@@ -1,7 +1,6 @@
 require("dotenv").config();
-const { log } = require("console");
 const mongoose = require("mongoose");
-const MongoStore = require('connect-mongo')(express);
+
 
 // DEFINING PARAMTERS 
 const DATABASE =  process.env.DATABASE;
@@ -12,7 +11,11 @@ const MONGO_AUTH_SOURCE = process.env.MONGO_AUTH_SOURCE;
 const MONGO_AUTH_MENCHANISM = process.env.MONGO_AUTH_MENCHANISM;
 // ....
 // INITIATING DB 
-const config = `mongodb://localhost:${MONGO_PORT}/${DATABASE}`;
+const config = {
+    connectionString: `mongodb://localhost:${MONGO_PORT}/${DATABASE}`,
+    db: `${DATABASE}`,
+    collection: "session"
+};
 const isProduction = process.env.NODE_ENV == "production"; 
 // ...
 
@@ -21,7 +24,7 @@ const connect_mongodb = async () => {
         if (isProduction) {
             return process.env.NODE_ENV
         }else {
-            const resp = await mongoose.connect(config, {
+            const resp = await mongoose.connect(config.connectionString, {
                 /* "auth": {
                     "username": `${MONGO_USERNAME}`,
                     "password": `${MONGO_PASS}`
@@ -36,14 +39,4 @@ const connect_mongodb = async () => {
     }
 };
 
-const mongo_store = () => {
-    try {
-        return new MongoStore(config)
-
-    } catch (error) {
-        console.log("..Eror in Mongo Session Storage ...", error);
-        return error
-    }
-}
-
-module.exports = { connect_mongodb, mongo_store };
+module.exports = { connect_mongodb, config };
