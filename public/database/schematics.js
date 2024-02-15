@@ -14,12 +14,14 @@ const user_schema = new mongoose.Schema({
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true, unique: true},
     company: {type: String, required: true, unique: false},
+    department: {type: String, required: true, unique: false},
     userID: {type: String, required: true, unique: true},
     photo: {type: String, required: false, unique: false, default: null},
     ID_card_type: {type: String, required: false, unique: false, default: null},
     ID_card_number: {type: String, required: false, unique: false, default: null},
     ID_photo_font: {type: String, required: false, unique: false, default: null},
-    ID_photo_back: {type: String, required: false, unique: false, default: null}
+    ID_photo_back: {type: String, required: false, unique: false, default: null},
+    otp: {type: String, required: false, unique: false, default: null}
 }, {timestamps: true}  // for this will add createdAt and updatedAt to the schema automatically 
 ); 
 const login_schema = new mongoose.Schema({

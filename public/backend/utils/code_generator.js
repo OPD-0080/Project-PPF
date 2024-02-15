@@ -1,5 +1,5 @@
 
-const radomSerialCode = () => {
+const randomSerialCode = (number) => {
     const base = "0123456789";
 
     const generate = (length) => {
@@ -9,8 +9,8 @@ const radomSerialCode = () => {
         }
         return show;
     }
-    return generate(5)
+    return generate(number)
 }
 
 
-module.exports = {radomSerialCode};
+module.exports = {randomSerialCode};
