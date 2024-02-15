@@ -30,7 +30,7 @@ const connect_mongodb = async () => {
                     "password": `${MONGO_PASS}`
                 }*/
             });
-            console.log("** Monog Database is connected **");
+            console.log("** Mongo Database is connected **");
             return resp
         }
     } catch (error) {

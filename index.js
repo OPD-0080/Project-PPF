@@ -13,8 +13,9 @@ const MongoStore = require('connect-mongo');
 // ...
 // EXPRESS ROUTERS
 const { connect_mongodb, config } = require(path.join(__dirname, "/public/database/connection"));
-
-
+const post_routes = require(path.join(__dirname, "/public/backend/router/POST_route"));
+const get_routes = require(path.join(__dirname, "/public/backend/router/GET_route"));
+const { passport_strategy } = require(path.join(__dirname, "/public/backend/controller/passport"));
 // ...
 // INITIALIZATION SERVER
 const app = express(); // all app depends on ~
@@ -52,15 +53,15 @@ app.use(session({
 app.use(flash());
 
 // INITIALIZING ROUTERS 
-//app.use("/db/get", route_pages);
-//app.use("/db/post", route_post);
+app.use("/api/post/user", post_routes);
+app.use("/api/get/user", get_routes);
 // ...
 
 
 // passort middleware 
-//passport.use(passport_strategy);
-//app.use(passport.initialize());
-//app.use(passport.session());
+passport.use(passport_strategy);
+app.use(passport.initialize());
+app.use(passport.session());
 // ...
 
 
