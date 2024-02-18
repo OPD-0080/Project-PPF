@@ -6,7 +6,7 @@ const crypto = require("crypto");
 
 // ....
 // IMPORTATION OF FILES 
-const { LoginModel, DateTimeTracker } = require("../../database/schematics");
+const { LoginModel, DateTimeTracker, UserModel } = require("../../database/schematics");
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
 
 // ...
@@ -19,34 +19,30 @@ const verify = async(username, password, cb) => {
     let resp = {};
     console.log("..PASSPORT DATA...", username, password);
 
-    // check is user credentials is found in db
-        const user = await LoginModel.findOne({ "email": username });
-        console.log("** checking for user in db **", user);
+    //  encrypt passowrd 
+        const hashed_pass = await encrypt_access_code(password);
+        console.log("** hashing user password **", hashed_pass); 
     // ...
-    if (user) { // user has already login 
-        console.log("** User already login **");
-        return cb(null, user, { msg: "User already login" }); 
-
-    }else { // user is not login 
-        console.log("** User not login **");
-
-        //  encrypt passowrd 
-            const hashed_pass = await encrypt_access_code(password);
-            console.log("** hashing user password **", hashed_pass); 
-        // ...
-        // Save data into database
-            const payload = {
-                email: data.email,
-                password: hashed_pass,
-                company: data.company,
-                userID: data.userID
-            };
-            const user = await LoginModel.insertMany(payload);
-            //await DateTimeTracker.craee
-            console.log("** DB insertion responds **", user);
-        // ...
-        return cb(null, user);
-    }
+    // getting data from db
+        const data = await UserModel.find({ "email": username });
+    // ...
+    // Save data into database
+        const payload = {
+            email: data.email,
+            company: data.company,
+            userID: data.userID
+        };
+        const user = await LoginModel.insertMany(payload);
+        await DateTimeTracker.insertMany({ 
+            "email": payload.email, 
+            "userID": data.userID, 
+            "login_date": "",
+            "login_time": ""
+            
+        });
+        console.log("** DB insertion responds **", user);
+    // ...
+    return cb(null, user);
 }
 const passport_strategy = new LocalStrategy( verify );
 // .....................................................................

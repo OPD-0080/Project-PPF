@@ -59,8 +59,6 @@ const signup_handler = async (req, res, next) => {
         // ...
 
 
-    
-
     } catch (error) {
         console.log("** Error:: Signup Handler **", error, error.writeErrors[0]);
 

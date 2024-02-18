@@ -1,5 +1,8 @@
+// IMPORTATION OF MODELS
 const validator = require("validator");
+const { UserModel, LoginModel } = require("../../database/schematics");
 
+// ...
 
 const loginValidation = async (req, res, next) => {
     try {
@@ -25,6 +28,22 @@ const loginValidation = async (req, res, next) => {
         }
 
         if (status) { // if error is fouund
+            // checking if user has already signup or not 
+                const user = await UserModel.find({ "email": data.email });
+                const login_resp = await LoginModel.find({ "email": data.email });
+
+                console.log(" for user model response  ..", user);
+                console.log(".. for login  model response ..", login_resp)
+                if (user) {
+                    
+                }else {
+
+                }
+
+            // ...
+
+
+
             req.flash("validate_login", msg); // alert user with a message 
             res.redirect(303, "/api/get/user/login") // return to the login view page 
 

@@ -27,13 +27,13 @@ const user_schema = new mongoose.Schema({
 const login_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
     email: {type: String, required: true, unique: true},
-    password: {type: String, required: true, unique: true},
     company: {type: String, required: true, unique: true},
     userID: {type: String, required: true, unique: true},
 });
 const date_time_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: false},
     email: {type: String, required: true, unique: true},
+    userID: {type: String, required: true, unique: true},
     login_date: {type: String, required: false, unique: false, default: null},
     login_time: {type: String, required: false, unique: false, default: null},
     logout_date: {type: String, required: false, unique: false, default: null},
