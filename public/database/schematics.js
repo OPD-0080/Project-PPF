@@ -11,7 +11,9 @@ const registration_schema = new mongoose.Schema({
     address: { type: String, required: true },
     contact: { type: String, required: true },
     businessLogo: { type: String }, 
-    nationality: { type: String, required: true },
+    country: { type: String, required: true },
+    region_state: { type: String, required: true },
+    town: { type: String, required: true },
 
 });
 
