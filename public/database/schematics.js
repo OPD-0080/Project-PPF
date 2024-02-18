@@ -27,20 +27,20 @@ const user_schema = new mongoose.Schema({
 const login_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
     email: {type: String, required: true, unique: true},
-    password: {type: String, required: true, unique: true},
     company: {type: String, required: true, unique: true},
     userID: {type: String, required: true, unique: true},
 });
 const date_time_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: false},
-    email: {type: String, required: true, unique: true},
+    email: {type: String, required: true},
+    userID: {type: String, required: true, unique: true},
     login_date: {type: String, required: false, unique: false, default: null},
     login_time: {type: String, required: false, unique: false, default: null},
     logout_date: {type: String, required: false, unique: false, default: null},
     logout_time: {type: String, required: false, unique: false, default: null},
 });
 
-  const registration_schema = new mongoose.Schema({
+const registration_schema = new mongoose.Schema({
     email: {type: String, required: true, unique: true},
     businessName: { type: String, required: true },
     natureOfBusiness: {type: String, required: this},
@@ -68,6 +68,6 @@ const RegistrationModel = mongoose.model("registration", registration_schema);
 
 // EXPORT SCHEMATICS
 module.exports = { 
-    UserModel, LoginModel, DateTimeTracker
+    UserModel, LoginModel, DateTimeTracker, RegistrationModel
 }
 // ..

@@ -1,5 +1,11 @@
+// IMPORTATION OF MODELS
 const validator = require("validator");
+const moment = require("moment");
 
+
+const { UserModel, LoginModel, DateTimeTracker } = require("../../database/schematics");
+
+// ...
 
 const loginValidation = async (req, res, next) => {
     try {
@@ -9,6 +15,10 @@ const loginValidation = async (req, res, next) => {
 
         if (!validator.isEmail(data.username)) {
             msg = "Error. Provide Valid Email !";
+            status = true;
+
+        }else if (validator.isEmpty(data.username)) {
+            msg = "Error. Provide Email !";
             status = true;
 
         }else if (validator.isEmpty(data.password)) {
@@ -24,14 +34,48 @@ const loginValidation = async (req, res, next) => {
             status = true;
         }
 
+
         if (status) { // if error is fouund
             req.flash("validate_login", msg); // alert user with a message 
-            res.redirect(303, "/api/get/user/login") // return to the login view page 
+            //res.redirect(303, "/api/get/user/login") // return to the login view page 
 
         }else {
             console.log("** Validation Completed **");
 
-            next() // mve to the next middelware 
+            // checking if user has already signup or not 
+                const user = await UserModel.find({ "email": data.username });
+                const login_resp = await LoginModel.find({ "email": data.username });
+
+                console.log(" for user model response  ..", user, user.length);
+                console.log(".. for login  model response ..", login_resp);
+
+                if (user.length == 0) { // if user has not signup and trying to login 
+                    console.log("** User has not signup **");
+                    
+                    // send user an alert message
+                        req.flash("signup", "User not Signup. Please Signup !");
+                    // ...
+                    res.redirect(303, "/api/get/user/signup"); // redirect user to the signup page
+
+                }else if ( (user.length > 0) && (login_resp.length == 0) ) { // if user has signup and trying to login 
+                    next() // mve to the next middelware 
+                }else if ( (user.length > 0) && (login_resp.length > 0) ) { // if user has signup and already login but login for the second time
+                    // delete user login  data from db first and update date and time 
+                        await DateTimeTracker.updateOne(
+                                { "uuid": login_resp[0].uuid }, // filter to get user data from db
+                                { $set: { // then update that data
+                                    "logout_date": `${moment().format("YYYY-MM-DD")}`,
+                                    "logout_time": `${moment().format("hh:mm")}`
+                                }}
+                            );
+                        await LoginModel.deleteOne({ "uuid": login_resp[0].uuid });
+                    // ..
+                    // send alert message to user
+                        req.flash("login", "User Login Twice. Re-login !");
+                    // ...
+                    res.redirect(303, "/api/get/user/logout"); // redirect user to the signout page
+                }
+            // ...
         }
 
     } catch (error) {
