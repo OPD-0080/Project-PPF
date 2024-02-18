@@ -3,12 +3,11 @@ require("dotenv").config();
 const LocalStrategy = require('passport-local');
 const passport = require("passport");
 const crypto = require("crypto");
-
+const moment = require("moment");
 // ....
 // IMPORTATION OF FILES 
 const { LoginModel, DateTimeTracker, UserModel } = require("../../database/schematics");
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
-
 // ...
 
 
@@ -25,22 +24,38 @@ const verify = async(username, password, cb) => {
     // ...
     // getting data from db
         const data = await UserModel.find({ "email": username });
+        const date_tracker = await DateTimeTracker.find({ "email": username });
     // ...
     // Save data into database
         const payload = {
-            email: data.email,
-            company: data.company,
-            userID: data.userID
+            email: data[0].email,
+            company: data[0].company,
+            userID: data[0].userID
         };
         const user = await LoginModel.insertMany(payload);
-        await DateTimeTracker.insertMany({ 
-            "email": payload.email, 
-            "userID": data.userID, 
-            "login_date": "",
-            "login_time": ""
+        console.log("** DB insertion responds at passport section **", user);
+
+        if (date_tracker.length == 0) {
+            console.log("** inserting data in dateTracker collection **", date_tracker);
+
             
-        });
-        console.log("** DB insertion responds **", user);
+            await DateTimeTracker.insertMany({ 
+                "uuid": data[0].uuid,
+                "email": payload.email, 
+                "userID": payload.userID, 
+                "login_date": `${moment().format("YYYY-MM-DD")}`,
+                "login_time": `${moment().format("hh:mm")}`
+            });
+            
+        }else {
+            await DateTimeTracker.updateOne({ 
+                "login_date": `${moment().format("YYYY-MM-DD")}`,
+                "login_time": `${moment().format("hh:mm")}`
+            });
+            
+        }
+
+        
     // ...
     return cb(null, user);
 }

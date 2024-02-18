@@ -35,7 +35,7 @@ const signup_handler = async (req, res, next) => {
             console.log("** final payload **", payload);
 
             const db_insert_resp = await UserModel.insertMany(payload);
-            await DateTimeTracker.insertMany({ "uuid": db_insert_resp[0].uuid, "email": payload.email });
+            await DateTimeTracker.insertMany({ "uuid": db_insert_resp[0].uuid, "email": payload.email, "userID": payload.userID });
         // ...
         // send OTP code to user email using nodemailer
             const otp_code = await randomSerialCode(4);
@@ -61,7 +61,7 @@ const signup_handler = async (req, res, next) => {
 
 
     } catch (error) {
-        console.log("** Error:: Signup Handler **", error, error.writeErrors[0]);
+        console.log("** Error:: Signup Handler **", error);
 
         // Handling errors 
             if (error.writeErrors[0].err.errmsg.includes("duplicate key error collection")) { // for duplicate key pairs in db 
@@ -71,9 +71,7 @@ const signup_handler = async (req, res, next) => {
 
         // ...
     }
-}
-
-
+};
 const login_handler = async (req, res, next) => {
     try {
         console.log("** Collecting data from login UI **", req.body);
@@ -85,7 +83,7 @@ const login_handler = async (req, res, next) => {
     } catch (error) {
         console.log("** Error:: Login Handler **", error);
     }
-}
+};
 const registration_handler = async (req, res, next) => {
 
     const email = req.body.email;
@@ -128,7 +126,7 @@ const registration_handler = async (req, res, next) => {
         return res.status(500).json({ message: "Internal Server Error." });
     }
 
-}
+};
 
 
 module.exports = { signup_handler, login_handler, registration_handler }

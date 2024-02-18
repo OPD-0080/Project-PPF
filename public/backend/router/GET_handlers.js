@@ -11,9 +11,6 @@ const view_login = async (req, res, next) => {
 
 
 
-
-
-
         // notification section
             const error_alert = req.flash("validate_login");
             if (error_alert !== "") {
@@ -50,10 +47,28 @@ const view_signup = async (req, res, next) => {
     } catch (error) {
         console.log("** Error:: Login view **", error);
     }
+};
+
+const view_logout = async (req, res, next) => {
+    try {
+        console.log("** Inside Logout view **");
+        // send alert message
+            req.flash("login", "User Logout. Please Login !");
+        // ..
+        // destroy user session data in passport
+            req.session.destroy();
+        // ...
+        res.redirect(303, "/api/get/user/login");  // redirect to login get page
+
+    } catch (error) {
+        console.log("** Error:: Login view **", error);
+    }
 }
 
 
 
 
 
-module.exports = { view_login, view_signup }
+
+
+module.exports = { view_login, view_signup, view_logout }
