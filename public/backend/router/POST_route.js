@@ -7,8 +7,8 @@ const passport = require("passport");
 // IMPORTATION OF HANDLERS
 const { login_handler, signup_handler, registration_handler } = require("./POST_handlers");
 // ...
-// IMPORATION OF MIDDLEWARES
-const { loginValidation, signupValidation } = require("../controller/validation");
+// IMPORTATION OF MIDDLEWARES
+const { loginValidation, signupValidation, registrationValidation } = require("../controller/validation");
 
 
 // ...
@@ -36,7 +36,7 @@ const upload = multer({ storage: storage });
 // ROUTERS SECTION 
 router.post("/signup", signupValidation, signup_handler)
 router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: '/api/get/user/login', failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), login_handler);
-router.post("/register", registration_handler)
+router.post("/register", registrationValidation,registration_handler)
 
 
 // ...
