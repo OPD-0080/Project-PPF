@@ -13,6 +13,7 @@ const MongoStore = require('connect-mongo');
 // ...
 // EXPRESS ROUTERS
 const { connect_mongodb, config } = require(path.join(__dirname, "/public/database/connection"));
+const post_routes  = require(path.join(__dirname, "/public/backend/router/POST_route"));
 
 
 // ...
@@ -53,7 +54,7 @@ app.use(flash());
 
 // INITIALIZING ROUTERS 
 //app.use("/db/get", route_pages);
-//app.use("/db/post", route_post);
+app.use("/api/post/user", post_routes);
 // ...
 
 

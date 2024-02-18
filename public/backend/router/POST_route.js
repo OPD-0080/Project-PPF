@@ -5,7 +5,7 @@ const passport = require("passport");
 
 
 // IMPORTATION OF HANDLERS
-
+const {registration_handler} = require('./POST_handlers')
 
 // ...
 // MULTER SECION FOR UPLOADING DATA
@@ -30,8 +30,8 @@ const upload = multer({ storage: storage });
 */
 
 // ROUTERS SECTION 
-//router.post("/api/user/register", )
+router.post("/register", registration_handler)
 
 
 // ...
-//module.exports = router
+module.exports = router
