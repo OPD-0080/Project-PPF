@@ -61,7 +61,7 @@ const registration_schema = new mongoose.Schema({
 const UserModel = mongoose.model("Users", user_schema);
 const LoginModel = mongoose.model("Login", login_schema);
 const DateTimeTracker = mongoose.model("DateTimeTracker", date_time_schema);
-const RegistrationModel = mongoose.model("registration", registration_schema);
+const RegistrationModel = mongoose.model("Registration", registration_schema);
 
 
 // ...

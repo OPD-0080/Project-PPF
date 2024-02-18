@@ -130,4 +130,62 @@ const signupValidation = async (req, res, next) => {
     }
 };
 
-module.exports = { loginValidation, signupValidation }
+const registrationValidation = async (req, res, next) => {
+    try {
+        console.log("** Validating Registration fields **");
+        const data = req.body;
+        let status = "", msg = "";
+
+        if (!validator.isEmail(data.email)) {
+            msg = "Error. Provide Valid Email !";
+            status = true;
+
+        }else if (validator.isEmpty(data.email)){
+            msg = "Error. Provide An Email !";
+            status = true;
+        
+        }else if (validator.isEmpty(data.businessName)) {
+            msg = "Error. Provide Business name !";
+            status = true;
+
+        }else if (validator.isEmpty(data.natureOfBusiness)){
+            msg = "Error. Provide a summary of your service !";
+            status = true;
+
+        } else if (validator.isEmpty(data.businessType)){
+            msg = "Error. Provide the type of business !";
+            status = true;
+
+        }else if (validator.isEmpty(data.location)){
+            msg = "Error. Provide Your business location !";
+            status = true;
+
+        }else if (validator.isEmpty(data.address)){
+            msg = "Error. Provide Your address !";
+            status = true;
+
+        }else if (validator.isEmpty(data.contact)){
+            msg = "Error. Provide Your contact !";
+            status = true;
+
+        }else if (validator.isEmpty(data.country)){
+            msg = "Error. Provide the Country you operate in!";
+            status = true;
+
+        }else if (validator.isEmpty(data.region_state)){
+            msg = "Error. Provide Your business region or state !";
+            status = true;
+
+        }else if (validator.isEmpty(data.town)){
+            msg = "Error. Provide Your business town!";
+            status = true;
+        }
+        return res.status(404).json(msg);
+
+    } catch (error) {
+        console.log("** Error:: login validation **", error);
+    }   
+    
+};
+
+module.exports = { loginValidation, signupValidation, registrationValidation }
