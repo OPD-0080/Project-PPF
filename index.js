@@ -56,8 +56,6 @@ app.use(flash());
 app.use("/api/post/user", post_routes);
 app.use("/api/get/user", get_routes);
 // ...
-
-
 // passort middleware 
 passport.use(passport_strategy);
 app.use(passport.initialize());

@@ -40,6 +40,20 @@ const date_time_schema = new mongoose.Schema({
     logout_time: {type: String, required: false, unique: false, default: null},
 });
 
+  const registration_schema = new mongoose.Schema({
+    email: {type: String, required: true, unique: true},
+    businessName: { type: String, required: true },
+    natureOfBusiness: {type: String, required: this},
+    businessType: { type: String, required: true },
+    location: { type: String, required: true },
+    address: { type: String, required: true },
+    contact: { type: String, required: true },
+    businessLogo: { type: String }, 
+    country: { type: String, required: true },
+    region_state: { type: String, required: true },
+    town: { type: String, required: true },
+});
+
 
 // ...
 // DECLARING SCHEMATICS
@@ -47,6 +61,8 @@ const date_time_schema = new mongoose.Schema({
 const UserModel = mongoose.model("Users", user_schema);
 const LoginModel = mongoose.model("Login", login_schema);
 const DateTimeTracker = mongoose.model("DateTimeTracker", date_time_schema);
+const RegistrationModel = mongoose.model("registration", registration_schema);
+
 
 // ...
 
