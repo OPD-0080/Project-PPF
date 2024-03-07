@@ -43,7 +43,7 @@ const date_time_schema = new mongoose.Schema({
 const registration_schema = new mongoose.Schema({
     email: {type: String, required: true, unique: true},
     businessName: { type: String, required: true },
-    natureOfBusiness: {type: String, required: this},
+    natureOfBusiness: {type: String, required: true},
     businessType: { type: String, required: true },
     location: { type: String, required: true },
     address: { type: String, required: true },
