@@ -63,4 +63,19 @@ app.use(passport.session());
 // ...
 
 
+// use EJS as the view engine 
+app.set("view engine", "ejs");
+
+app.get("/registor", (req, res) => {
+    res.render('register');
+});
+
+app.get("/user-register", (req, res) => {
+    res.render('user-register');
+});
+
+app.get("/login", (req, res) => {
+    res.render('login');
+});
+
 app.listen(PORT, () => { console.log(`.....Server is listern on PORT  ${PORT}`) })
