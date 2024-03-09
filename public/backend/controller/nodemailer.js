@@ -21,9 +21,9 @@ const sendMailForSignupAuth = async (payload, code) => {
         const email_detail = {
             from: `PROJECT PPF ${process.env.NODEMAILER_USER}`,
             to: `${payload.email}`,
-            subject: "AUTHENTICATION CODE",
+            subject: "OTP AUTHENTICATION CODE",
             text: `Dear Admin, ${payload.first_name} ${payload.last_name} with userID ${payload.userID} is trying to signup against ${payload.company},
-                Please provide the OPT Codes to the user for authentication: ${code}`,
+                Permit user by giving the OTP Code to the user for authentication: ${code}`,
             //html: "" // to customize message to the receiptent tmo suit company profile 
         };
         console.log("....SENDNING EMAIL .....", email_detail);
