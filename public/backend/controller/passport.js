@@ -38,7 +38,6 @@ const verify = async(username, password, cb) => {
         if (date_tracker.length == 0) {
             console.log("** inserting data in dateTracker collection **", date_tracker);
 
-            
             await DateTimeTracker.insertMany({ 
                 "uuid": data[0].uuid,
                 "email": payload.email, 
@@ -54,8 +53,6 @@ const verify = async(username, password, cb) => {
             });
             
         }
-
-        
     // ...
     return cb(null, user);
 }
