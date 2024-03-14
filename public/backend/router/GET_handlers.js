@@ -14,7 +14,8 @@ const view_registration = async (req, res, next) => {
             console.log("Error message", error_alert);
             console.log("user alert message :", user_alert);
         // ...
-        res.json(200)
+        // res.json(200)
+        res.render("register" )
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
@@ -25,11 +26,8 @@ const view_signup = async (req, res, next) => {
         console.log("** Inside Signup view **");
         let user_alert = "";
 
-
-
-
-
         // notification section
+
             const error_alert = req.flash("validate_signup");
             const flash_msg = req.flash("signup");
 
@@ -44,7 +42,7 @@ const view_signup = async (req, res, next) => {
             console.log("user alert message :", user_alert);
             console.log("OTP status :", otp_status);
         // ...
-        res.json(200)
+        res.render("user-register")
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
@@ -69,7 +67,7 @@ const view_login = async (req, res, next) => {
             }
             console.log("user alert message :", user_alert);
         // ...
-        res.json(200)
+        res.render("login")
 
     } catch (error) {
         console.log("** Error:: Login view **", error);

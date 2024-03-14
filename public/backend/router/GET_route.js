@@ -12,7 +12,7 @@ const { view_login, view_signup, view_logout, view_registration, view_404, view_
 
 // ROUTERS SECTION 
 router.get("/register", view_registration);
-router.get("/signup", view_signup);
+router.get("/user-register", view_signup);
 router.get("/login", view_login);
 router.get("/logout", view_logout);
 router.get("/404", view_404);

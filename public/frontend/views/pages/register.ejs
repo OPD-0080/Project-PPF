@@ -1,6 +1,6 @@
+
 <!DOCTYPE html>
 <html lang="en" class="h-100">
-
 
 <!-- Mirrored from welly.dexignzone.com/django/xhtml/page-register.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 20 Feb 2024 11:22:27 GMT -->
 <head>
@@ -20,11 +20,11 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<!-- Title -->
-	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
+	<title>PROJECT - PPF</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
-  <link href="css/style.css" rel="stylesheet">
-	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/frontend/css/style.css" >
+	<!-- <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet"> -->
 </head>
 
 <body class="h-100">
@@ -41,39 +41,68 @@
 										<!-- <a href="index.html"><img src="images/logo-full.png" alt=""></a> -->
 									</div>
                                     <h4 class="text-center mb-1 text-white">Sign up your account</h4>
-                                    <form action="/user-register" method="post">
+                                    <form action="/api/post/user/register" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; col-md-6">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>
-                                                <input type="email" class="form-control" placeholder="hello@example.com">
+                                                <input type="email" class="form-control" placeholder="hello@example.com" name="email">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>First Name</strong></label>
-                                                <input type="text" class="form-control" placeholder="First">
+                                                <label class="mb-1 text-white"><strong>Business Name</strong></label>
+                                                <input type="text" class="form-control" placeholder="Business Name" name="businessName">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Last Name</strong></label>
-                                                <input type="text" class="form-control" placeholder="Last Name">
+                                                <label class="mb-1 text-white"><strong>Nature Of Business</strong></label>
+                                                <input type="text" class="form-control" placeholder="Nature Of Business" name="natureOfBusiness">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Other Name</strong></label>
-                                                <input type="text" class="form-control" placeholder="Other Name">
+                                                <label class="mb-1 text-white"><strong>Business Type</strong></label>
+                                                <input type="text" class="form-control" placeholder="Business Type" name="businessType">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Phone Number</strong></label>
-                                                <input type="number" class="form-control" placeholder="Phone Number">
+                                                <label class="mb-1 text-white"><strong>Business Location</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="location">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Department </strong></label>
-                                                <input type="text" class="form-control" placeholder="DEpartment">
-                                            </div> 
+                                                <label class="mb-1 text-white"><strong>Business Address</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="address">
+                                            </div>
                                             <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>Contact</strong></label>
+                                                <input type="text" class="form-control" placeholder="contact" name="contact">
+                                            </div>
+                                            <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>Busines Logo</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="businessLogo">
+                                            </div>
+                                            <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>Country</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="country">
+                                            </div>
+                                            <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>Region/state</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="region_state">
+                                            </div>
+                                            <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>Town</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="town">
+                                            </div>
+                                            <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>CEO Name</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="ceo ">
+                                            </div>
+                                            <!-- <div class="form-group; col-md-4">
+                                                <label class="mb-1 text-white"><strong>Role</strong></label>
+                                                <input type="text" class="form-control" placeholder="">
+                                            </div> -->
+                                    
+                                            <div class="form-group; col-md-4">
                                                 <label class="mb-1 text-white"><strong>Password</strong></label>
-                                                <input type="password" class="form-control" value="Password">
+                                                <input type="password" class="form-control" value="Password" name="new_pass">
                                             </div> 
-                                            <div class="form-group; col-md-6">
+                                            <div class="form-group; col-md-4">
                                                 <label class="mb-1 text-white"><strong>Confirm Password</strong></label>
-                                                <input type="password" class="form-control" value="Password">
+                                                <input type="password" class="form-control" value="Password" name="confirm_pass">
                                             </div> 
                                             
                                             <div class="text-center mt-4" style="margin-top: 10px;">

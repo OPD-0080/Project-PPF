@@ -23,7 +23,7 @@
 	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
-  <link href="css/style.css" rel="stylesheet">
+  <link href="/frontend/css/style.css"rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet">
 </head>
 
@@ -41,68 +41,39 @@
 										<!-- <a href="index.html"><img src="images/logo-full.png" alt=""></a> -->
 									</div>
                                     <h4 class="text-center mb-1 text-white">Sign up your account</h4>
-                                    <form action="/register" method="post">
+                                    <form action="/api/post/user/user-register" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; col-md-6">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>
-                                                <input type="email" class="form-control" placeholder="hello@example.com">
+                                                <input type="email" class="form-control" placeholder="hello@example.com" name="username">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Business Name</strong></label>
-                                                <input type="text" class="form-control" placeholder="Business Name">
+                                                <label class="mb-1 text-white"><strong>First Name</strong></label>
+                                                <input type="text" class="form-control" placeholder="First" name="first_name">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Nature Of Business</strong></label>
-                                                <input type="text" class="form-control" placeholder="Nature Of Business">
+                                                <label class="mb-1 text-white"><strong>Last Name</strong></label>
+                                                <input type="text" class="form-control" placeholder="Last Name" name="last_name">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Business Type</strong></label>
-                                                <input type="text" class="form-control" placeholder="Business Type">
+                                                <label class="mb-1 text-white"><strong>Other Name</strong></label>
+                                                <input type="text" class="form-control" placeholder="Other Name" name="middle_name">
                                             </div>
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Business Location</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
+                                                <label class="mb-1 text-white"><strong>Phone Number</strong></label>
+                                                <input type="tel" class="form-control" placeholder="Phone Number" name="tel">
                                             </div>
+                                            <!-- <div class="form-group; col-md-6">
+                                                <label class="mb-1 text-white"><strong>Department </strong></label>
+                                                <input type="text" class="form-control" placeholder="DEpartment" name="">
+                                            </div>  -->
                                             <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Business Address</strong></label>
-                                                <input type="text" class="form-control" placeholder="P.o Box .....">
-                                            </div>
-                                            <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Contact</strong></label>
-                                                <input type="text" class="form-control" placeholder="contact">
-                                            </div>
-                                            <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Busines Logo</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
-                                            </div>
-                                            <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Country</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
-                                            </div>
-                                            <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Region/state</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
-                                            </div>
-                                            <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>Town</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
-                                            </div>
-                                            <div class="form-group; col-md-6">
-                                                <label class="mb-1 text-white"><strong>CEO Name</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
-                                            </div>
-                                            <div class="form-group; col-md-4">
-                                                <label class="mb-1 text-white"><strong>Role</strong></label>
-                                                <input type="text" class="form-control" placeholder="">
-                                            </div>
-                                    
-                                            <div class="form-group; col-md-4">
                                                 <label class="mb-1 text-white"><strong>Password</strong></label>
-                                                <input type="password" class="form-control" value="Password">
+                                                <input type="password" class="form-control" value="Password" name="new_pass">
                                             </div> 
-                                            <div class="form-group; col-md-4">
+                                            <div class="form-group; col-md-6">
                                                 <label class="mb-1 text-white"><strong>Confirm Password</strong></label>
-                                                <input type="password" class="form-control" value="Password">
+                                                <input type="password" class="form-control" value="Password" name="confirm_pass">
                                             </div> 
                                             
                                             <div class="text-center mt-4" style="margin-top: 10px;">

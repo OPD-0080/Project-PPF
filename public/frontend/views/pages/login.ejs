@@ -23,7 +23,7 @@
 	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
-  <link href="css/style.css" rel="stylesheet">
+  <link href="/frontend/css/style.css" rel="stylesheet">
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet">
 </head>
 
@@ -40,14 +40,14 @@
 										<a href="index.html"><img src="PPF LOGO" alt=""></a>
 									</div>
                                     <h4 class="text-center mb-4 text-white">Sign in your account</h4>
-                                    <form action="/login" method="post">
+                                    <form action="/api/post/user/login" method="post">
                                         <div class="form-group">
                                             <label class="mb-1 text-white"><strong>Email / User ID</strong></label>
-                                            <input type="email" class="form-control" value="hello@example.com">
+                                            <input type="email" class="form-control" value="hello@example.com" name="username">
                                         </div>
                                         <div class="form-group">
                                             <label class="mb-1 text-white"><strong>Company</strong></label>
-                                            <input type="text" class="form-control" value="">
+                                            <input type="text" class="form-control" value="" name="company">
                                         </div>
                                         <!-- <div class="form-group">
                                             <label class="mb-1 text-white"><strong>User ID</strong></label>
@@ -55,7 +55,7 @@
                                         </div> -->
                                         <div class="form-group">
                                             <label class="mb-1 text-white"><strong>Password</strong></label>
-                                            <input type="password" class="form-control" value="Password">
+                                            <input type="password" class="form-control" value="Password" name="password">
                                         </div>
                                         <div class="row d-flex justify-content-between mt-4 mb-2">
                                             <!-- <div class="form-group">

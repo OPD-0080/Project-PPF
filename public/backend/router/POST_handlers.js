@@ -20,7 +20,7 @@ const registration_handler = async (req, res, next) => {
     const address = req.body.address;
     const contact = req.body.contact;
     const businessLogo = req.body.businessLogo;
-    const country = req.body.country;
+    const count = req.body.country;
     const region_state = req.body.region_state;
     const town = req.body.town;
     const ceo = req.body.ceo;
@@ -49,7 +49,7 @@ const registration_handler = async (req, res, next) => {
                 address:address,
                 contact:contact,
                 businessLogo:businessLogo,
-                country:country,
+                country:count,
                 region_state:region_state,
                 town:town,
                 ceo: ceo,
@@ -114,11 +114,11 @@ const signup_handler = async (req, res, next) => {
         // checking if OTP code is sent via email sucessfully 
             if (nodemail_resp == null) {
                 req.flash("signup", "Bad Network. OTP not sent. Please Signup again !");
-                res.redirect(303, "/api/get/user/signup");
+                res.redirect(303, "/api/get/user/user-register");
 
             }else if (nodemail_resp !== undefined) { // if OTP is sent sucessfully 
                 store.session.set("OTP_status", true);
-                res.redirect(303, "/api/get/user/signup"); 
+                res.redirect(303, "/api/get/user/user-register"); 
             }
         // ...
 
@@ -128,7 +128,7 @@ const signup_handler = async (req, res, next) => {
         // Handling errors 
             if (error.writeErrors[0].err.errmsg.includes("duplicate key error collection")) { // for duplicate key pairs in db 
                 req.flash("signup", "User already SignUp. Please Login !");
-                res.redirect(303, "/api/get/user/signup");
+                res.redirect(303, "/api/get/user/user-register");
             }
 
         // ...
