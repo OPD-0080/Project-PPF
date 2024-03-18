@@ -5,16 +5,17 @@ const store = require("store2");
 const view_registration = async (req, res, next) => {
     try {
         console.log("** Inside Registration view **");
-
-
+        let context = {}
 
         // notification section
-            const error_alert = req.flash("validate_register");
-            const user_alert = req.flash("register");
+            const error_alert = req.flash("validate_register"); 
+            const user_alert = req.flash("register"); 
             console.log("Error message", error_alert);
             console.log("user alert message :", user_alert);
         // ...
-        res.json(200)
+        
+
+        res.render("register", context);
 
     } catch (error) {
         console.log("** Error:: Login view **", error);

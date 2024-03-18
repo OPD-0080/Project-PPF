@@ -1,0 +1,22 @@
+*, html, body, ul, ol *::after, *::before {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  width: 100%;
+  background: #2e2e2e;
+  color: white;
+}
+
+ul, ol, li {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+}/*# sourceMappingURL=reset.css.map */

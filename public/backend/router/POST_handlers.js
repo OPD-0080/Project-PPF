@@ -81,7 +81,7 @@ const signup_handler = async (req, res, next) => {
             console.log("** hashing user password **", hashed_pass); 
         // ...
         // save data into db
-            const biodata = await RegistrationModel.find({ businessName: data.company }); // getting company biodata from db
+            const biodata = await RegistrationModel.find({ businessName: data.company }); // getting company biodata from db            
             const payload = {
                 first_name: data.first_name,
                 last_name: data.last_name,
@@ -170,6 +170,7 @@ const login_handler = async (req, res, next) => {
         console.log("** Collecting data from login UI **", req.body);
         const data = req.body;
 
+        
 
         
         
