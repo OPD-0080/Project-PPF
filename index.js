@@ -62,5 +62,4 @@ app.use(passport.initialize());
 app.use(passport.session());
 // ...
 
-
 app.listen(PORT, () => { console.log(`.....Server is listern on PORT  ${PORT}`) })

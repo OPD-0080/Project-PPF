@@ -1,0 +1,16 @@
+{
+    "beautify.options": {
+
+    },
+    "liveSassCompile.settings.formats": [
+
+        {
+            "format": "expanded",
+            "extensionName": ".css",
+            "savePath": "/public/frontend/css",
+            "savePathReplacementPairs": null
+        }
+    ],
+    "liveSassCompile.settings.generateMap": false,
+    "liveSassCompile.settings.useNewCompiler": false
+}
