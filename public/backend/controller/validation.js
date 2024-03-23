@@ -96,7 +96,11 @@ const signupValidation = async (req, res, next) => {
         const data = req.body;
         let status = "", msg = "";
 
-        if (!validator.isEmail(data.email)) {
+        if (!validator.isEmpty(data.username)) {
+            msg = "Error. Provide an Email !";
+            status = true;
+
+        }else if (!validator.isEmail(data.username)) {
             msg = "Error. Provide Valid Email !";
             status = true;
 
@@ -124,7 +128,7 @@ const signupValidation = async (req, res, next) => {
 
         if (status) { // if error is fouund
             req.flash("validate_signup", msg); // alert user with a message 
-            res.redirect(303, "/api/get/user/signup") // return to the login view page 
+            res.redirect(303, "/api/get/user/user-register") // return to the login view page 
 
         }else {
             console.log("** Validation Completed **");
@@ -134,7 +138,7 @@ const signupValidation = async (req, res, next) => {
 
                 if (biodata.length == 0) { // server could not find registered biodata from db
                     req.flash("signup", `Error. ${data.company} not registered. Please Register !`) // send messge to user 
-                    res.redirect(303, "/api/get/user/signup");
+                    res.redirect(303, "/api/get/user/user-register");
 
                 }else { // server found biodata 
                     next() // move to the next middelware 
@@ -142,7 +146,7 @@ const signupValidation = async (req, res, next) => {
         }
 
     } catch (error) {
-        console.log("** Error:: login validation **", error);
+        console.log("** Error:: signup validation **", error);
         res.redirect(303, "/api/get/user/404");
     }
 };
@@ -165,7 +169,7 @@ const loginValidation = async (req, res, next) => {
             status = true;
 
         }else if (validator.isEmpty(data.company)) {
-            msg = "Error. Select Your Company First to Login";
+            msg = "Error. Select Your Company";
             status = true;
 
         }else if (validator.isEmpty(data.userID)) {
