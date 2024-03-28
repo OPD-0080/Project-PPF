@@ -1,6 +1,9 @@
 // IMPORTATION OF MODULES 
 const store = require("store2");
+// ...
 
+// IMPORTATION OF FILES
+const config = require("../config/config");
 // ...
 const view_registration = async (req, res, next) => {
     try {
@@ -17,6 +20,8 @@ const view_registration = async (req, res, next) => {
             
             console.log("user alert message :", context.message);
         // ...
+        context.register_url = config.post_urls.register;
+
         res.render("register", { context });
 
     } catch (error) {
@@ -28,8 +33,9 @@ const view_signup = async (req, res, next) => {
         console.log("** Inside Signup view **");
         let context = {}, user_alert = "";
 
-        // notification section
 
+        
+        // notification section
             const error_alert = req.flash("validate_signup");
             const flash_msg = req.flash("signup");
             const otp_status = store.session.get("OTP_status");
@@ -39,6 +45,8 @@ const view_signup = async (req, res, next) => {
             console.log("user alert message :", context.message);
             console.log("OTP status :", otp_status);
         // ...
+        context.signup_url = config.post_urls.user_register;
+
         res.render("user-register", { context })
 
     } catch (error) {

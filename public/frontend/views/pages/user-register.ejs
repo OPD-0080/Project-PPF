@@ -20,7 +20,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 
 	<!-- Title -->
-	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
+    <title>PROJECT - PPF || SignUp </title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
     <link rel="stylesheet" href="/frontend/css/style.css" >
@@ -50,8 +50,8 @@
 									<div class="text-center mb-12">
 										<!-- <a href="index.html"><img src="images/logo-full.png" alt=""></a> -->
 									</div>
-                                    <h4 class="text-center mb-1 text-white">Sign up your account</h4>
-                                    <form action="/api/post/user/user-register" method="post">
+                                    <h4 class="text-center mb-1 text-white"> SignUp Your Account </h4>
+                                    <form action="<% if (context !== undefined) { %><%- context.signup_url %><% } %>" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; col-md-6">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>
@@ -87,7 +87,7 @@
                                             </div> 
                                             
                                             <div class="text-center mt-4" style="margin-top: 10px;">
-                                                <button type="submit" class="btn bg-white text-primary btn-block">Sign me up</button>
+                                                <button type="submit" class="btn bg-white text-primary btn-block">Sign Me Up</button>
                                             </div>
                                         </div>
                                     </form>

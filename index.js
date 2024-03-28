@@ -12,7 +12,8 @@ const MongoStore = require('connect-mongo');
 
 // ...
 // EXPRESS ROUTERS
-const { connect_mongodb, config } = require(path.join(__dirname, "/public/database/connection"));
+const config = require(path.join(__dirname, "/public/backend/config/config"));
+const { connect_mongodb, DBconfig } = require(path.join(__dirname, "/public/database/connection"));
 const post_routes = require(path.join(__dirname, "/public/backend/router/POST_route"));
 const get_routes = require(path.join(__dirname, "/public/backend/router/GET_route"));
 const { passport_strategy } = require(path.join(__dirname, "/public/backend/controller/passport"));
@@ -38,10 +39,10 @@ app.use(session({
     resave: true,
     saveUninitialized: true,
     store: new MongoStore({
-        "collectionName": `${config.collection}`,
+        "collectionName": `${DBconfig.collection}`,
         "ttl": 1000 * 60 * 60 * 24 * 1, // expire in 1 day
-        "dbName": `${config.db}`,
-        "mongoUrl": `${config.connectionString}`,
+        "dbName": `${DBconfig.db}`,
+        "mongoUrl": `${DBconfig.connectionString}`,
         "autoRemove": "native", // delete data from db when session expires 
     }),
     cookie: {
@@ -53,8 +54,8 @@ app.use(session({
 app.use(flash());
 
 // INITIALIZING ROUTERS 
-app.use("/api/post/user", post_routes);
-app.use("/api/get/user", get_routes);
+app.use(`${config.POST_url}`, post_routes);
+app.use(`${config.GET_url}`, get_routes);
 // ...
 // passort middleware 
 passport.use(passport_strategy);
