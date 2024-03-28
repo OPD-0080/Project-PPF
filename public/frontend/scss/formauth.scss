@@ -1,0 +1,52 @@
+@import "./variables.scss";
+@import "./reset.scss";
+
+.notification-wrapper {
+    position: fixed;
+    bottom: 0px;
+    background: transparent;
+    width: 100%;
+    @include flex(row, center, center);
+    left: 0px;
+    @include trans-05s;
+    opacity: 1;
+    visibility: visible;
+
+    &.show {
+        opacity: 0;
+        visibility: hidden;
+        @include trans-05s;
+    }
+
+    .i {
+        width: 40px;
+        height: 40px;
+        background:  #9a0a0a;
+        @include flex(row, center, center);
+        
+        div {
+            width: 30px;
+            height: 30px;
+            background: url("../img/svg/information-white.svg");
+            @include background-initializer;
+            background-size: cover;
+            
+        }
+    }
+    .notification-text {
+        position: relative;
+        padding: 10px 15px;
+        background: #9a0a0a;
+        font-size: smaller;
+        text-align: center;
+    }
+}
+.auth-form {
+    form {
+        .form-cell {
+            input {
+                color: black;
+            }
+        }
+    }
+}

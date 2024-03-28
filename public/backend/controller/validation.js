@@ -4,6 +4,7 @@ const moment = require("moment");
 
 
 const { UserModel, LoginModel, DateTimeTracker, RegistrationModel } = require("../../database/schematics");
+const config = require("../config/config");
 
 // ...
 const registrationValidation = async (req, res, next) => {
@@ -77,7 +78,8 @@ const registrationValidation = async (req, res, next) => {
         
         if (status) {
             req.flash("validate_register", msg);
-            res.redirect(303, "/api/get/user/register"); // redirect to the registration page 
+
+            res.redirect(303, `${config.view_urls.register}`); // redirect to the registration page 
         }else {
             console.log("validation complete");
 
@@ -86,7 +88,7 @@ const registrationValidation = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: login validation **", error);
-        res.redirect(303, "/api/get/user/404");
+        res.redirect(303, `${config.view_urls._500}`);
     }   
     
 };
@@ -128,7 +130,7 @@ const signupValidation = async (req, res, next) => {
 
         if (status) { // if error is fouund
             req.flash("validate_signup", msg); // alert user with a message 
-            res.redirect(303, "/api/get/user/user-register") // return to the login view page 
+            res.redirect(303, `${config.view_urls.user_register}`) // return to the login view page 
 
         }else {
             console.log("** Validation Completed **");
@@ -138,7 +140,7 @@ const signupValidation = async (req, res, next) => {
 
                 if (biodata.length == 0) { // server could not find registered biodata from db
                     req.flash("signup", `Error. ${data.company} not registered. Please Register !`) // send messge to user 
-                    res.redirect(303, "/api/get/user/user-register");
+                    res.redirect(303, `${config.view_urls.user_register}`)
 
                 }else { // server found biodata 
                     next() // move to the next middelware 
@@ -147,7 +149,7 @@ const signupValidation = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: signup validation **", error);
-        res.redirect(303, "/api/get/user/404");
+        res.redirect(303, `${config.view_urls._500}`)
     }
 };
 const loginValidation = async (req, res, next) => {
@@ -169,7 +171,7 @@ const loginValidation = async (req, res, next) => {
             status = true;
 
         }else if (validator.isEmpty(data.company)) {
-            msg = "Error. Select Your Company First to Login";
+            msg = "Error. Select Your Company";
             status = true;
 
         }else if (validator.isEmpty(data.userID)) {
@@ -180,7 +182,7 @@ const loginValidation = async (req, res, next) => {
 
         if (status) { // if error is fouund
             req.flash("validate_login", msg); // alert user with a message 
-            res.redirect(303, "/api/get/user/login") // return to the login view page 
+            res.redirect(303, `${config.view_urls.login}`);// return to the login view page 
 
         }else {
             console.log("** Validation Completed **");
@@ -198,7 +200,7 @@ const loginValidation = async (req, res, next) => {
                     // send user an alert message
                         req.flash("signup", "User not Signup. Please Signup !");
                     // ...
-                    res.redirect(303, "/api/get/user/signup"); // redirect user to the signup page
+                    res.redirect(303, `${config.view_urls.user_register}`) // redirect user to the signup page
 
                 }else if ( (user.length > 0) && (login_resp.length == 0) ) { // if user has signup and trying to login 
                     next() // mve to the next middelware 
@@ -216,14 +218,14 @@ const loginValidation = async (req, res, next) => {
                     // send alert message to user
                         req.flash("login", "User Login Twice. Re-login !");
                     // ...
-                    res.redirect(303, "/api/get/user/logout"); // redirect user to the signout page
+                    res.redirect(303, `${config.view_urls.logout}`); // redirect user to the signout page
                 }
             // ...
         }
 
     } catch (error) {
         console.log("** Error:: login validation **", error);
-        res.redirect(303, "/api/get/user/404");
+        res.redirect(303, `${config.view_urls._500}`);
     }
 };
 const OTPValidation = async (req, res, next) => {
@@ -236,12 +238,12 @@ const OTPValidation = async (req, res, next) => {
             next(); // move to the next middelware
         }else {
             req.flash("signup", "Invalid OTP Code. Please Signup Again !");
-            res.redirect(303, "/api/get/user/signup");
+            res.redirect(303, `${config.view_urls.user_register}`);
         }
 
     } catch (error) {
         console.log("** Error:: OTP validation **", error);
-        res.redirect(303, "/api/get/user/404");
+        res.redirect(303, `${config.view_urls._500}`);
     }
 }
 

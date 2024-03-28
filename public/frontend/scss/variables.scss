@@ -1,0 +1,215 @@
+// VARIABLE
+$opd: #f5f5f5;
+$primary_background: #2e2e2e;
+$primary_color: #ffffff;
+$primary-sidebar-background: #424141;
+$primary-sidebar-inside: #4d4c4c;
+$secondary-background: #f5f5f5;
+$primary-index-background: #424141; 
+$cc-primary-background: #00001a;
+$cc-secondary-background: #03033b;
+$cc-secondary-deepGreen: #015301;
+$cc-tertiary-background: #010124;
+$cc-color-yellow: #c17f05cc;
+$cc-color-lightRed: #ff2d2d;
+$cc-color-lightblue: #4a4af7;
+$cc-color-lightgreen: #06be06;
+$cc-color-black: black;
+$cc-orange: orange;
+$cc-color-post: #ffffffa2;
+$cc-main-color: white;
+$cc-red: red;
+$cc-alert-red: #d50202;
+
+$green: green;
+$black: black;
+$deep-red: rgb(217, 7, 7);
+
+
+$max-width: 100%;
+$max-height: 100vh;
+$font-vs: 11px;
+$font-s: 13px;
+$font-l: 16px;
+$font-vl: 20px;
+$font-xl: 23px;
+$font-xxl: 30px;
+$margin-vs: 10px;
+$margin-xvss: 6px;
+$margin-xvs: 8px;
+$margin-s: 20px;
+$margin-l: 30px;
+$margin-vl: 50px;
+$margin-xl: 70px;
+$margin-xxl: 90px;
+$uppercase: uppercase;
+$lowercase: lowercase;
+$media-w-375: 330px;
+
+$database-background: #000085;
+$database-banner: #0606cf;
+$overlay: #0000008f;
+$database-red: red;
+$database-main-background: #b90404;
+
+
+
+
+// @MIXIN
+@mixin grid($repeat, $fraction) {
+    display: grid;
+    grid-template-columns: repeat($repeat, $fraction);
+}
+@mixin position-relative-init {
+    position: relative;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+@mixin position-relative-custom($width, $height) {
+    position: relative;
+    width: $width;
+    height: $height;
+}
+@mixin position-asbolute-init {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+}
+@mixin position-absolute-custom($width, $height) {
+    position: relative;
+    width: $width;
+    height: $height;
+}
+@mixin flex($direction, $justify, $alignment ) {
+    display: flex;
+    flex-direction: $direction;
+    justify-content: $justify;
+    align-items: $alignment
+}
+@mixin background-initializer {
+    background-repeat: no-repeat;
+    background-position: center;
+}
+@mixin trans {
+    transition: .2s ease;
+    -webkit-transition: .2s ease;
+    -moz-transition: .2s ease;
+    -ms-transition: .2s ease;
+    -o-transition: .2s ease;
+}
+@mixin trans-01s {
+    transition: .1s ease;
+    -webkit-transition: .1s ease;
+    -moz-transition: .1s ease;
+    -ms-transition: .1s ease;
+    -o-transition: .1s ease;
+}
+@mixin trans-05s {
+    transition: .5s ease;
+    -webkit-transition: .5s ease;
+    -moz-transition: .5s ease;
+    -ms-transition: .5s ease;
+    -o-transition: .5s ease;
+}
+@mixin trans-1s {
+    transition: 1s ease;
+    -webkit-transition: 1s ease;
+    -moz-transition: 1s ease;
+    -ms-transition: 1s ease;
+    -o-transition: 1s ease;
+}
+@mixin trans-delay-1s {
+    transition-delay: .3s;
+}
+@mixin border-circle {
+    border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+    -ms-border-radius: 50%;
+    -o-border-radius: 50%;
+}
+@mixin border-10 {
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    -ms-border-radius: 10px;
+    -o-border-radius: 10px;
+}
+@mixin border-20 {
+    border-radius: 20px;
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    -ms-border-radius: 20px;
+    -o-border-radius: 20px;
+}
+@mixin border($a, $b, $c, $d) {
+    border-radius: $a $b $c $d;
+    -webkit-border-radius: $a $b $c $d;
+    -moz-border-radius: $a $b $c $d;
+    -ms-border-radius: $a $b $c $d;
+    -o-border-radius: $a $b $c $d;
+}
+@mixin rotate-right {
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    -moz-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+    -o-transform: rotate(180deg);
+}
+@mixin rotate($r) {
+    transform: rotate($r);
+    -webkit-transform: rotate($r);
+    -moz-transform: rotate($r);
+    -ms-transform: rotate($r);
+    -o-transform: rotate($r);
+}
+@mixin rotate-90 {
+    transform: rotate(35deg);
+    -webkit-transform: rotate(35deg);
+    -moz-transform: rotate(35deg);
+    -ms-transform: rotate(35deg);
+    -o-transform: rotate(35deg);
+}
+@mixin shrink-in {
+    transform: scale(0.1);
+    -webkit-transform: scale(0.1);
+    -moz-transform: scale(0.1);
+    -ms-transform: scale(0.1);
+    -o-transform: scale(0.1);
+}
+@mixin shrink-out {
+    transform: scale(1);
+    -webkit-transform: scale(1);
+    -moz-transform: scale(1);
+    -ms-transform: scale(1);
+    -o-transform: scale(1);
+}
+@mixin transform($x, $y) {
+    transform: translate($x, $y);
+    -webkit-transform: translate($x, $y);
+    -moz-transform: translate($x, $y);
+    -ms-transform: translate($x, $y);
+    -o-transform: translate($x, $y);
+}
+@mixin transformX($x) {
+    transform: translateX($x);
+    -webkit-transform: translateX($x);
+    -moz-transform: translateX($x);
+    -ms-transform: translateX($x);
+    -o-transform: translateX($x);
+}
+@mixin transformY($y) {
+    transform: translateY($y);
+    -webkit-transform: translateY($y);
+    -moz-transform: translateY($y);
+    -ms-transform: translateY($y);
+    -o-transform: translateY($y);
+}
+@mixin filter($filter) {
+    filter: blur($filter);
+    -webkit-filter: blur($filter);
+}

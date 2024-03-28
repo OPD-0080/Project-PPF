@@ -1,21 +1,28 @@
 // IMPORTATION OF MODULES 
 const store = require("store2");
+// ...
 
+// IMPORTATION OF FILES
+const config = require("../config/config");
 // ...
 const view_registration = async (req, res, next) => {
     try {
         console.log("** Inside Registration view **");
+        let context = {};
+
 
 
 
         // notification section
-            const error_alert = req.flash("validate_register");
-            const user_alert = req.flash("register");
-            console.log("Error message", error_alert);
-            console.log("user alert message :", user_alert);
+            const error_alert = req.flash("validate_register"); 
+            const flash_msg = req.flash("register"); 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            
+            console.log("user alert message :", context.message);
         // ...
-        // res.json(200)
-        res.render("register" )
+        context.register_url = config.post_urls.register;
+
+        res.render("register", { context });
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
@@ -24,25 +31,23 @@ const view_registration = async (req, res, next) => {
 const view_signup = async (req, res, next) => {
     try {
         console.log("** Inside Signup view **");
-        let user_alert = "";
+        let context = {}, user_alert = "";
 
+
+        
         // notification section
-
             const error_alert = req.flash("validate_signup");
             const flash_msg = req.flash("signup");
-
-            if (error_alert.length !== 0) {
-                user_alert = error_alert;
-            }else {
-                user_alert = flash_msg;
-            }
             const otp_status = store.session.get("OTP_status");
             setTimeout(() => { store.session.set("OTP_status", null) }, 3000); // clear OTP status after 3s
-
-            console.log("user alert message :", user_alert);
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            
+            console.log("user alert message :", context.message);
             console.log("OTP status :", otp_status);
         // ...
-        res.render("user-register")
+        context.signup_url = config.post_urls.user_register;
+
+        res.render("user-register", { context })
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
@@ -51,7 +56,7 @@ const view_signup = async (req, res, next) => {
 const view_login = async (req, res, next) => {
     try {
         console.log("** Inside Login view **");
-        let user_alert = "";
+        let context = {}, user_alert = "";
 
 
 
@@ -60,14 +65,11 @@ const view_login = async (req, res, next) => {
         // notification section
             const error_alert = req.flash("validate_login");
             const flash_msg = req.flash("login");
-            if (error_alert.length !== 0) {
-                user_alert = error_alert;
-            }else {
-                user_alert = flash_msg;
-            }
-            console.log("user alert message :", user_alert);
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            
+            console.log("user alert message :", context.message);
         // ...
-        res.render("login")
+        res.render("login", { context })
 
     } catch (error) {
         console.log("** Error:: Login view **", error);

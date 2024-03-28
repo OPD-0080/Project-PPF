@@ -1,16 +1,16 @@
 {
-    "beautify.options": {
-
-    },
+    "editor.fontSize": 18,
+    "json.schemas": [],
+    "liveSassCompile.settings.includeItems": [],
+    "liveSassCompile.settings.useNewCompiler": false,
+    "liveSassCompile.settings.generateMap": false,
     "liveSassCompile.settings.formats": [
-
+        
         {
             "format": "expanded",
             "extensionName": ".css",
             "savePath": "/public/frontend/css",
             "savePathReplacementPairs": null
         }
-    ],
-    "liveSassCompile.settings.generateMap": false,
-    "liveSassCompile.settings.useNewCompiler": false
+    ]
 }

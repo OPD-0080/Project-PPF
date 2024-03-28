@@ -3,6 +3,7 @@ const store = require("store2");
 
 // ....
 // IMPORTATION OF FILES 
+const config = require("../config/config");
 const { UserModel, LoginModel, RegistrationModel, DateTimeTracker } = require("../../database/schematics");
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
 const { randomSerialCode } = require("../utils/code_generator");
@@ -19,7 +20,7 @@ const registration_handler = async (req, res, next) => {
     const location = req.body.location;
     const address = req.body.address;
     const contact = req.body.contact;
-    const businessLogo = req.body.businessLogo;
+    //const businessLogo = req.body.businessLogo;
     const count = req.body.country;
     const region_state = req.body.region_state;
     const town = req.body.town;
@@ -34,7 +35,7 @@ const registration_handler = async (req, res, next) => {
             console.log("Email already exists in the database ");
 
             req.flash("register", `${businessName} already registered !`);
-            res.redirect(303, "/api/get/user/register");
+            res.redirect(303, `${config.view_urls.register}`);
 
         } else {
             // encrypt password
@@ -48,7 +49,7 @@ const registration_handler = async (req, res, next) => {
                 location:location,
                 address:address,
                 contact:contact,
-                businessLogo:businessLogo,
+               // businessLogo:businessLogo,
                 country:count,
                 region_state:region_state,
                 town:town,
@@ -61,12 +62,17 @@ const registration_handler = async (req, res, next) => {
             // send message to user 
                 req.flash("signup", "Registration successful");
             // ...
-            res.redirect(303, "/api/get/user/signup");    // redirect to signup page
+            res.redirect(303, `${config.view_urls.user_register}`);   // redirect to user registeration page
         }
         
     } catch (error) {
         console.log("Error from Registeration ..", error);
-        res.status(303).redirect("/api/get/user/500");
+
+        // handling duplicate UUID keys err
+        if (error.code == "11000") {
+            req.flash("register", `${businessName} already registered !`);
+            res.redirect(303, `${config.view_urls.user_register}`);
+        }
         
     }
 
@@ -81,7 +87,7 @@ const signup_handler = async (req, res, next) => {
             console.log("** hashing user password **", hashed_pass); 
         // ...
         // save data into db
-            const biodata = await RegistrationModel.find({ businessName: data.company }); // getting company biodata from db
+            const biodata = await RegistrationModel.find({ businessName: data.company }); // getting company biodata from db            
             const payload = {
                 first_name: data.first_name,
                 last_name: data.last_name,
@@ -114,11 +120,11 @@ const signup_handler = async (req, res, next) => {
         // checking if OTP code is sent via email sucessfully 
             if (nodemail_resp == null) {
                 req.flash("signup", "Bad Network. OTP not sent. Please Signup again !");
-                res.redirect(303, "/api/get/user/user-register");
+                res.redirect(303, `${config.view_urls.user_register}`);
 
             }else if (nodemail_resp !== undefined) { // if OTP is sent sucessfully 
                 store.session.set("OTP_status", true);
-                res.redirect(303, "/api/get/user/user-register"); 
+                res.redirect(303, `${config.view_urls.user_register}`); 
             }
         // ...
 
@@ -128,7 +134,7 @@ const signup_handler = async (req, res, next) => {
         // Handling errors 
             if (error.writeErrors[0].err.errmsg.includes("duplicate key error collection")) { // for duplicate key pairs in db 
                 req.flash("signup", "User already SignUp. Please Login !");
-                res.redirect(303, "/api/get/user/user-register");
+                res.redirect(303, `${config.view_urls.user_register}`);
             }
 
         // ...
@@ -146,23 +152,24 @@ const OTP_verification_handler = async (req, res, next) => {
                     console.log("OPT verified");
 
                     req.flash("login", "User Signup sucessful");
-                    res.redirect(303, "/api/get/user/login");
+                    res.redirect(303, `${config.view_urls.login}`);
 
                 }else {
                     console.log("OTP not verified");
 
                     req.flash("signup", "Error. OTP verification Failed. Signup again !");
-                    res.redirect(303, "/api/get/user/signup");
+                    res.redirect(303, `${config.view_urls.user_register}`);
                 }
             // ...
         }else {
             console.log("User not found for OTP verification");
 
             req.flash("signup", "User not found. Please Signup !");
-            res.redirect(303, "/api/get/user/signup");
+            res.redirect(303, `${config.view_urls.user_register}`);
         }
     } catch (error) {
         console.log("** Error:: OTP verification Handler **", error);
+        res.redirect(303, `${config.view_urls._500}`);
     }
 };
 const login_handler = async (req, res, next) => {
@@ -170,6 +177,7 @@ const login_handler = async (req, res, next) => {
         console.log("** Collecting data from login UI **", req.body);
         const data = req.body;
 
+        
 
         
         

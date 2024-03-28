@@ -11,7 +11,7 @@ const MONGO_AUTH_SOURCE = process.env.MONGO_AUTH_SOURCE;
 const MONGO_AUTH_MENCHANISM = process.env.MONGO_AUTH_MENCHANISM;
 // ....
 // INITIATING DB 
-const config = {
+const DBconfig = {
     connectionString: `mongodb://localhost:${MONGO_PORT}/${DATABASE}`,
     db: `${DATABASE}`,
     collection: "session"
@@ -24,7 +24,7 @@ const connect_mongodb = async () => {
         if (isProduction) {
             return process.env.NODE_ENV
         }else {
-            const resp = await mongoose.connect(config.connectionString, {
+            const resp = await mongoose.connect(DBconfig.connectionString, {
                 /* "auth": {
                     "username": `${MONGO_USERNAME}`,
                     "password": `${MONGO_PASS}`
@@ -39,4 +39,4 @@ const connect_mongodb = async () => {
     }
 };
 
-module.exports = { connect_mongodb, config };
+module.exports = { connect_mongodb, DBconfig };

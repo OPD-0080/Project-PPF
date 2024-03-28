@@ -23,7 +23,8 @@
 	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
     <!-- Favicon icon -->
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
-  <link href="/frontend/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="/frontend/css/style.css" >
+    <link rel="stylesheet" href="/frontend/css/formauth.css" >
 	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet">
 </head>
 
@@ -32,6 +33,16 @@
         <div class="container h-100">
             <div class="row justify-content-center h-100 align-items-center">
                 <div class="col-md-6">
+                    <!-- NOTIFICATION SECTION  -->
+                    <% if (context.message !== undefined) { %>
+                        <% if (context.message.length > 0) { %>
+                            <div class="notification-wrapper">
+                                <div class="i"><div></div></div>
+                                <div class="notification-text"> <%- context.message %> </div>
+                            </div>
+                        <% } %>
+                    <% } %>
+                    <!-- NOTIFICATION SECTION  -->
                     <div class="authincation-content">
                         <div class="row no-gutters">
                             <div class="col-xl-12">
