@@ -9,12 +9,17 @@
     @include flex(row, center, center);
     left: 0px;
     @include trans-05s;
-    opacity: 1;
-    visibility: visible;
+    opacity: 0;
+    visibility: hidden;
 
     &.show {
-        opacity: 0;
-        visibility: hidden;
+        opacity: 1;
+        visibility: visible;
+        @include trans-05s;
+    }
+    &.show2 {
+        opacity: 1;
+        visibility: visible;
         @include trans-05s;
     }
 
@@ -44,8 +49,60 @@
 .auth-form {
     form {
         .form-cell {
+            margin-bottom: $margin-s;
             input {
                 color: black;
+            }
+            .department-preview {
+                position: relative;
+                width: 100%;
+                background: transparent;
+                @include flex(row, center, center);
+                flex-wrap: wrap;
+
+                .department-card {
+                    position: relative;
+                    padding: 5px 10px;
+                    background: #086461;
+                    @include flex(row, space-between, center);
+                    @include border-10;
+                    margin-right: $margin-xvss;
+
+                    .depart-content {
+                        color: white;
+                        font-size: smaller;
+                    }
+                    .depart-close-button {
+                        width: 20px;
+                        height: 20px;
+                        margin-left: $margin-vs;
+                        @include background-initializer;
+                        background-image: url("../img/svg/close-white.svg");
+                        background-size: cover;
+                    }
+                }
+            }
+        }
+    }
+    .logo-wrapper {
+        position: relative;
+        top: 0px;
+        
+        .logo-img-wrapper {
+            position: relative;
+            @include flex(row, center, center);
+            
+            img {
+                width: 60px;
+                height: 50px;
+                background: grey;
+                margin-right: $margin-vs;
+                margin-bottom: $margin-s;
+            }
+            div {
+                color: white;
+                font-weight: bolder;
+                font-size: $font-vl;
             }
         }
     }

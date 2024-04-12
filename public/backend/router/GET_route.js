@@ -5,7 +5,9 @@ const passport = require("passport");
 
 
 // IMPORTATION OF HANDLERS
-const { view_login, view_signup, view_logout, view_registration, view_404, view_500 } = require("./GET_handlers");
+const { view_login, view_signup, view_logout, view_registration, view_404, view_500,
+        view_dashboard
+    } = require("./GET_handlers");
 
 // ...
 
@@ -17,5 +19,6 @@ router.get("/login", view_login);
 router.get("/logout", view_logout);
 router.get("/404", view_404);
 router.get("/500", view_500);
+router.get("/dashboard", view_dashboard);
 // ...
 module.exports = router

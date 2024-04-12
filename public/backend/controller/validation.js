@@ -13,11 +13,11 @@ const registrationValidation = async (req, res, next) => {
         const data = req.body;
         let status = "", msg = "";
 
-        if (!validator.isEmail(data.email)) {
+        if (!validator.isEmail(data.username)) {
             msg = "Error. Provide Valid Email !";
             status = true;
 
-        }else if (validator.isEmpty(data.email)){
+        }else if (validator.isEmpty(data.username)){
             msg = "Error. Provide An Email !";
             status = true;
         
@@ -65,17 +65,16 @@ const registrationValidation = async (req, res, next) => {
             msg = "Error. Provide New Password !";
             status = true;
 
-        }else if (validator.isEmpty(data.confirm_pass)){
+        }else if (validator.isEmpty(data.password)){
             msg = "Error. Provide Confirm Password !";
             status = true;
 
-        }else if (data.new_pass.trim() !== data.confirm_pass.trim()){
+        }else if (data.new_pass.trim() !== data.password.trim()){
             msg = "Error. Password does not matche !";
             status = true;
         }
 
 
-        
         if (status) {
             req.flash("validate_register", msg);
 
@@ -114,8 +113,12 @@ const signupValidation = async (req, res, next) => {
             msg = "Error. Provide Your Last Name";
             status = true;
 
-        }else if (!validator.isMobilePhone(data.tel)) {
+        }else if (!validator.isEmpty(data.tel)) {
             msg = "Error. Provide Your Active Contact Number";
+            status = true;
+
+        }else if (!validator.isEmpty(data.company)) {
+            msg = "Error. Provide Your Company";
             status = true;
 
         }else if (validator.isEmpty(data.new_pass)) {

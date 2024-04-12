@@ -18,6 +18,7 @@ const config = {
         user_register: `${GET_base_url}/user-register`,
         login: `${GET_base_url}/login`,
         logout: `${GET_base_url}/logout`,
+        dashboard: `${GET_base_url}/dashboard`,
         _404: `${GET_base_url}/404`,
         _500: `${GET_base_url}/500`,
 

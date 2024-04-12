@@ -13,7 +13,7 @@ const { sendMailForSignupAuth } =  require("../controller/nodemailer");
 
 const registration_handler = async (req, res, next) => {
 
-    const email = req.body.email;
+    const email = req.body.username;
     const businessName = req.body.businessName;
     const natureOfBusiness = req.body.natureOfBusiness;
     const businessType = req.body.businessType;
@@ -25,7 +25,7 @@ const registration_handler = async (req, res, next) => {
     const region_state = req.body.region_state;
     const town = req.body.town;
     const ceo = req.body.ceo;
-    const confirm_pass = req.body.confirm_pass;
+    const confirm_pass = req.body.password;
 
     try { 
         const existingUser = await RegistrationModel.find({ "email": email });
@@ -62,7 +62,8 @@ const registration_handler = async (req, res, next) => {
             // send message to user 
                 req.flash("signup", "Registration successful");
             // ...
-            res.redirect(303, `${config.view_urls.user_register}`);   // redirect to user registeration page
+            next();
+            //res.redirect(303, `${config.view_urls.user_register}`);   // redirect to user registeration page
         }
         
     } catch (error) {
@@ -77,6 +78,15 @@ const registration_handler = async (req, res, next) => {
     }
 
 };
+const redirect_to_dashboard_handler = async (req, res, next) => {
+    try {
+        console.log("Redirecting to dashboard ....");
+
+        res.redirect(303, `${config.view_urls.dashboard}`);
+    } catch (error) {
+        console.log("** Error:: redirect Dashboard Handler **", error);
+    }
+}
 const signup_handler = async (req, res, next) => {
     try {
         console.log("** Collecting data from signup UI **", req.body);
@@ -96,7 +106,7 @@ const signup_handler = async (req, res, next) => {
                 tel: data.tel,
                 password: hashed_pass,
                 company: data.company,
-                department: data.department,
+                // department: data.department,
                 userID: `${data.company.toLowerCase().slice(0, 3).trim()}${randomSerialCode(4)}`,
                 companyRefID: biodata[0].uuid
             };
@@ -105,7 +115,7 @@ const signup_handler = async (req, res, next) => {
             await UserModel.insertMany(payload);
             await DateTimeTracker.insertMany({ "companyRefID": payload.companyRefID, "email": payload.email, "userID": payload.userID });
         // ...
-        // send OTP code to user email using nodemailer
+        // send OTP code to company email using nodemailer for authentication 
             const otp_code = await randomSerialCode(4);
             const nodemail_resp = await sendMailForSignupAuth({ 
                 email: biodata[0].email, 
@@ -187,4 +197,4 @@ const login_handler = async (req, res, next) => {
 };
 
 
-module.exports = { signup_handler, OTP_verification_handler, login_handler, registration_handler }
+module.exports = { signup_handler, OTP_verification_handler, login_handler, registration_handler, redirect_to_dashboard_handler }

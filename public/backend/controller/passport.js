@@ -6,11 +6,9 @@ const crypto = require("crypto");
 const moment = require("moment");
 // ....
 // IMPORTATION OF FILES 
-const { LoginModel, DateTimeTracker, UserModel } = require("../../database/schematics");
+const { LoginModel, DateTimeTracker, UserModel, RegistrationModel } = require("../../database/schematics");
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
 // ...
-
-
 
 
 // PASSPORT VERIFYING LOGIN CREDDENTIALS LOCALLY 
@@ -22,39 +20,39 @@ const verify = async(username, password, cb) => {
         const hashed_pass = await encrypt_access_code(password);
         console.log("** hashing user password **", hashed_pass); 
     // ...
-    // getting data from db
-        const data = await UserModel.find({ "email": username });
-        const date_tracker = await DateTimeTracker.find({ "email": username });
-    // ...
-    // Save data into database
-        const payload = {
-            email: data[0].email,
-            company: data[0].company,
-            userID: data[0].userID
-        };
-        const user = await LoginModel.insertMany(payload);
-        console.log("** DB insertion responds at passport section **", user);
-
-        if (date_tracker.length == 0) {
-            console.log("** inserting data in dateTracker collection **", date_tracker);
-
-            await DateTimeTracker.insertMany({ 
-                "uuid": data[0].uuid,
-                "email": payload.email, 
-                "userID": payload.userID, 
-                "login_date": `${moment().format("YYYY-MM-DD")}`,
-                "login_time": `${moment().format("hh:mm")}`
-            });
+    // checking if username has a role of superuser or not before proceeding to login 
+        const superuser_status = await is_user_superuser(username);
+        if (superuser_status) {
+            console.log("for superuser only");
+            // getting business biodata from  db in other to have access to the business email
+            const biodata = await RegistrationModel.find({ "email": username });
             
+            const payload = {
+                email: biodata[0].email,
+                company: biodata[0].businessName,
+                userID: biodata[0].ceo, // important !. the userID become ethe cCEO name for user with superuser role.
+                role: biodata[0].role
+            };
+            console.log("getting superuser payload ...", payload);
+
+            if (await update_login_credentials(payload, biodata, username)) {
+                return cb(null, payload); // important ! using payload in-place of the usermmodel schema since is of the same  
+            }
         }else {
-            await DateTimeTracker.updateOne({ 
-                "login_date": `${moment().format("YYYY-MM-DD")}`,
-                "login_time": `${moment().format("hh:mm")}`
-            });
-            
+            // getting data from signup collection  to have access to some specific data
+                const user = await UserModel.find({ "email": username });
+            // Save user into database
+                const payload = {
+                    email: user[0].email,
+                    company: user[0].company,
+                    userID: user[0].userID,
+                    role: user[0].role
+                };
+                if (await update_login_credentials(payload, user, username)) {
+                    return cb(null, payload);
+                }
+            // ..
         }
-    // ...
-    return cb(null, user);
 }
 const passport_strategy = new LocalStrategy( verify );
 // .....................................................................
@@ -113,6 +111,41 @@ const isUSerAuthenticated = (req) => {
     }
 }
 // ......
+// CUSTOM MODULES SECTION
+const is_user_superuser = async (username) => {
+    let is_user_superuser = "";
+    const biodata = await RegistrationModel.find({ "email": username });
+
+    if (biodata.length > 0) {
+        (biodata[0].role.trim() == "superuser")? is_user_superuser = true : is_user_superuser = false;
+    }
+    return is_user_superuser;
+};
+const update_login_credentials = async (payload, user, username) => {
+    const user_resp = await LoginModel.insertMany(payload);
+
+    // updating login timer as user login 
+        const date_tracker = await DateTimeTracker.find({ "email": username });
+        if (date_tracker.length == 0) {
+
+            await DateTimeTracker.insertMany({ 
+                "companyRefID": user[0].uuid,
+                "email": payload.email, 
+                "userID": payload.userID, 
+                "login_date": `${moment().format("YYYY-MM-DD")}`,
+                "login_time": `${moment().format("hh:mm")}`
+            });
+            return true;
+        }else {
+            await DateTimeTracker.updateOne({ 
+                "login_date": `${moment().format("YYYY-MM-DD")}`,
+                "login_time": `${moment().format("hh:mm")}`
+            });
+            return true;
+        }
+    // ...
+};
+// ...
 
 
 module.exports = {

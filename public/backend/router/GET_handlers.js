@@ -15,13 +15,15 @@ const view_registration = async (req, res, next) => {
 
         // notification section
             const error_alert = req.flash("validate_register"); 
-            const flash_msg = req.flash("register"); 
-            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            const flash_msg = req.flash("register");
             
             console.log("user alert message :", context.message);
         // ...
-        context.register_url = config.post_urls.register;
-
+        // wrapping data into context object
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.register_url = config.post_urls.register;
+        // ...
+        
         res.render("register", { context });
 
     } catch (error) {
@@ -40,12 +42,15 @@ const view_signup = async (req, res, next) => {
             const flash_msg = req.flash("signup");
             const otp_status = store.session.get("OTP_status");
             setTimeout(() => { store.session.set("OTP_status", null) }, 3000); // clear OTP status after 3s
-            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
             
             console.log("user alert message :", context.message);
             console.log("OTP status :", otp_status);
         // ...
-        context.signup_url = config.post_urls.user_register;
+        // wrapping data into context object 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.OTP = otp_status;
+            context.signup_url = config.post_urls.user_register;
+        // ...
 
         res.render("user-register", { context })
 
@@ -75,6 +80,17 @@ const view_login = async (req, res, next) => {
         console.log("** Error:: Login view **", error);
     }
 };
+const view_dashboard = async (req, res, next) => {
+    try {
+        let context = {}, user_alert = "";
+        console.log("** inside Dashboard view");
+
+
+        res.render("dashboard", { context });
+    } catch (error) {
+        console.log("** Error:: View Dashboard **", error);
+    }
+};
 const view_logout = async (req, res, next) => {
     try {
         console.log("** Inside Logout view **");
@@ -94,7 +110,7 @@ const view_404 = async (req, res, next) => {
     try {
         console.log("** Inside 404 view **");
 
-        res.redirect(303, "/api/get/user/404");  // redirect to login get page
+        res.render("/");  // redirect to login get page
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
@@ -118,4 +134,4 @@ const view_500 = async (req, res, next) => {
 
 
 
-module.exports = { view_login, view_signup, view_logout, view_registration, view_404, view_500 }
+module.exports = { view_login, view_signup, view_logout, view_registration, view_404, view_500, view_dashboard }

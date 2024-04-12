@@ -36,12 +36,21 @@ a {
   -moz-transition: 0.5s ease;
   -ms-transition: 0.5s ease;
   -o-transition: 0.5s ease;
-  opacity: 1;
-  visibility: visible;
-}
-.notification-wrapper.show {
   opacity: 0;
   visibility: hidden;
+}
+.notification-wrapper.show {
+  opacity: 1;
+  visibility: visible;
+  transition: 0.5s ease;
+  -webkit-transition: 0.5s ease;
+  -moz-transition: 0.5s ease;
+  -ms-transition: 0.5s ease;
+  -o-transition: 0.5s ease;
+}
+.notification-wrapper.show2 {
+  opacity: 1;
+  visibility: visible;
   transition: 0.5s ease;
   -webkit-transition: 0.5s ease;
   -moz-transition: 0.5s ease;
@@ -73,6 +82,70 @@ a {
   text-align: center;
 }
 
+.auth-form form .form-cell {
+  margin-bottom: 20px;
+}
 .auth-form form .form-cell input {
   color: black;
+}
+.auth-form form .form-cell .department-preview {
+  position: relative;
+  width: 100%;
+  background: transparent;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.auth-form form .form-cell .department-preview .department-card {
+  position: relative;
+  padding: 5px 10px;
+  background: #086461;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 10px;
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -ms-border-radius: 10px;
+  -o-border-radius: 10px;
+  margin-right: 6px;
+}
+.auth-form form .form-cell .department-preview .department-card .depart-content {
+  color: white;
+  font-size: smaller;
+}
+.auth-form form .form-cell .department-preview .department-card .depart-close-button {
+  width: 20px;
+  height: 20px;
+  margin-left: 10px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-image: url("../img/svg/close-white.svg");
+  background-size: cover;
+}
+.auth-form .logo-wrapper {
+  position: relative;
+  top: 0px;
+}
+.auth-form .logo-wrapper .logo-img-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.auth-form .logo-wrapper .logo-img-wrapper img {
+  width: 60px;
+  height: 50px;
+  background: grey;
+  margin-right: 10px;
+  margin-bottom: 20px;
+}
+.auth-form .logo-wrapper .logo-img-wrapper div {
+  color: white;
+  font-weight: bolder;
+  font-size: 20px;
 }

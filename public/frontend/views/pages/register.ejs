@@ -36,9 +36,14 @@
                     <!-- NOTIFICATION SECTION  -->
                     <% if (context.message !== undefined) { %>
                         <% if (context.message.length > 0) { %>
-                            <div class="notification-wrapper">
+                            <div class="notification-wrapper show2">
                                 <div class="i"><div></div></div>
                                 <div class="notification-text"> <%- context.message %> </div>
+                            </div>
+                        <% }else { %>
+                            <div class="notification-wrapper">
+                                <div class="i"><div></div></div>
+                                <div class="notification-text"></div>
                             </div>
                         <% } %>
                     <% } %>
@@ -48,15 +53,18 @@
                         <div class="row no-gutters">
                             <div class="col-xl-12">
                                 <div class="auth-form">
-									<div class="text-center mb-12">
-										<!-- <a href="index.html"><img src="images/logo-full.png" alt=""></a> -->
+									<div class="text-center mb-12 logo-wrapper">
+									    <a href="index.html" class="logo-img-wrapper">
+                                            <img src="../../img/svg" alt="">
+                                            <div class="logo-content"> Logo Content </div>
+                                        </a>
 									</div>
                                     <h4 class="text-center mb-1 text-white"> Register Your Business </h4>
                                     <form action="<% if (context !== undefined) { %><%- context.register_url %><% } %>" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>
-                                                <input type="email" class="form-control" placeholder="hello@example.com" name="email">
+                                                <input type="email" class="form-control" placeholder="hello@example.com" name="username">
                                             </div>
                                             <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Business Name</strong></label>
@@ -85,17 +93,17 @@
                                                 <input type="text" class="form-control" placeholder="Eg: " name="address">
                                             </div>
                                             <div class="form-group; col-md-6 form-cell">
-                                                <label class="mb-1 text-white"><strong>Contact</strong></label>
+                                                <label class="mb-1 text-white"><strong>Country</strong></label>
+                                                <input type="text" class="form-control" placeholder="" name="country" value="Ghana">
+                                            </div>
+                                            <div class="form-group; col-md-6 form-cell">
+                                                <label class="mb-1 text-white"><strong>Contact Number </strong></label>
                                                 <input type="text" class="form-control" placeholder="0123456789" name="contact">
                                             </div>
                                             <!-- <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Busines Logo</strong></label>
                                                 <input type="text" class="form-control" placeholder="" name="businessLogo">
                                             </div> -->
-                                            <div class="form-group; col-md-6 form-cell">
-                                                <label class="mb-1 text-white"><strong>Country</strong></label>
-                                                <input type="text" class="form-control" placeholder="" name="country" value="Ghana">
-                                            </div>
                                             <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Region/state</strong></label>
                                                 <select class="form-control" name="region_state" id="">
@@ -118,15 +126,26 @@
                                                 <label class="mb-1 text-white"><strong>Role</strong></label>
                                                 <input type="text" class="form-control" placeholder="">
                                             </div> -->
-                                    
+                                            
                                             <div class="form-group; col-md-4 form-cell">
                                                 <label class="mb-1 text-white"><strong>Password</strong></label>
                                                 <input type="password" class="form-control" value="Password" name="new_pass">
                                             </div> 
                                             <div class="form-group; col-md-4 form-cell">
                                                 <label class="mb-1 text-white"><strong>Confirm Password</strong></label>
-                                                <input type="password" class="form-control" value="Password" name="confirm_pass">
+                                                <input type="password" class="form-control" value="Password" name="password">
                                             </div> 
+                                            <!-- <div class="form-group; col-md-6 form-cell">
+                                                <label class="mb-1 text-white"><strong> Departments (if applicable) </strong></label>
+                                                <select class="form-control" name="department" id="department-option">
+                                                    <option value=""> Select Opt(s) </option>
+                                                    <option value="departmemnt 1"> departmemnt 1 </option>
+                                                    <option value="departmemnt 2"> departmemnt 2 </option>
+                                                    <option value="departmemnt 3"> departmemnt 3 </option>
+                                                </select>
+                                                <div class="department-preview">
+                                                </div>
+                                            </div> -->
                                             
                                             <div class="text-center mt-4" style="margin-top: 10px;">
                                                 <button type="submit" class="btn bg-white text-primary btn-block"> Register </button>
