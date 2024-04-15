@@ -49,6 +49,7 @@
 .auth-form {
     form {
         .form-cell {
+            position: relative;
             margin-bottom: $margin-s;
             input {
                 color: black;
@@ -79,6 +80,32 @@
                         @include background-initializer;
                         background-image: url("../img/svg/close-white.svg");
                         background-size: cover;
+                    }
+                }
+            }
+            .preview-company-wrapper {
+                position: absolute;
+                bottom: -20px;
+                width: 100%;
+                background: grey;
+                @include flex(row, center, center);
+                flex-wrap: wrap;
+                //visibility: hidden;
+                
+                &.show {
+                    visibility: visible;
+                    
+                } 
+                li {
+                    font-size: smaller;
+                    @include flex(row, center, center);
+                    margin-right: $margin-s;
+
+                    .i {
+                        width: 25px;
+                        height: 25px;
+                        background: red;
+                        margin-right: $margin-xvss;
                     }
                 }
             }

@@ -4,7 +4,11 @@ const store = require("store2");
 
 // IMPORTATION OF FILES
 const config = require("../config/config");
+const { UserModel, LoginModel, RegistrationModel, DateTimeTracker } = require("../../database/schematics");
+const { randomPassword } = require("../utils/code_generator");
 // ...
+
+
 const view_registration = async (req, res, next) => {
     try {
         console.log("** Inside Registration view **");
@@ -33,10 +37,13 @@ const view_registration = async (req, res, next) => {
 const view_signup = async (req, res, next) => {
     try {
         console.log("** Inside Signup view **");
-        let context = {}, user_alert = "";
+        let context = {};
 
 
-        
+        // providing a default random password for users for the first time
+            const random_default_pass = `defpass-${await randomPassword(7)}`;
+            console.log(random_default_pass);
+        // ...
         // notification section
             const error_alert = req.flash("validate_signup");
             const flash_msg = req.flash("signup");
@@ -50,7 +57,9 @@ const view_signup = async (req, res, next) => {
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
             context.OTP = otp_status;
             context.signup_url = config.post_urls.user_register;
+            context.random_default_pass = random_default_pass;
         // ...
+        console.log(context);
 
         res.render("user-register", { context })
 
@@ -63,17 +72,28 @@ const view_login = async (req, res, next) => {
         console.log("** Inside Login view **");
         let context = {}, user_alert = "";
 
-
-
-
-
+        
+        // getting all business name from DB and populate it on DOM 
+            let businesses = [];
+            const biodata = await RegistrationModel.find();
+            for (let i = 0; i < biodata.length; i++) {
+                const data = biodata[i];
+                businesses.push(data.businessName.trim());
+            }
+        // ...
         // notification section
             const error_alert = req.flash("validate_login");
             const flash_msg = req.flash("login");
-            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
             
             console.log("user alert message :", context.message);
         // ...
+        // wrapping data into context object 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.businesses = JSON.stringify(businesses);
+        // ...
+        console.log(context);
+
+
         res.render("login", { context })
 
     } catch (error) {

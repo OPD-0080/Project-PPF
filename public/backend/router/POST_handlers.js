@@ -62,19 +62,22 @@ const registration_handler = async (req, res, next) => {
             // send message to user 
                 req.flash("signup", "Registration successful");
             // ...
-            next();
-            //res.redirect(303, `${config.view_urls.user_register}`);   // redirect to user registeration page
+            next(); // move to the next middleware
         }
         
     } catch (error) {
         console.log("Error from Registeration ..", error);
 
         // handling duplicate UUID keys err
-        if (error.code == "11000") {
-            req.flash("register", `${businessName} already registered !`);
-            res.redirect(303, `${config.view_urls.user_register}`);
-        }
-        
+            if (error.code == "11000") { //  for duplicate of business name 
+                req.flash("register", `${businessName} already registered !`);
+                res.redirect(303, `${config.view_urls.register}`);
+            }
+            if (error, error.code == "11000" && Object.keys(error.keyValue) == "password") { // for duplicate of password 
+                req.flash("register", `Provided Password already used !`);
+                res.redirect(303, `${config.view_urls.register}`);
+            }
+        // ...
     }
 
 };
@@ -91,11 +94,12 @@ const signup_handler = async (req, res, next) => {
     try {
         console.log("** Collecting data from signup UI **", req.body);
         const data = req.body;
+        const user = req.session.passport.user.company; 
 
-        //  encrypt passowrd 
-            const hashed_pass = await encrypt_access_code(data.confirm_pass);
-            console.log("** hashing user password **", hashed_pass); 
-        // ...
+        // //  encrypt passowrd 
+        //     const hashed_pass = await encrypt_access_code(data.confirm_pass);
+        //     console.log("** hashing user password **", hashed_pass); 
+        // // ...
         // save data into db
             const biodata = await RegistrationModel.find({ businessName: data.company }); // getting company biodata from db            
             const payload = {
@@ -104,10 +108,9 @@ const signup_handler = async (req, res, next) => {
                 middle_name: data.middle_name,
                 email: data.email,
                 tel: data.tel,
-                password: hashed_pass,
-                company: data.company,
-                // department: data.department,
-                userID: `${data.company.toLowerCase().slice(0, 3).trim()}${randomSerialCode(4)}`,
+                password: data.confirm_pass,
+                company: user.company,
+                userID: `${user.company.toLowerCase().slice(0, 3).trim()}${randomSerialCode(4)}`,
                 companyRefID: biodata[0].uuid
             };
             console.log("** final payload **", payload);
@@ -123,6 +126,7 @@ const signup_handler = async (req, res, next) => {
                 last_name: payload.last_name, 
                 userID: payload.userID, 
                 company: payload.company,
+                password: payload.password,
                 role: payload.role
             }, otp_code);
             console.log("** is OTP code sent to email :", nodemail_resp);
@@ -130,6 +134,10 @@ const signup_handler = async (req, res, next) => {
         // checking if OTP code is sent via email sucessfully 
             if (nodemail_resp == null) {
                 req.flash("signup", "Bad Network. OTP not sent. Please Signup again !");
+                // delete signup data from db
+                    await UserModel.deleteOne({ "userID": payload.userID });
+                    await DateTimeTracker.deleteOne({ "userID": payload.userID });
+                // ...
                 res.redirect(303, `${config.view_urls.user_register}`);
 
             }else if (nodemail_resp !== undefined) { // if OTP is sent sucessfully 

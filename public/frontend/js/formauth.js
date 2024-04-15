@@ -76,25 +76,78 @@ const notify_user = (msg) => {
         remove_opt();
     }
     // ...
-    department_option.onchange = (e) => {
-        let proceed  = "";
-        //  checking for data in session Storage 
-            (sessionStorage.getItem("reg"))?   proceed = true :  select_multiple_option(e);
-        // ..
-        if (proceed) {
-            const session_data = JSON.parse(sessionStorage.getItem("reg")) //  get data from session Storage
-            const data_duplicate_status = session_data.findIndex(data => data == e.target.value); // check for duplication of opts
-
-            // showing error alert when opts is duplicated or else proceed to select options
-            (data_duplicate_status  > -1)? notify_user(`${e.target.value} already selected.`) : select_multiple_option(e);
-        }
-    };
+    if (department_option !== null) {
+        department_option.onchange = (e) => {
+            let proceed  = "";
+            //  checking for data in session Storage 
+                (sessionStorage.getItem("reg"))?   proceed = true :  select_multiple_option(e);
+            // ..
+            if (proceed) {
+                const session_data = JSON.parse(sessionStorage.getItem("reg")) //  get data from session Storage
+                const data_duplicate_status = session_data.findIndex(data => data == e.target.value); // check for duplication of opts
+    
+                // showing error alert when opts is duplicated or else proceed to select options
+                (data_duplicate_status  > -1)? notify_user(`${e.target.value} already selected.`) : select_multiple_option(e);
+            }
+        };
+    }
 
     const select_multiple_option = (e) => {
         departments.push(e.target.value); // push value into array 
         sessionStorage.setItem("reg", JSON.stringify(departments)); // store data in local session storage
         display_card(departments, department_wrapper); // displaying opts in DOM
         remove_opt()
+    };
+})();
+// ...
+// POPULATING LIST OF BUSINESSES 
+(() => {
+    const business_wrapper = document.querySelector("#business-wrapper");
+    const preview_el = document.querySelector(".preview-company-wrapper");
+
+    if (business_wrapper !== null) {
+        const businesses = JSON.parse(business_wrapper.getAttribute("data-com"));
+        console.log(businesses);
+        
+        const input = document.querySelector("#input-company");
+        input.onkeyup = (e) => {
+            const value = e.target.value;
+            // checking user value character is of min 3 to proceed 
+                if (value.length >= 4) {
+                    populate_filtered_data(businesses, value, preview_el);
+                    select_filtered_data(input, preview_el);
+                }else {
+                    preview_el.classList.remove("show");
+                }
+            // ...
+        }
+    }
+    const populate_filtered_data = (array, value, div) => {
+        const filtered_data = array.filter(data => { return data.trim().startsWith(value.trim()) });
+        console.log("gettiing filtered data ..", filtered_data);
+
+        let show = "";
+        filtered_data.forEach(data => {
+            show += `
+                <li class="preview-opts"><div class="i"></div><div>${data}</div></li>
+            `;
+            div.innerHTML = show;
+        });
+    }
+    const select_filtered_data = (input_tag, div) => {
+        const preview_opts = document.querySelectorAll(".preview-opts");
+        preview_opts.forEach(opt => {
+            opt.onclick = (e) => {
+                const selected_value = e.target.innerText;
+                if (selected_value !== "") {
+                    input_tag.value = selected_value;  // sshow in DOM and collapse opts 
+                    div.classList.add("show"); // collaspe opts after selection 
+                    
+                    //populate_filtered_data(preview_el);
+                }
+            }
+        })
+
     };
 })();
 // ...

@@ -13,14 +13,14 @@ const registrationValidation = async (req, res, next) => {
         const data = req.body;
         let status = "", msg = "";
 
-        if (!validator.isEmail(data.username)) {
-            msg = "Error. Provide Valid Email !";
-            status = true;
-
-        }else if (validator.isEmpty(data.username)){
+        if (validator.isEmpty(data.username)){
             msg = "Error. Provide An Email !";
             status = true;
         
+        }else if (!validator.isEmail(data.username)) {
+            msg = "Error. Provide Valid Email !";
+            status = true;
+
         }else if (validator.isEmpty(data.businessName)) {
             msg = "Error. Provide Business name !";
             status = true;
@@ -97,10 +97,10 @@ const signupValidation = async (req, res, next) => {
         const data = req.body;
         let status = "", msg = "";
 
-        if (!validator.isEmpty(data.username)) {
-            msg = "Error. Provide an Email !";
+        if (validator.isEmpty(data.username)){
+            msg = "Error. Provide An Email !";
             status = true;
-
+        
         }else if (!validator.isEmail(data.username)) {
             msg = "Error. Provide Valid Email !";
             status = true;
@@ -113,12 +113,8 @@ const signupValidation = async (req, res, next) => {
             msg = "Error. Provide Your Last Name";
             status = true;
 
-        }else if (!validator.isEmpty(data.tel)) {
+        }else if (validator.isEmpty(data.tel)) {
             msg = "Error. Provide Your Active Contact Number";
-            status = true;
-
-        }else if (!validator.isEmpty(data.company)) {
-            msg = "Error. Provide Your Company";
             status = true;
 
         }else if (validator.isEmpty(data.new_pass)) {
@@ -137,12 +133,13 @@ const signupValidation = async (req, res, next) => {
 
         }else {
             console.log("** Validation Completed **");
+            const user = req.session.passport.user;
             // checking if comapny is registered or not
-                const biodata = await RegistrationModel.find({ businessName: data.company }); // getting company biodata from db
+                const biodata = await RegistrationModel.find({ businessName: user.company.trim() }); // getting company biodata from db
                 console.log("getting biodata from db ...", biodata);
 
                 if (biodata.length == 0) { // server could not find registered biodata from db
-                    req.flash("signup", `Error. ${data.company} not registered. Please Register !`) // send messge to user 
+                    req.flash("signup", `Error. ${user.company} not registered. Please Register !`) // send messge to user 
                     res.redirect(303, `${config.view_urls.user_register}`)
 
                 }else { // server found biodata 

@@ -8,6 +8,7 @@ const moment = require("moment");
 // IMPORTATION OF FILES 
 const { LoginModel, DateTimeTracker, UserModel, RegistrationModel } = require("../../database/schematics");
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
+const { config } = require("../config/config");
 // ...
 
 
@@ -15,7 +16,6 @@ const { encrypt_access_code, verify_access_code } = require("../controller/encry
 const verify = async(username, password, cb) => {
     let resp = {};
     console.log("..PASSPORT DATA...", username, password);
-
     //  encrypt passowrd 
         const hashed_pass = await encrypt_access_code(password);
         console.log("** hashing user password **", hashed_pass); 
@@ -26,7 +26,7 @@ const verify = async(username, password, cb) => {
             console.log("for superuser only");
             // getting business biodata from  db in other to have access to the business email
             const biodata = await RegistrationModel.find({ "email": username });
-            
+
             const payload = {
                 email: biodata[0].email,
                 company: biodata[0].businessName,
@@ -102,13 +102,8 @@ passport.deserializeUser(function(user, cb) {
 });
 // ............................................
 // CHECK FOR AUTHENTICATION OF USER BEFORE ACCESSING RESOURCES
-const isUSerAuthenticated = (req) => {
-    if (req.session.passport) {
-        return true;
-    }else {
-        // alert user with notification
-        return false;
-    }
+const isUSerAuthenticated = (req, res, next) => {
+    (req.session.passport)? next() : res.redirect(303, config.view_urls.login);
 }
 // ......
 // CUSTOM MODULES SECTION
