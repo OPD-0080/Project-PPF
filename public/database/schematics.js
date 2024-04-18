@@ -19,8 +19,8 @@ const registration_schema = new mongoose.Schema({
     region_state: { type: String, required: true },
     town: { type: String, required: true },
     ceo: { type: String, required: true },
-    password: { type: String, required: true, uniqu: true },
-    role: { type: String, required: true, uniqu: false }
+    password: { type: String, required: true, unique: true },
+    role: { type: String, required: true, unique: false }
 });
 const user_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
@@ -32,8 +32,9 @@ const user_schema = new mongoose.Schema({
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true, unique: true},
     company: {type: String, required: true, unique: false},
-    department: {type: String, required: true, unique: false},
+    department: {type: String, required: false, unique: false},
     userID: {type: String, required: true, unique: true},
+    role: { type: String, required: false, unique: false, default: null},
     photo: {type: String, required: false, unique: false, default: null},
     ID_card_type: {type: String, required: false, unique: false, default: null},
     ID_card_number: {type: String, required: false, unique: false, default: null},
@@ -45,8 +46,9 @@ const user_schema = new mongoose.Schema({
 const login_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
     email: {type: String, required: true, unique: true},
-    company: {type: String, required: true, unique: true},
+    company: {type: String, required: true, unique: false},
     userID: {type: String, required: true, unique: true},
+    role: {type: String, required: true},
 });
 const date_time_schema = new mongoose.Schema({
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'}, 

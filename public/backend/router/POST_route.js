@@ -5,9 +5,10 @@ const passport = require("passport");
 
 
 // IMPORTATION OF HANDLERS
-const { login_handler, signup_handler, registration_handler, OTP_verification_handler } = require("./POST_handlers");
+const { login_handler, signup_handler, registration_handler, OTP_verification_handler, redirect_to_dashboard_handler } = require("./POST_handlers");
 // ...
 // IMPORTATION OF MIDDLEWARES
+const config = require("../config/config");
 const { loginValidation, signupValidation, OTPValidation, registrationValidation } = require("../controller/validation");
 // ...
 // MULTER SECION FOR UPLOADING DATA
@@ -32,10 +33,10 @@ const upload = multer({ storage: storage });
 */
 
 // ROUTERS SECTION 
-router.post("/register", registrationValidation, registration_handler );
+router.post("/register", registrationValidation, registration_handler, passport.authenticate("local", { failureRedirect: `${config.view_urls.register}`, failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), redirect_to_dashboard_handler );
 router.post("/user-register", signupValidation, signup_handler );
 router.post("/otp/verification", OTPValidation, OTP_verification_handler );
-router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: '/api/get/user/login', failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), login_handler);
+router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), redirect_to_dashboard_handler);
 
 
 

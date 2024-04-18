@@ -2,7 +2,7 @@ require("dotenv");
 const nodemailer = require("nodemailer");
 
 // IMPORTATION OF FILES
-const { UserModel, DateTimeTracker } = require("../../database/schematics");
+
 // ..
 // initializing nodemailer trasport 
 const transporter = nodemailer.createTransport({
@@ -15,15 +15,13 @@ const transporter = nodemailer.createTransport({
     }
 });
 // ...
-const sendMailForSignupAuth = async (payload, code) => {
+const sending_email = async (company_name, subject, message, payload) => {
     try {
-        
         const email_detail = {
-            from: `PROJECT PPF ${process.env.NODEMAILER_USER}`,
+            from: `${company_name} ${process.env.NODEMAILER_USER}`,
             to: `${payload.email}`,
-            subject: "OTP AUTHENTICATION CODE",
-            text: `Dear Admin, ${payload.first_name} ${payload.last_name} with userID ${payload.userID} is trying to signup against ${payload.company},
-                Permit user by giving the OTP Code to the user for authentication: ${code}`,
+            subject: `${subject}`,
+            text: `${message}`,
             //html: "" // to customize message to the receiptent tmo suit company profile 
         };
         console.log("....SENDNING EMAIL .....", email_detail);
@@ -35,14 +33,9 @@ const sendMailForSignupAuth = async (payload, code) => {
         console.log("...ERROR :: ERROR IN SEMDMAIL FUNCTION ....", error);
         
         if ((error.syscall == "getaddrinfo") && (error.code == "EDNS")) {
-            console.log("Error. Bad Network");
-            // delete signup data from db
-                await UserModel.deleteOne({ "userID": payload.userID });
-                await DateTimeTracker.deleteOne({ "userID": payload.userID });
-            // ...
             return null
         }
     }
 }
 
-module.exports = { sendMailForSignupAuth }
+module.exports = { sending_email }
