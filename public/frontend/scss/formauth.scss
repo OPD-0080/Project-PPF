@@ -84,17 +84,20 @@
                 }
             }
             .preview-company-wrapper {
-                position: absolute;
-                bottom: -20px;
+                position: relative;
+                bottom: 0px;
+                left: 0px;
                 width: 100%;
                 background: grey;
-                @include flex(row, center, center);
-                flex-wrap: wrap;
+                display: none;
+                justify-content: flex-start;
+                align-items: flex-start;
+                //flex-wrap: wrap;
                 //visibility: hidden;
                 
                 &.show {
-                    visibility: visible;
-                    
+                    display: flex;
+                    flex-direction: column;
                 } 
                 li {
                     font-size: smaller;
@@ -102,9 +105,9 @@
                     margin-right: $margin-s;
 
                     .i {
-                        width: 25px;
+                        width: 30px;
                         height: 25px;
-                        background: red;
+                        background: whitesmoke;
                         margin-right: $margin-xvss;
                     }
                 }

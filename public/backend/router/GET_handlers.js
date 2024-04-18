@@ -69,7 +69,7 @@ const view_signup = async (req, res, next) => {
 };
 const view_login = async (req, res, next) => {
     try {
-        console.log("** Inside Login view **");
+        console.log("** Inside Login view **", store.session.get("login"));
         let context = {}, user_alert = "";
 
         
@@ -88,11 +88,15 @@ const view_login = async (req, res, next) => {
             console.log("user alert message :", context.message);
         // ...
         // wrapping data into context object 
-            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            if (store.session.get("login") !== null) { 
+                context.message = store.session.get("login"); 
+                setTimeout(() => { store.session.remove("login") }, 3000); 
+            }
+            else {(error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg; }
+            
             context.businesses = JSON.stringify(businesses);
         // ...
         console.log(context);
-
 
         res.render("login", { context })
 
@@ -114,13 +118,10 @@ const view_dashboard = async (req, res, next) => {
 const view_logout = async (req, res, next) => {
     try {
         console.log("** Inside Logout view **");
-        // send alert message
-            req.flash("login", "User Logout. Please Login !");
-        // ..
-        // destroy user session data in passport
-            req.session.destroy();
-        // ...
-        res.redirect(303, "/api/get/user/login");  // redirect to login get page
+        req.session.destroy();  // destroy user session data in passport
+        store.session.set("login", "User Logout sucessfully. Please Login !"); // using store module and cannot use flash module for alert messaging because req.session is destroyed
+
+        res.redirect(303, config.view_urls.login);  // redirect to login get page
 
     } catch (error) {
         console.log("** Error:: Login view **", error);

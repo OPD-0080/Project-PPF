@@ -2,6 +2,8 @@ const GET_base_url = "/api/get/user";
 const POST_base_url = "/api/post/user";
 
 const config = {
+    company_name: "Project PPF",
+
     GET_url: GET_base_url,
     POST_url: POST_base_url,
     

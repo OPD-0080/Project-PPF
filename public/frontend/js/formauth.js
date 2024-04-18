@@ -16,7 +16,7 @@ const notify_user = (msg) => {
     // setting logic for showing notification 
         if (notification_wrapper.classList.contains("show2")) {
             notification_wrapper.classList.add("show");
-            setTimeout(() => { notification_wrapper.classList.remove("show2") }, 3000);
+            setTimeout(() => { notification_wrapper.classList.remove("show2") }, 5000);
         }
         if (msg == undefined) { remove_alert() } 
         else {
@@ -114,9 +114,12 @@ const notify_user = (msg) => {
             const value = e.target.value;
             // checking user value character is of min 3 to proceed 
                 if (value.length >= 4) {
+                    preview_el.classList.add("show");
                     populate_filtered_data(businesses, value, preview_el);
                     select_filtered_data(input, preview_el);
+
                 }else {
+                    preview_el.innerHTML = "";
                     preview_el.classList.remove("show");
                 }
             // ...
@@ -124,8 +127,6 @@ const notify_user = (msg) => {
     }
     const populate_filtered_data = (array, value, div) => {
         const filtered_data = array.filter(data => { return data.trim().startsWith(value.trim()) });
-        console.log("gettiing filtered data ..", filtered_data);
-
         let show = "";
         filtered_data.forEach(data => {
             show += `
@@ -141,9 +142,8 @@ const notify_user = (msg) => {
                 const selected_value = e.target.innerText;
                 if (selected_value !== "") {
                     input_tag.value = selected_value;  // sshow in DOM and collapse opts 
-                    div.classList.add("show"); // collaspe opts after selection 
-                    
-                    //populate_filtered_data(preview_el);
+                    div.innerHTML = ""
+                    div.classList.remove("show"); // collaspe opts after selection 
                 }
             }
         })

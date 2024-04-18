@@ -4,17 +4,18 @@ const LocalStrategy = require('passport-local');
 const passport = require("passport");
 const crypto = require("crypto");
 const moment = require("moment");
+const validator = require("validator");
+const store = require("store2");
 // ....
 // IMPORTATION OF FILES 
 const { LoginModel, DateTimeTracker, UserModel, RegistrationModel } = require("../../database/schematics");
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
-const { config } = require("../config/config");
+const  config  = require("../config/config");
 // ...
-
+const regex = "[a-z]{3}[0-9]{5}";
 
 // PASSPORT VERIFYING LOGIN CREDDENTIALS LOCALLY 
 const verify = async(username, password, cb) => {
-    let resp = {};
     console.log("..PASSPORT DATA...", username, password);
     //  encrypt passowrd 
         const hashed_pass = await encrypt_access_code(password);
@@ -24,20 +25,34 @@ const verify = async(username, password, cb) => {
         const superuser_status = await is_user_superuser(username);
         if (superuser_status) {
             console.log("for superuser only");
-            // getting business biodata from  db in other to have access to the business email
-            const biodata = await RegistrationModel.find({ "email": username });
 
+            // getting business biodata 
+            const biodata = await getting_biodata_upon_email_or_userID(username);
+            console.log("...checking for biodata ...", biodata);
+            
             const payload = {
                 email: biodata[0].email,
                 company: biodata[0].businessName,
-                userID: biodata[0].ceo, // important !. the userID become ethe cCEO name for user with superuser role.
+                userID: biodata[0].ceo, // important !. the userID become the CEO name for user with superuser role.
                 role: biodata[0].role
             };
             console.log("getting superuser payload ...", payload);
 
-            if (await update_login_credentials(payload, biodata, username)) {
-                return cb(null, payload); // important ! using payload in-place of the usermmodel schema since is of the same  
+            // important ! using payload in-place of the usermmodel schema since is of the same  
+            if (await update_login_credentials(payload, biodata, username)) { 
+                // confirm encryted password before login user
+                    if (biodata[0].password === password) { return cb(null, payload) }
+                    else {
+                        store.session.set("login", "Error. Password Invalid. Provide Valid Credentails !") 
+                        return cb(null, false) 
+                    }
+                // ...
             }
+            else {
+                store.session.set("login", "Server Error. Try Again !") 
+                return cb(null, false) 
+            }
+            
         }else {
             // getting data from signup collection  to have access to some specific data
                 const user = await UserModel.find({ "email": username });
@@ -49,7 +64,17 @@ const verify = async(username, password, cb) => {
                     role: user[0].role
                 };
                 if (await update_login_credentials(payload, user, username)) {
-                    return cb(null, payload);
+                     // confirm encryted password before login user
+                        if (user[0].password === password) { return cb(null, payload) }
+                        else {
+                            store.session.set("login", " Error. Password Invalid. Provide Valid Credentails !") 
+                            return cb(null, false) 
+                        }
+                    // ...
+                }
+                else {
+                    store.session.set("login", "Server Error. Try Again !") 
+                    return cb(null, false) 
                 }
             // ..
         }
@@ -103,42 +128,70 @@ passport.deserializeUser(function(user, cb) {
 // ............................................
 // CHECK FOR AUTHENTICATION OF USER BEFORE ACCESSING RESOURCES
 const isUSerAuthenticated = (req, res, next) => {
-    (req.session.passport)? next() : res.redirect(303, config.view_urls.login);
+    (req.session.hasOwnProperty("passport"))? next() : res.redirect(303, config.view_urls.login);
 }
 // ......
 // CUSTOM MODULES SECTION
 const is_user_superuser = async (username) => {
-    let is_user_superuser = "";
-    const biodata = await RegistrationModel.find({ "email": username });
+    let is_user_superuser = "", biodata = "";
+
+    if (username.match(regex)) { return false } 
+    else if (validator.isEmail(username)) { biodata = await RegistrationModel.find({ "email": username });}
+    else { biodata = await RegistrationModel.find({ "ceo": username }) }
 
     if (biodata.length > 0) {
         (biodata[0].role.trim() == "superuser")? is_user_superuser = true : is_user_superuser = false;
     }
     return is_user_superuser;
 };
+const getting_biodata_upon_email_or_userID = async (username) => {
+    let biodata = "";
+    (validator.isEmail(username))? biodata = await RegistrationModel.find({ "email": username }) : biodata = await RegistrationModel.find({ "ceo": username }); 
+    return biodata;
+}
 const update_login_credentials = async (payload, user, username) => {
-    const user_resp = await LoginModel.insertMany(payload);
+    let date_tracker = "";
+    try {
+        if (username.match(regex)) { date_tracker = await DateTimeTracker.find({ "userID": username }) } 
+        else if (validator.isEmail(username)) { date_tracker = await DateTimeTracker.find({ "email": username });}
+        else { date_tracker = await DateTimeTracker.find({ "userID": username }) }
 
-    // updating login timer as user login 
-        const date_tracker = await DateTimeTracker.find({ "email": username });
-        if (date_tracker.length == 0) {
+        await LoginModel.insertMany(payload);
+        // updating login timer as user login 
+            if (date_tracker.length == 0) {
+                await DateTimeTracker.insertMany({ 
+                    "companyRefID": user[0].uuid,
+                    "email": payload.email, 
+                    "userID": payload.userID, 
+                    "login_date": `${moment().format("YYYY-MM-DD")}`,
+                    "login_time": `${moment().format("hh:mm")}`
+                });
+                return true;
+            }else {
+                await DateTimeTracker.updateOne({ 
+                    "login_date": `${moment().format("YYYY-MM-DD")}`,
+                    "login_time": `${moment().format("hh:mm")}`
+                });
+                return true;
+            }
+        // ...
+    } catch (error) {
+        console.log("Error in Update login credentials ...", error);
 
-            await DateTimeTracker.insertMany({ 
-                "companyRefID": user[0].uuid,
-                "email": payload.email, 
-                "userID": payload.userID, 
-                "login_date": `${moment().format("YYYY-MM-DD")}`,
-                "login_time": `${moment().format("hh:mm")}`
-            });
-            return true;
-        }else {
-            await DateTimeTracker.updateOne({ 
-                "login_date": `${moment().format("YYYY-MM-DD")}`,
-                "login_time": `${moment().format("hh:mm")}`
-            });
-            return true;
+        if (error.code == "1100" & error.writeErrors[0].err.errmsg.includes("uuid")) {
+            // delete user login data from db
+                await DateTimeTracker.updateOne(
+                    { "uuid": user[0].uuid }, // filter to get user data from db
+                    { $set: { // then update that data
+                        "logout_date": `${moment().format("YYYY-MM-DD")}`,
+                        "logout_time": `${moment().format("hh:mm")}`
+                    }}
+                );
+                await LoginModel.deleteOne({ "uuid": user[0].uuid });
+            // ...
+            return false;
         }
-    // ...
+    }
 };
 // ...
 

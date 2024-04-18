@@ -36,7 +36,7 @@ const upload = multer({ storage: storage });
 router.post("/register", registrationValidation, registration_handler, passport.authenticate("local", { failureRedirect: `${config.view_urls.register}`, failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), redirect_to_dashboard_handler );
 router.post("/user-register", signupValidation, signup_handler );
 router.post("/otp/verification", OTPValidation, OTP_verification_handler );
-router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), login_handler);
+router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. User already login", failureMessage: true, successMessage: "User Authenicated" }), redirect_to_dashboard_handler);
 
 
 

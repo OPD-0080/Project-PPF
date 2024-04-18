@@ -128,18 +128,18 @@ a {
   background-size: cover;
 }
 .auth-form form .form-cell .preview-company-wrapper {
-  position: absolute;
-  bottom: -20px;
+  position: relative;
+  bottom: 0px;
+  left: 0px;
   width: 100%;
   background: grey;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
+  display: none;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 .auth-form form .form-cell .preview-company-wrapper.show {
-  visibility: visible;
+  display: flex;
+  flex-direction: column;
 }
 .auth-form form .form-cell .preview-company-wrapper li {
   font-size: smaller;
@@ -150,9 +150,9 @@ a {
   margin-right: 20px;
 }
 .auth-form form .form-cell .preview-company-wrapper li .i {
-  width: 25px;
+  width: 30px;
   height: 25px;
-  background: red;
+  background: whitesmoke;
   margin-right: 6px;
 }
 .auth-form .logo-wrapper {

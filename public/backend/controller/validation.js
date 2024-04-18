@@ -157,49 +157,63 @@ const loginValidation = async (req, res, next) => {
         console.log("** Validating Login fields **");
         const data = req.body;
         let status = "", msg = "";
+        const regex = "[a-z]{3}[0-9]{5}";
 
-        if (!validator.isEmail(data.username)) {
-            msg = "Error. Provide Valid Email !";
-            status = true;
-
-        }else if (validator.isEmpty(data.username)) {
+        
+        if (validator.isEmpty(data.username.trim())) {
             msg = "Error. Provide Email !";
             status = true;
 
-        }else if (validator.isEmpty(data.password)) {
+        }
+        else if (validator.isEmpty(data.password.trim())) {
             msg = "Error. Provide Valid Password";
             status = true;
 
-        }else if (validator.isEmpty(data.company)) {
+        }else if (validator.isEmpty(data.company.trim())) {
             msg = "Error. Select Your Company";
             status = true;
-
-        }else if (validator.isEmpty(data.userID)) {
-            msg = "Error. Provide Valid User ID";
-            status = true;
         }
-
-
+        console.log(status);
         if (status) { // if error is fouund
             req.flash("validate_login", msg); // alert user with a message 
             res.redirect(303, `${config.view_urls.login}`);// return to the login view page 
 
         }else {
             console.log("** Validation Completed **");
+            let user = "", login_resp = "";
+            // check if user used either the userID or email approach
+                if (validator.isEmail(data.username.trim())) { // when user uses email approach for login 
+                    console.log("user login with Email");
+                    // confirm if user provide belongs to the ceo or not 
+                        const is_user_ceo = await RegistrationModel.find({ "email": data.username.trim() });
+                        if (is_user_ceo.length > 0) {
+                            user = is_user_ceo;
+                            login_resp = await LoginModel.find({ "email": data.username.trim() });
 
-            // checking if user has already signup or not 
-                const user = await UserModel.find({ "email": data.username });
-                const login_resp = await LoginModel.find({ "email": data.username });
-
-                console.log(" for user model response  ..", user, user.length);
-                console.log(".. for login  model response ..", login_resp);
-
-                if (user.length == 0) { // if user has not signup and trying to login 
-                    console.log("** User has not signup **");
-                    
-                    // send user an alert message
-                        req.flash("signup", "User not Signup. Please Signup !");
+                        }else {
+                            user = await UserModel.find({ "email": data.username.trim() });
+                            login_resp = await LoginModel.find({ "email": data.username.trim() });
+                        }
                     // ...
+                }else if (data.username.trim().match(regex)) {   // when a user uses the UserID approach for login 
+                    console.log("user login with UserID");
+
+                    user = await UserModel.find({ "userID": data.username.trim() });
+                    login_resp = await LoginModel.find({ "userID": data.username.trim() });
+                    
+                }else { // only for ceo 
+                    console.log("user login with ceo name");
+
+                    user = await RegistrationModel.find({ "ceo": data.username.trim() });
+                    login_resp = await LoginModel.find({ "userID": data.username.trim() });
+
+                }
+                console.log("... for user model response  ..", user, user.length);
+                console.log(".. for login  model response ..", login_resp);
+            // ...
+            // checking if user is a superuser or not and has already signup or not 
+                if (user.length == 0) { // if user has not signup and trying to login 
+                    req.flash("signup", "Error. User not Signup. Please Signup !"); // send user an alert message
                     res.redirect(303, `${config.view_urls.user_register}`) // redirect user to the signup page
 
                 }else if ( (user.length > 0) && (login_resp.length == 0) ) { // if user has signup and trying to login 
@@ -216,7 +230,7 @@ const loginValidation = async (req, res, next) => {
                         await LoginModel.deleteOne({ "uuid": login_resp[0].uuid });
                     // ..
                     // send alert message to user
-                        req.flash("login", "User Login Twice. Re-login !");
+                        req.flash("login", "Error. User Login Twice. Re-login !");
                     // ...
                     res.redirect(303, `${config.view_urls.logout}`); // redirect user to the signout page
                 }
@@ -237,7 +251,7 @@ const OTPValidation = async (req, res, next) => {
 
             next(); // move to the next middelware
         }else {
-            req.flash("signup", "Invalid OTP Code. Please Signup Again !");
+            req.flash("signup", "Error. Invalid OTP Code. Please Signup Again !");
             res.redirect(303, `${config.view_urls.user_register}`);
         }
 

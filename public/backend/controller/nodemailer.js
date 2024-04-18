@@ -2,7 +2,7 @@ require("dotenv");
 const nodemailer = require("nodemailer");
 
 // IMPORTATION OF FILES
-const { UserModel, DateTimeTracker } = require("../../database/schematics");
+
 // ..
 // initializing nodemailer trasport 
 const transporter = nodemailer.createTransport({
@@ -15,15 +15,13 @@ const transporter = nodemailer.createTransport({
     }
 });
 // ...
-const sendMailForSignupAuth = async (payload, code) => {
+const sending_email = async (company_name, subject, message, payload) => {
     try {
-        
         const email_detail = {
-            from: `PROJECT PPF ${process.env.NODEMAILER_USER}`,
+            from: `${company_name} ${process.env.NODEMAILER_USER}`,
             to: `${payload.email}`,
-            subject: "OTP AUTHENTICATION CODE",
-            text: `Dear Admin, you just singup ${payload.first_name} ${payload.last_name} with userID ${payload.userID},
-                Permit user by giving the OTP CODE to the user for authentication: ${code} with the DEFAULT PASSWORD ${payload.password}`,
+            subject: `${subject}`,
+            text: `${message}`,
             //html: "" // to customize message to the receiptent tmo suit company profile 
         };
         console.log("....SENDNING EMAIL .....", email_detail);
@@ -40,4 +38,4 @@ const sendMailForSignupAuth = async (payload, code) => {
     }
 }
 
-module.exports = { sendMailForSignupAuth }
+module.exports = { sending_email }
