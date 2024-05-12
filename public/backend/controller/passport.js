@@ -12,7 +12,6 @@ const { LoginModel, DateTimeTracker, UserModel, RegistrationModel } = require(".
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
 const  config  = require("../config/config");
 // ...
-const regex = "[a-z]{3}[0-9]{5}";
 
 // PASSPORT VERIFYING LOGIN CREDDENTIALS LOCALLY 
 const verify = async(username, password, cb) => {
@@ -41,7 +40,7 @@ const verify = async(username, password, cb) => {
             // important ! using payload in-place of the usermmodel schema since is of the same  
             if (await update_login_credentials(payload, biodata, username)) { 
                 // confirm encryted password before login user
-                    if (biodata[0].password === password) { return cb(null, payload) }
+                    if (biodata[0].password === hashed_pass) { return cb(null, payload) }
                     else {
                         store.session.set("login", "Error. Password Invalid. Provide Valid Credentails !") 
                         return cb(null, false) 
@@ -65,7 +64,7 @@ const verify = async(username, password, cb) => {
                 };
                 if (await update_login_credentials(payload, user, username)) {
                      // confirm encryted password before login user
-                        if (user[0].password === password) { return cb(null, payload) }
+                        if (user[0].password === hashed_pass) { return cb(null, payload) }
                         else {
                             store.session.set("login", " Error. Password Invalid. Provide Valid Credentails !") 
                             return cb(null, false) 
@@ -135,7 +134,7 @@ const isUSerAuthenticated = (req, res, next) => {
 const is_user_superuser = async (username) => {
     let is_user_superuser = "", biodata = "";
 
-    if (username.match(regex)) { return false } 
+    if (username.match(config.userID_regexp)) { return false } 
     else if (validator.isEmail(username)) { biodata = await RegistrationModel.find({ "email": username });}
     else { biodata = await RegistrationModel.find({ "ceo": username }) }
 
@@ -152,7 +151,7 @@ const getting_biodata_upon_email_or_userID = async (username) => {
 const update_login_credentials = async (payload, user, username) => {
     let date_tracker = "";
     try {
-        if (username.match(regex)) { date_tracker = await DateTimeTracker.find({ "userID": username }) } 
+        if (username.match(config.userID_regexp)) { date_tracker = await DateTimeTracker.find({ "userID": username }) } 
         else if (validator.isEmail(username)) { date_tracker = await DateTimeTracker.find({ "email": username });}
         else { date_tracker = await DateTimeTracker.find({ "userID": username }) }
 

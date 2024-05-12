@@ -157,8 +157,7 @@ const loginValidation = async (req, res, next) => {
         console.log("** Validating Login fields **");
         const data = req.body;
         let status = "", msg = "";
-        const regex = "[a-z]{3}[0-9]{5}";
-
+    
         
         if (validator.isEmpty(data.username.trim())) {
             msg = "Error. Provide Email !";
@@ -180,6 +179,7 @@ const loginValidation = async (req, res, next) => {
 
         }else {
             console.log("** Validation Completed **");
+
             let user = "", login_resp = "";
             // check if user used either the userID or email approach
                 if (validator.isEmail(data.username.trim())) { // when user uses email approach for login 
@@ -195,7 +195,7 @@ const loginValidation = async (req, res, next) => {
                             login_resp = await LoginModel.find({ "email": data.username.trim() });
                         }
                     // ...
-                }else if (data.username.trim().match(regex)) {   // when a user uses the UserID approach for login 
+                }else if (data.username.trim().match(config.userID_regexp)) {   // when a user uses the UserID approach for login 
                     console.log("user login with UserID");
 
                     user = await UserModel.find({ "userID": data.username.trim() });
@@ -213,11 +213,11 @@ const loginValidation = async (req, res, next) => {
             // ...
             // checking if user is a superuser or not and has already signup or not 
                 if (user.length == 0) { // if user has not signup and trying to login 
-                    req.flash("signup", "Error. User not Signup. Please Signup !"); // send user an alert message
-                    res.redirect(303, `${config.view_urls.user_register}`) // redirect user to the signup page
+                    req.flash("signup", "Error. User not Found. For Signup, Contact Admin !"); // send user an alert message
+                    res.redirect(303, `${config.view_urls.login}`) // redirect user to the signup page
 
-                }else if ( (user.length > 0) && (login_resp.length == 0) ) { // if user has signup and trying to login 
-                    next() // mve to the next middelware 
+                }else if ( (user.length > 0) && (login_resp.length <= 0) ) { // if user has signup and trying to login 
+                    next() 
                 }else if ( (user.length > 0) && (login_resp.length > 0) ) { // if user has signup and already login but login for the second time
                     // delete user login  data from db first and update date and time 
                         await DateTimeTracker.updateOne(
@@ -243,22 +243,149 @@ const loginValidation = async (req, res, next) => {
     }
 };
 const OTPValidation = async (req, res, next) => {
+    let msg = "", status = "";
     try {
         console.log("Validating OTP code :", req.body);
         const data = req.body
-        if (data.otp.match(`[0-9]{4}`)) {
-            console.log("validation complete");
 
-            next(); // move to the next middelware
+        if (validator.isEmpty(data.otp) || data.otp.length < 5) {
+            msg = "Error. Provide Valid OTP code";
+            status = true;
+
+        }else if (data.otp.match(`[0-9]{5}`)) {
+            status = false;
+            
         }else {
-            req.flash("signup", "Error. Invalid OTP Code. Please Signup Again !");
-            res.redirect(303, `${config.view_urls.user_register}`);
+            msg = "Error. Invalid OTP Code. Try Again !";
+            status = true;
+        }
+
+        if (status) {
+            req.flash("otp", msg);
+            res.redirect(303, `${config.view_urls.otp}`);
+        }else {
+            next()
         }
 
     } catch (error) {
         console.log("** Error:: OTP validation **", error);
         res.redirect(303, `${config.view_urls._500}`);
     }
+};
+const resetPasswordValidation = async (req, res, next) => {
+    let msg = "", status = "";
+    try {
+        console.log("Validating reset password fields :", req.body);
+        const data = req.body
+
+        if (validator.isEmpty(data.old_pass)) {
+            msg = "Error. Provide valid default password !";
+            status = true;
+
+        }else if (validator.isEmpty(data.new_pass)) {
+            msg = "Error. Provide new password !";
+            status = true;
+            
+        }else if (validator.isEmpty(data.confirm_pass)) {
+            msg = "Error. Provide new password !";
+            status = true;
+            
+        }else if (data.new_pass !== data.confirm_pass) {
+            msg = "Error. Password does not match !";
+            status = true;
+            
+        }else {
+            status = false;
+        }
+        console.log(status);
+
+        if (status) { // if error is fouund
+            req.flash("validate_reset_password", msg); // alert user with a message 
+            res.redirect(303, `${config.view_urls.login}`);// return to the login view page 
+
+        }else {
+            console.log("** Validation Completed **");
+            necx();
+        }
+
+    } catch (error) {
+        console.log("** Error:: OTP validation **", error);
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+};
+const forgotPasswordInitiateValidation = async (req, res, next) => {
+    try {
+        console.log("** Validating forgot password initiate fields **");
+        const data = req.body;
+        let status = "", msg = "";
+    
+        if (validator.isEmpty(data.username.trim())) {
+            msg = "Error. Provide Email / userID !";
+            status = true;
+
+        }else if (validator.isEmpty(data.company.trim())) {
+            msg = "Error. Provide Your Company";
+            status = true;
+        }
+        console.log(status);
+        
+        if (status) { // if error is fouund
+            req.flash("fpass_initiate", msg); // alert user with a message 
+            res.redirect(303, `${config.view_urls.forgot_password_initiate}`);
+
+        }else {
+            console.log("** Validation Completed **");
+            next();
+        }
+
+    } catch (error) {
+        console.log("** Error:: forgot password initiate validation **", error);
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+};
+const forgotPasswordConfirmValidation = async (req, res, next) => {
+    try {
+        console.log("** Validating forgot password confirm fields **");
+        const data = req.body;
+        let status = "", msg = "";
+    
+        if (validator.isEmpty(data.new_pass.trim())) {
+            msg = "Error. Provide Your New Password !";
+            status = true;
+
+        }else if (validator.isEmpty(data.confirm_pass.trim())) {
+            msg = "Error. Provide Confirm Password !";
+            status = true;
+        }
+        else if (data.new_pass.trim() !== data.confirm_pass.trim()) {
+            msg = "Error. Password does not match !";
+            status = true;
+        }
+        console.log(status);
+        
+        if (status) { // if error is fouund
+            req.flash("fpass_confirm", msg); // alert user with a message 
+            res.redirect(303, `${config.view_urls.forgot_password_confirm}`);
+
+        }else {
+            console.log("** Validation Completed **");
+            next();
+        }
+
+    } catch (error) {
+        console.log("** Error:: forgot password confirm validation **", error);
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+};
+
+
+
+const is_user_active = async (user) => {
+    let msg = "";
+    (user.is_active)? msg = true : msg = false;
+    return msg 
 }
 
-module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation }
+module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
+    is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation
+}
