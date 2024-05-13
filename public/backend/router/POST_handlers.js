@@ -431,6 +431,10 @@ const forgot_password_confirmation_handler = async (req, res, next) => {
 
         }else {
             await UserModel.updateOne({ "email": user_email, "company": company }, { "password": hashed_pass });
+            
+            req.session.fpass_username = "";
+            req.session.fpass_company = "";
+                        
             req.flash("login", "Password modified sucessful. Login !");
             res.redirect(303, `${config.view_urls.login}`);
         }
