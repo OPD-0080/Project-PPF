@@ -40,7 +40,7 @@ router.post("/register", registrationValidation, registration_handler, passport.
 router.post("/user-register", isUSerAuthenticated, signupValidation, signup_handler );
 router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. User already login", failureMessage: true}), is_OTP_verified, is_password_secured );
 router.post("/otpverification", isUSerAuthenticated, OTPValidation, OTP_verification_handler );
-router.post("/password/reset", resetPasswordValidation, isUSerAuthenticated, password_reset_handler );
+router.post("/password/reset",  isUSerAuthenticated, resetPasswordValidation, password_reset_handler );
 router.post("/password/forgot/initiate", forgotPasswordInitiateValidation, forgot_password_initiate_handler );
 router.post("/password/forgot/confirmation", forgotPasswordConfirmValidation, forgot_password_confirmation_handler );
 
