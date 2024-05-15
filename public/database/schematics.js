@@ -20,7 +20,9 @@ const registration_schema = new mongoose.Schema({
     town: { type: String, required: true },
     ceo: { type: String, required: true },
     password: { type: String, required: true, unique: true },
-    role: { type: String, required: true, unique: false, default: "Admin" }
+    role: { type: String, required: true, unique: false, default: "Admin" },
+    otp: {type: String, required: false, unique: false, default: null},
+    is_active: {type: String, required: false, unique: false, default: true}
 });
 const user_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
@@ -28,6 +30,7 @@ const user_schema = new mongoose.Schema({
     first_name: {type: String, required: true, unique: false, trim: true},
     last_name: {type: String, required: true, unique: false, trim: true},
     middle_name: {type: String, required: true, unique: false, trim: true},
+    date_of_birth: {type: String, required: true, unique: false, trim: true},
     tel: {type: String, required: true, unique: true},
     email: {type: String, required: true, unique: true},
     password: {type: String, required: true, unique: true},

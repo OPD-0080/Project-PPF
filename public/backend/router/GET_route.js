@@ -14,7 +14,7 @@ const { isUSerAuthenticated } = require("../controller/passport");
 // ROUTERS SECTION 
 router.get("/register", view_registration);
 router.get("/user-register", isUSerAuthenticated, view_signup);
-router.get("/optverification", view_OTP);
+router.get("/otpverification", view_OTP);
 router.get("/resetpassword", view_reset_password);
 router.get("/forgotpasswordinitiate", view_forgot_password_initiate);
 router.get("/forgotpasswordconfirm", view_forgot_password_confirm);

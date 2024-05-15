@@ -117,6 +117,10 @@ const signupValidation = async (req, res, next) => {
             msg = "Error. Provide Your Active Contact Number";
             status = true;
 
+        }else if (validator.isEmpty(data.date_of_birth)) {
+            msg = "Error. Provide Your Date of Birth";
+            status = true;
+
         }else if (validator.isEmpty(data.new_pass)) {
             msg = "Error. Provide Password";
             status = true;
@@ -384,8 +388,14 @@ const is_user_active = async (user) => {
     let msg = "";
     (user.is_active)? msg = true : msg = false;
     return msg 
-}
+};
+const getting_auth_user_data = async (auth_user) => {
+    let user = "";
+    (auth_user.role == "Admin")? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
+    return user
+};
 
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
-    is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation
+    is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
+    getting_auth_user_data
 }
