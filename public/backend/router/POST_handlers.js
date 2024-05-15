@@ -247,7 +247,7 @@ const OTP_verification_handler = async (req, res, next) => {
                 res.redirect(303, `${config.view_urls.dashboard}`);
 
             }else {
-                if (user[0].password.match(config.default_pass_regexp)) {   
+                if (user[0].password.match(config.default_pass_regexp)) {  
                     req.flash("reset_password", "For Security reasons, Change Password !");
                     res.redirect(303, `${config.view_urls.reset_password}`);
 
@@ -259,6 +259,7 @@ const OTP_verification_handler = async (req, res, next) => {
         }
     } catch (error) {
         console.log("** Error:: OTP verification Handler **", error);
+        console.log(typeof error);
         res.redirect(303, `${config.view_urls._500}`);
     }
 };
@@ -511,6 +512,46 @@ const forgot_password_confirmation_handler = async (req, res, next) => {
         res.redirect(303, `${config.view_urls._500}`);
     }
 };
+const resend_OTP_code_handler = async (req, res, next) => {
+    try {
+        console.log("** Collecting data for resend OTP code **");
+
+        const auth_user = req.session.passport.user;
+        let proceed = "";
+
+        console.log("... Generating OTP code ...");
+        const otp = await randomSerialCode(5);
+
+        console.log("... OTP code genrated  completed ...");
+        console.log("... Sending email to auth user ...");
+
+        const nodemail_resp = await sending_email(
+            config.company_name,
+            "Resend OTP Code",
+            auth_user.email,
+            `Dear ${auth_user.userID}, use the OTP code ${otp} resend to you for Email Verification. OTP will elapse in 10min. Thank You !`
+        );
+        console.log("** is email sent to company :", nodemail_resp);
+
+        if (nodemail_resp == null) {
+            console.log("... Email notification failed. Redirecting...");
+
+            req.flash("otp", "Error. OTP not sent. Try again !");
+            res.redirect(303, `${config.view_urls.otp}`);
+
+        }else if (nodemail_resp !== undefined) {
+            console.log("... Email notification completed. Redirecting...");
+
+            req.flash("otp", "OTP code resent. Confirm OTP code !");
+            res.redirect(303, `${config.view_urls.otp}`);
+        }
+
+    } catch (error) {
+        console.log("** Error:: Resend OTP code Handler **", error);
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+
+}
 
 
 
@@ -518,5 +559,5 @@ const forgot_password_confirmation_handler = async (req, res, next) => {
 
 module.exports = { signup_handler, OTP_verification_handler, registration_handler,
     is_OTP_verified, is_password_secured,  password_reset_handler, forgot_password_initiate_handler, 
-    forgot_password_confirmation_handler 
+    forgot_password_confirmation_handler, resend_OTP_code_handler
 }
