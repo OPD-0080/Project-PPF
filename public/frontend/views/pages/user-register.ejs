@@ -82,6 +82,10 @@
                                                 <input type="tel" class="form-control" name="tel">
                                             </div>
                                             <div class="form-group; form-cell col-md-6">
+                                                <label class="mb-1 text-white"><strong>Date of Birth</strong></label>
+                                                <input type="date" class="form-control" name="date_of_birth">
+                                            </div>
+                                            <div class="form-group; form-cell col-md-6">
                                                 <label class="mb-1 text-white"><strong>Password</strong></label>
                                                 <input type="password" class="form-control" readonly value='<% if (context.random_default_pass !== undefined) { %><%- context.random_default_pass %><% } %>' name="new_pass">
                                             </div> 

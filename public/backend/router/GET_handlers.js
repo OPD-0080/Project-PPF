@@ -14,14 +14,9 @@ const view_registration = async (req, res, next) => {
         console.log("** Inside Registration view **");
         let context = {};
 
-
-
-
         // notification section
             const error_alert = req.flash("validate_register"); 
             const flash_msg = req.flash("register");
-            
-            console.log("user alert message :", context.message);
         // ...
         // wrapping data into context object
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
@@ -41,21 +36,16 @@ const view_signup = async (req, res, next) => {
 
 
         // providing a default random password for users for the first time
-            const random_default_pass = `defpass-${await randomPassword(7)}`;
+            const random_default_pass = `defpass${await randomPassword(5)}`;
             console.log(random_default_pass);
         // ...
         // notification section
             const error_alert = req.flash("validate_signup");
             const flash_msg = req.flash("signup");
-            const otp_status = store.session.get("OTP_status");
-            setTimeout(() => { store.session.set("OTP_status", null) }, 3000); // clear OTP status after 3s
             
-            console.log("user alert message :", context.message);
-            console.log("OTP status :", otp_status);
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.OTP = otp_status;
             context.signup_url = config.post_urls.user_register;
             context.random_default_pass = random_default_pass;
         // ...
@@ -72,7 +62,6 @@ const view_login = async (req, res, next) => {
         console.log("** Inside Login view **", store.session.get("login"));
         let context = {}, user_alert = "";
 
-        
         // getting all business name from DB and populate it on DOM 
             let businesses = [];
             const biodata = await RegistrationModel.find();
@@ -84,8 +73,6 @@ const view_login = async (req, res, next) => {
         // notification section
             const error_alert = req.flash("validate_login");
             const flash_msg = req.flash("login");
-            
-            console.log("user alert message :", context.message);
         // ...
         // wrapping data into context object 
             if (store.session.get("login") !== null) { 
@@ -93,8 +80,8 @@ const view_login = async (req, res, next) => {
                 setTimeout(() => { store.session.remove("login") }, 3000); 
             }
             else {(error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg; }
-            
             context.businesses = JSON.stringify(businesses);
+            context.login_url = config.post_urls.login;
         // ...
         console.log(context);
 
@@ -102,6 +89,94 @@ const view_login = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
+    }
+};
+const view_OTP = async (req, res, next) => {
+    try {
+        console.log("** Inside OTP verification view **");
+        let context = {}, user_alert = "";
+
+
+        // notification section
+            const error_alert = req.flash("validate_otp");
+            const flash_msg = req.flash("otp");
+        // ...
+        // wrapping data into context object 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.otp_url = config.post_urls.otp;
+        // ...
+        console.log(context);
+
+        res.render("otp_verification", { context })
+
+    } catch (error) {
+        console.log("** Error:: OTP verification view **", error);
+    }
+};
+const view_reset_password = async (req, res, next) => {
+    try {
+        console.log("** Inside resetting password view **");
+        let context = {}, user_alert = "";
+
+
+        // notification section
+            const error_alert = req.flash("validate_reset_password");
+            const flash_msg = req.flash("reset_password");
+        // ...
+        // wrapping data into context object 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.reset_pass_url = config.post_urls.reset_password;
+        // ...
+        console.log(context);
+
+        res.render("reset_password", { context })
+
+    } catch (error) {
+        console.log("** Error:: Resetting password view **", error);
+    }
+};
+const view_forgot_password_initiate = async (req, res, next) => {
+    try {
+        console.log("** Inside forgot password initiate view **");
+        let context = {}, user_alert = "";
+
+
+        // notification section
+            const error_alert = req.flash("validate_forgot_password");
+            const flash_msg = req.flash("forgot_password");
+        // ...
+        // wrapping data into context object 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.fpass_initiate_url = config.post_urls.forgot_password_initiate;
+        // ...
+        console.log(context);
+
+        res.render("fpass_initiate", { context })
+
+    } catch (error) {
+        console.log("** Error:: forgot password initiate view **", error);
+    }
+};
+const view_forgot_password_confirm = async (req, res, next) => {
+    try {
+        console.log("** Inside forgot password confirmation view **");
+        let context = {}, user_alert = "";
+
+
+        // notification section
+            const error_alert = req.flash("validate_fpass_confirm");
+            const flash_msg = req.flash("fpass_confirm");
+        // ...
+        // wrapping data into context object 
+            (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
+            context.fpass_confirm_url = config.post_urls.forgot_password_confirm;
+        // ...
+        console.log(context);
+
+        res.render("fpass_confirm", { context })
+
+    } catch (error) {
+        console.log("** Error:: forgot password confirm view **", error);
     }
 };
 const view_dashboard = async (req, res, next) => {
@@ -155,4 +230,5 @@ const view_500 = async (req, res, next) => {
 
 
 
-module.exports = { view_login, view_signup, view_logout, view_registration, view_404, view_500, view_dashboard }
+module.exports = { view_login, view_signup, view_logout, view_registration, view_404, view_500, view_dashboard,
+        view_OTP, view_reset_password, view_forgot_password_initiate, view_forgot_password_confirm }

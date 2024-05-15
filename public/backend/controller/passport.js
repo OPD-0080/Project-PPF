@@ -12,72 +12,88 @@ const { LoginModel, DateTimeTracker, UserModel, RegistrationModel } = require(".
 const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
 const  config  = require("../config/config");
 // ...
-const regex = "[a-z]{3}[0-9]{5}";
 
 // PASSPORT VERIFYING LOGIN CREDDENTIALS LOCALLY 
 const verify = async(username, password, cb) => {
     console.log("..PASSPORT DATA...", username, password);
-    //  encrypt passowrd 
-        const hashed_pass = await encrypt_access_code(password);
-        console.log("** hashing user password **", hashed_pass); 
-    // ...
-    // checking if username has a role of superuser or not before proceeding to login 
-        const superuser_status = await is_user_superuser(username);
-        if (superuser_status) {
-            console.log("for superuser only");
+    console.log("... Initiating password encryption ...");
 
-            // getting business biodata 
-            const biodata = await getting_biodata_upon_email_or_userID(username);
-            console.log("...checking for biodata ...", biodata);
-            
-            const payload = {
-                email: biodata[0].email,
-                company: biodata[0].businessName,
-                userID: biodata[0].ceo, // important !. the userID become the CEO name for user with superuser role.
-                role: biodata[0].role
-            };
-            console.log("getting superuser payload ...", payload);
+    const hashed_pass = await encrypt_access_code(password);
+    console.log("** hashing user password **", hashed_pass); 
+    
 
-            // important ! using payload in-place of the usermmodel schema since is of the same  
-            if (await update_login_credentials(payload, biodata, username)) { 
-                // confirm encryted password before login user
-                    if (biodata[0].password === password) { return cb(null, payload) }
-                    else {
-                        store.session.set("login", "Error. Password Invalid. Provide Valid Credentails !") 
-                        return cb(null, false) 
-                    }
-                // ...
-            }
-            else {
-                store.session.set("login", "Server Error. Try Again !") 
-                return cb(null, false) 
-            }
-            
-        }else {
-            // getting data from signup collection  to have access to some specific data
-                const user = await UserModel.find({ "email": username });
-            // Save user into database
-                const payload = {
-                    email: user[0].email,
-                    company: user[0].company,
-                    userID: user[0].userID,
-                    role: user[0].role
-                };
-                if (await update_login_credentials(payload, user, username)) {
-                     // confirm encryted password before login user
-                        if (user[0].password === password) { return cb(null, payload) }
-                        else {
-                            store.session.set("login", " Error. Password Invalid. Provide Valid Credentails !") 
-                            return cb(null, false) 
-                        }
-                    // ...
-                }
+    console.log("... Password encryption completed ...");
+    console.log("... verifiying if user is admin or not ...");
+
+
+    const user_status = await is_user_admin(username);
+    if (user_status) {
+        console.log("... verification completed  ...");
+
+        // getting business biodata 
+        const biodata = await getting_biodata_upon_email_or_userID(username);
+        console.log("...checking for biodata ...", biodata);
+        
+        const payload = {
+            email: biodata[0].email,
+            company: biodata[0].businessName,
+            userID: biodata[0].ceo, // important !. the userID become the CEO name for user with superuser role.
+            role: biodata[0].role
+        };
+        console.log("getting user payload ...", payload);
+        console.log("... validating user credentials before redirecting ...");
+
+
+        if (await update_login_credentials(payload, biodata, username)) { 
+            // confirm encryted password before login user
+                if (biodata[0].password === hashed_pass) { return cb(null, payload) }
                 else {
-                    store.session.set("login", "Server Error. Try Again !") 
+                    store.session.set("login", "Error. Password Invalid. Provide Valid Credentails !") 
                     return cb(null, false) 
                 }
-            // ..
+            // ...
         }
+        else {
+            store.session.set("login", "Server Error. Try Again !") 
+            return cb(null, false) 
+        }
+        
+    }else {
+        console.log("... verification completed  ...");
+
+        let  user = "";
+        (username.match(config.userID_regexp))? user = await UserModel.find({ "userID": username.trim() }) : user = await UserModel.find({ "email": username });
+        console.log("...getting passport user ...", user);
+
+        const payload = {
+            email: user[0].email,
+            company: user[0].company,
+            userID: user[0].userID,
+            role: user[0].role
+        };
+
+        console.log("... validating user credentials before redirecting ...");
+
+        if (await update_login_credentials(payload, user, username)) {
+            if (user[0].password.match(config.default_pass_regexp)) {
+
+                if (user[0].password === password) { return cb(null, payload) }
+                else {
+                    store.session.set("login", " Error. Password Invalid. Provide Valid Credentails !") 
+                    return cb(null, false) 
+                }
+            }else {
+                if (user[0].password === hashed_pass) { return cb(null, payload) }
+                else {
+                    store.session.set("login", " Error. Password Invalid. Provide Valid Credentails !") 
+                    return cb(null, false) 
+                }
+            }
+        }else {
+            store.session.set("login", "Server Error. Try Again !") 
+            return cb(null, false) 
+        }
+    }
 }
 const passport_strategy = new LocalStrategy( verify );
 // .....................................................................
@@ -132,17 +148,17 @@ const isUSerAuthenticated = (req, res, next) => {
 }
 // ......
 // CUSTOM MODULES SECTION
-const is_user_superuser = async (username) => {
-    let is_user_superuser = "", biodata = "";
+const is_user_admin = async (username) => {
+    let is_user_admin = "", biodata = "";
 
-    if (username.match(regex)) { return false } 
+    if (username.match(config.userID_regexp)) { return false } 
     else if (validator.isEmail(username)) { biodata = await RegistrationModel.find({ "email": username });}
     else { biodata = await RegistrationModel.find({ "ceo": username }) }
 
     if (biodata.length > 0) {
-        (biodata[0].role.trim() == "superuser")? is_user_superuser = true : is_user_superuser = false;
+        (biodata[0].role.trim() == "Admin")? is_user_admin = true : is_user_admin = false;
     }
-    return is_user_superuser;
+    return is_user_admin;
 };
 const getting_biodata_upon_email_or_userID = async (username) => {
     let biodata = "";
@@ -152,7 +168,7 @@ const getting_biodata_upon_email_or_userID = async (username) => {
 const update_login_credentials = async (payload, user, username) => {
     let date_tracker = "";
     try {
-        if (username.match(regex)) { date_tracker = await DateTimeTracker.find({ "userID": username }) } 
+        if (username.match(config.userID_regexp)) { date_tracker = await DateTimeTracker.find({ "userID": username }) } 
         else if (validator.isEmail(username)) { date_tracker = await DateTimeTracker.find({ "email": username });}
         else { date_tracker = await DateTimeTracker.find({ "userID": username }) }
 

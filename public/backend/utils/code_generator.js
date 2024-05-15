@@ -1,5 +1,5 @@
 
-const randomSerialCode = (number) => {
+const randomSerialCode = async (number) => {
     const base = "0123456789";
 
     const generate = (length) => {

@@ -52,11 +52,14 @@
                         <div class="row no-gutters">
                             <div class="col-xl-12">
                                 <div class="auth-form">
-									<div class="text-center mb-3">
-										<a href="index.html"><img src="PPF LOGO" alt=""></a>
+									<div class="text-center mb-12 logo-wrapper">
+                                        <a href="index.html" class="logo-img-wrapper">
+                                            <img src="../../img/svg" alt="">
+                                            <div class="logo-content"> Logo Content </div>
+                                        </a>
 									</div>
                                     <h4 class="text-center mb-4 text-white"> Login into your account  </h4>
-                                    <form action="/api/post/user/login" method="post">
+                                    <form action="<% if (context !== undefined) { %><%- context.login_url %><% } %>" method="post">
                                         <div class="form-group form-cell">
                                             <label class="mb-1 text-white"><strong>Email / User ID</strong></label>
                                             <input type="text" class="form-control" placeholder="hello@example.com / comxxxxx" name="username">

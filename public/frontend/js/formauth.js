@@ -107,7 +107,6 @@ const notify_user = (msg) => {
 
     if (business_wrapper !== null) {
         const businesses = JSON.parse(business_wrapper.getAttribute("data-com"));
-        console.log(businesses);
         
         const input = document.querySelector("#input-company");
         input.onkeyup = (e) => {
