@@ -12,7 +12,7 @@ const MONGO_AUTH_MENCHANISM = process.env.MONGO_AUTH_MENCHANISM;
 // ....
 // INITIATING DB 
 const DBconfig = {
-    connectionString: `mongodb://localhost:${MONGO_PORT}/${DATABASE}`,
+    connectionString: `mongodb://localhost:${MONGO_PORT}/${DATABASE}?directConnection=true`,
     db: `${DATABASE}`,
     collection: "session"
 };

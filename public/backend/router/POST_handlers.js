@@ -16,16 +16,16 @@ const { is_user_active, getting_auth_user_data } = require("../controller/valida
 const registration_handler = async (req, res, next) => {
 
     const email = req.body.username.trim();
-    const businessName = req.body.businessName.trim().toLowerCase();
-    const natureOfBusiness = req.body.natureOfBusiness.trim();
-    const businessType = req.body.businessType.trim();
-    const location = req.body.location.trim();
-    const address = req.body.address.trim();
+    const businessName = req.body.businessName.trim().toLowerCase().toLowerCase();
+    const natureOfBusiness = req.body.natureOfBusiness.trim().toLowerCase();
+    const businessType = req.body.businessType.trim().toLowerCase();
+    const location = req.body.location.trim().toLowerCase();
+    const address = req.body.address.trim().toLowerCase();
     const contact = req.body.contact.trim();
-    const count = req.body.country.trim();
-    const region_state = req.body.region_state.trim();
-    const town = req.body.town.trim();
-    const ceo = req.body.ceo.trim();
+    const count = req.body.country.trim().toLowerCase();
+    const region_state = req.body.region_state.trim().toLowerCase();
+    const town = req.body.town.trim().toLowerCase();
+    const ceo = req.body.ceo.trim().toLowerCase();
     const confirm_pass = req.body.password.trim();
 
     try { 
@@ -107,9 +107,9 @@ const signup_handler = async (req, res, next) => {
         const otp_code = await randomSerialCode(5);
         const biodata = await RegistrationModel.find({ businessName: user.company }); // getting company biodata from db            
         const payload = {
-            first_name: data.first_name.trim(),
-            last_name: data.last_name.trim(),
-            middle_name: data.middle_name.trim(),
+            first_name: data.first_name.trim().toLowerCase(),
+            last_name: data.last_name.trim().toLowerCase(),
+            middle_name: data.middle_name.trim().toLowerCase(),
             email: data.username.trim(),
             tel: data.tel.trim(),
             date_of_birth: data.date_of_birth,
@@ -439,11 +439,12 @@ const forgot_password_initiate_handler = async (req, res, next) => {
         }
 
         if (user_email !== "") {
+            console.log(config.company_name);
             const nodemail_resp = await sending_email_with_html_template(
                 config.company_name,
                 "Forgot Password",
                 user_email,
-                `Dear Admin, to change your current password, ${config.company_name} want to you to verify if its really you and not a robot by clicking the confirmation button`
+                `Dear Admin, to change your current password, ${config.company_name} want you to verify if its really you and not a robot by clicking the confirmation button`,
                 `<a style="padding: 15px 15px; background-color: black; background: black; color: white;" href="${config.view_urls.forgot_password_confirm}" id=""> Proceed to Change Password </a>`
             );
             console.log("** is email sent to user :", nodemail_resp);

@@ -16,7 +16,7 @@ const config = {
         otp: `${POST_base_url}/otp/verification`,
         reset_password: `${POST_base_url}/password/reset`,
         forgot_password_initiate: `${POST_base_url}/password/forgot/initiate`,
-        forgot_password_confirm: `${POST_base_url}/password/forgot/confirm`,
+        forgot_password_confirm: `${POST_base_url}/password/forgot/confirmation`,
     },
 
     view_urls: {
