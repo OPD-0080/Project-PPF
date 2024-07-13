@@ -1,0 +1,46 @@
+@import "./variables.scss";
+@import "./reset.scss";
+
+
+.otp-wrapper {
+    position: relative;
+    overflow: hidden;
+
+    .form-alert-wrapper {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        background: grey;
+        @include flex(row, center, center);
+        padding: 10px 10px;
+        @include transformY(-1000px);
+        @include trans-05s;
+
+        .i {
+            width: 20px;
+            height: 20px;
+            @include background-initializer;
+            background-size: cover;
+            background-image: url("../img/svg/information-white.svg");
+            margin-right: $margin-xvs;
+        }
+
+        div { font-size: smaller; }
+        &.sucess { 
+            background: black;
+        }
+        &.fail { 
+            background: $deep-red;
+        }
+        &.transit { 
+            @include transformY(0px);
+            @include trans-05s;
+        }
+    }
+    .otp-form-button {
+        display: none;
+
+        &.activate { display: block; }
+    }
+}

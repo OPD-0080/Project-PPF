@@ -13,7 +13,7 @@ const config = {
         register: `${POST_base_url}/register`,
         user_register: `${POST_base_url}/user-register`,
         login: `${POST_base_url}/login`,
-        otp: `${POST_base_url}/otp/verification`,
+        otp: `${POST_base_url}/otpverification`,
         reset_password: `${POST_base_url}/password/reset`,
         forgot_password_initiate: `${POST_base_url}/password/forgot/initiate`,
         forgot_password_confirm: `${POST_base_url}/password/forgot/confirmation`,
