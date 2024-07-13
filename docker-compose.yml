@@ -1,0 +1,31 @@
+version: '3.4'
+
+services:
+
+  mongo_db: 
+    container_name: db_container
+    image: mongo:latest
+    restart: always
+    ports: 2717:27017
+    volume: .:/data/db
+
+
+  app:
+    container_name: ppf_container
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+    environment:
+      - MONGODB_URL=mongodb://mongo_db:$(DB_PORT)
+      - DATABASE_NAME=$(DATABASE)
+
+    env_file: .env
+    ports:
+      - $(DEV_PORT):$(DB_PORT)
+    depends_on:
+      - mongo_db
+
+
+volumes: 
+  mongo_db: {}
