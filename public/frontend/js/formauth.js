@@ -339,6 +339,7 @@ const deactivate_gif_loader = (div_element) => { div_element.classList.remove("s
                     setTimeout(() => {  
                         notify_user("Purchase submisson sucess"); 
                         deactivate_gif_loader(gif_loader); 
+                        form_controls.forEach(el => { el.value = "" });
                     }, 3000) 
                 }
                 else if ((typeof responses === "Number") && (responses === 400)) { notify_user("Error. Purchase submission failed. Try Again"); }
