@@ -31,7 +31,8 @@ app.use(bodyParser.urlencoded({extended: true, limit: "3mb"})) // to post reques
 app.use(express.static(path.join(__dirname, "/public")))
 // ...
 // CONNECTING DATABASE 
-connect_mongodb();
+const connectMongoDB = async () => { await connect_mongodb(); }
+connectMongoDB();
 // ...
 // INITIATING SESSION 
 app.use(session({

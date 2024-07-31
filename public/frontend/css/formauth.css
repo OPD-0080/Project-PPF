@@ -9,8 +9,6 @@ body {
   overflow-x: hidden;
   overflow-y: scroll;
   width: 100%;
-  background: #2e2e2e;
-  color: white;
 }
 
 ul, ol, li {
@@ -38,6 +36,7 @@ a {
   -o-transition: 0.5s ease;
   opacity: 0;
   visibility: hidden;
+  z-index: 10010;
 }
 .notification-wrapper.show {
   opacity: 1;
@@ -57,16 +56,29 @@ a {
   -ms-transition: 0.5s ease;
   -o-transition: 0.5s ease;
 }
-.notification-wrapper .i {
+.notification-wrapper .notification-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background: #9a0a0a;
+}
+.notification-wrapper .notification-container.sucess {
+  background: green;
+}
+.notification-wrapper .notification-container.proceed {
+  background: #6e6e6e;
+}
+.notification-wrapper .notification-container .i {
   width: 40px;
   height: 40px;
-  background: #9a0a0a;
+  background: transparent;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
 }
-.notification-wrapper .i div {
+.notification-wrapper .notification-container .i div {
   width: 30px;
   height: 30px;
   background: url("../img/svg/information-white.svg");
@@ -74,12 +86,13 @@ a {
   background-position: center;
   background-size: cover;
 }
-.notification-wrapper .notification-text {
+.notification-wrapper .notification-container .notification-text {
   position: relative;
   padding: 10px 15px;
-  background: #9a0a0a;
+  background: transparent;
   font-size: smaller;
   text-align: center;
+  color: white;
 }
 
 .auth-form form .form-cell {
@@ -148,6 +161,7 @@ a {
   justify-content: center;
   align-items: center;
   margin-right: 20px;
+  color: white;
 }
 .auth-form form .form-cell .preview-company-wrapper li .i {
   width: 30px;
@@ -177,4 +191,35 @@ a {
   color: white;
   font-weight: bolder;
   font-size: 20px;
+}
+
+.purchases-form-wrapper .purchases-form-container .cells .row .col-form-label .text-danger {
+  visibility: visible;
+  opacity: 1;
+}
+.purchases-form-wrapper .purchases-form-container .cells .row .col-form-label .text-danger.hide {
+  visibility: hidden;
+  opacity: 0;
+}
+.purchases-form-wrapper .purchases-form-container .cells .purchases-button-wrapper .ms-auto {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.loading-gif {
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  background-image: url("../img/gif/Dual_Bal_red_black.gif");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  visibility: hidden;
+  opacity: 0;
+}
+.loading-gif.show {
+  visibility: visible;
+  opacity: 1;
 }

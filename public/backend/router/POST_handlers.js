@@ -5,14 +5,14 @@ const validator = require("validator");
 // ....
 // IMPORTATION OF FILES 
 const config = require("../config/config");
-const { UserModel, RegistrationModel, DateTimeTracker } = require("../../database/schematics");
+const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel } = require("../../database/schematics");
 const { encrypt_access_code } = require("../controller/encryption");
-const { randomSerialCode } = require("../utils/code_generator");
+const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
 const { is_user_active, getting_auth_user_data } = require("../controller/validation");
 
 //
-
+// AUTHENTICATION
 const registration_handler = async (req, res, next) => {
 
     const email = req.body.username.trim();
@@ -42,7 +42,7 @@ const registration_handler = async (req, res, next) => {
             // encrypt password
                 const hashed_pass = await encrypt_access_code(confirm_pass);
             // ... 
-            otp = await randomSerialCode(5);
+            const otp = await randomSerialCode(5);
             const newUser = new RegistrationModel({
                 email: email,
                 businessName: businessName,
@@ -56,9 +56,21 @@ const registration_handler = async (req, res, next) => {
                 town:town,
                 ceo: ceo,
                 password: hashed_pass,
-                otp: otp
+                otp: otp,
             });
             await newUser.save();
+            
+            const biodata = await RegistrationModel.findOne({ "email": email });
+            console.log("... getting registration data ...", biodata);
+            const auth_payload = {
+                email: biodata.email,
+                company: biodata.businessName,
+                userID: biodata.ceo, // important !. the userID become the CEO name for user with superuser role.
+                role: biodata.role,
+                companyRefID: biodata.uuid, 
+                authorization: await authorization_code(),
+            };
+            await AuthorizationModel.insertMany(auth_payload);
 
             // sending email notification to company email 
                 const nodemail_resp = await sending_email(
@@ -552,13 +564,62 @@ const resend_OTP_code_handler = async (req, res, next) => {
         res.redirect(303, `${config.view_urls._500}`);
     }
 
-}
+};
+// END 
+// PURCHASES
+const purchases_handler = async (req, res, next) => {
+    let context = {};
+    try {
+        console.log("** Collecting data for purchases entry submission **");
+        
+        const payload = req.body;
 
+        payload.companyRefID = req.session.passport.user.companyRefID;
+        payload.initiator = req.session.passport.user.userID;
+        payload.company = req.session.passport.user.company;
 
+        console.log("... payload collected completed ...", payload);
+        console.log("... inserting payload into database ...");
+
+        const query_resp = await PurchaseModel.insertMany(payload);
+        
+        console.log("... query responds ...", query_resp);
+        console.log("... insertion of payload completed ...");
+        console.log("... wrapping context before redirecting ...");
+
+        const msg = "Purchase submission completed";
+        context.msg = msg;
+        context.response = query_resp
+
+        console.log("... wrapping context completed ...");
+        console.log("... redireting reponses ....");
+
+        res.json(context);
+        
+    } catch (error) {
+        console.log("** Error:: Purchases Handler **", error);
+
+        if (error.code == "11000") { //  for duplicate of business name 
+            console.log("... wrapping context before redirecting ...");
+
+            const error_msg = "Error. Data is duplicated . Try Again !";
+            context.msg = error_msg;
+
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+
+            res.json(context);
+        }
+
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+};
+
+// END
 
 
 
 module.exports = { signup_handler, OTP_verification_handler, registration_handler,
     is_OTP_verified, is_password_secured,  password_reset_handler, forgot_password_initiate_handler, 
-    forgot_password_confirmation_handler, resend_OTP_code_handler
+    forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_handler
 }

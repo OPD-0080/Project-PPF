@@ -17,6 +17,7 @@ const config = {
         reset_password: `${POST_base_url}/password/reset`,
         forgot_password_initiate: `${POST_base_url}/password/forgot/initiate`,
         forgot_password_confirm: `${POST_base_url}/password/forgot/confirmation`,
+        purchases_entry: `${POST_base_url}/purchases/entry`,
     },
 
     view_urls: {
@@ -31,7 +32,9 @@ const config = {
         forgot_password_confirm: `${GET_base_url}/forgotpasswordconfirm`,
         _404: `${GET_base_url}/404`,
         _500: `${GET_base_url}/500`,
-
+        purchase: `${GET_base_url}/purchases`,
+        preview: `${GET_base_url}/purchasepreview`,
+        purchase_responds: `${GET_base_url}/purchasesresponds`,
     },
 
 

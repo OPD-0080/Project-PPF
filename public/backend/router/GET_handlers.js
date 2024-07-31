@@ -1,10 +1,11 @@
 // IMPORTATION OF MODULES 
 const store = require("store2");
+const moment = require("moment");
 // ...
 
 // IMPORTATION OF FILES
 const config = require("../config/config");
-const { UserModel, LoginModel, RegistrationModel, DateTimeTracker } = require("../../database/schematics");
+const { UserModel, LoginModel, RegistrationModel, DateTimeTracker, AuthorizationModel } = require("../../database/schematics");
 const { randomPassword } = require("../utils/code_generator");
 // ...
 
@@ -26,7 +27,8 @@ const view_registration = async (req, res, next) => {
         res.render("register", { context });
 
     } catch (error) {
-        console.log("** Error:: Login view **", error);
+        console.log("** Error:: Registration view **", error);
+        res.redirect("500");
     }
 };
 const view_signup = async (req, res, next) => {
@@ -54,7 +56,8 @@ const view_signup = async (req, res, next) => {
         res.render("user-register", { context })
 
     } catch (error) {
-        console.log("** Error:: Login view **", error);
+        console.log("** Error:: Signup view **", error);
+        res.redirect("500");
     }
 };
 const view_login = async (req, res, next) => {
@@ -89,6 +92,7 @@ const view_login = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: Login view **", error);
+        res.redirect("500");
     }
 };
 const view_OTP = async (req, res, next) => {
@@ -111,6 +115,7 @@ const view_OTP = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: OTP verification view **", error);
+        res.redirect("500");
     }
 };
 const view_reset_password = async (req, res, next) => {
@@ -133,6 +138,7 @@ const view_reset_password = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: Resetting password view **", error);
+        res.redirect("500");
     }
 };
 const view_forgot_password_initiate = async (req, res, next) => {
@@ -155,6 +161,7 @@ const view_forgot_password_initiate = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: forgot password initiate view **", error);
+        res.redirect("500");
     }
 };
 const view_forgot_password_confirm = async (req, res, next) => {
@@ -177,6 +184,7 @@ const view_forgot_password_confirm = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: forgot password confirm view **", error);
+        res.redirect("500");
     }
 };
 const view_dashboard = async (req, res, next) => {
@@ -185,43 +193,154 @@ const view_dashboard = async (req, res, next) => {
         console.log("** inside Dashboard view");
 
 
+
+
+
+
+        console.log("... wrapping context before rendering ...");
+
+        const flash_msg = req.flash("dashboard");
+        context.message = flash_msg;
+        context.config = config;
+
+        console.log("... context completed ...");
+        console.log("... rendering ...");
+
         res.render("dashboard", { context });
+
     } catch (error) {
         console.log("** Error:: View Dashboard **", error);
+        res.redirect("500");
     }
 };
 const view_logout = async (req, res, next) => {
     try {
         console.log("** Inside Logout view **");
-        req.session.destroy();  // destroy user session data in passport
-        store.session.set("login", "User Logout sucessfully. Please Login !"); // using store module and cannot use flash module for alert messaging because req.session is destroyed
+        console.log("... clearing out credentials from, database ...");
 
-        res.redirect(303, config.view_urls.login);  // redirect to login get page
+        if (req.session.hasOwnProperty("passport")) {
+            await LoginModel.deleteOne( {"email": req.session.passport.user.email});
+            await DateTimeTracker.updateOne( {"email": req.session.passport.user.email}, 
+                {"logout_date": `${moment().format("YYYY-MM-DD")}`, "logout_time": `${moment().format("hh:mm")}`}); 
+            await AuthorizationModel.updateOne( {"email": req.session.passport.user.email}, { "authorization_status": false, "authorization_visible": false } )
+
+            req.session.destroy();  // destroy user session data in passport
+            store.session.set("login", "User Logout sucessfully. Please Login !"); // using store module and cannot use flash module for alert messaging because req.session is destroyed
+
+            res.redirect(303, config.view_urls.login);  // redirect to login get page
+        }else {
+            console.log("... clearing out credentails from database completed ...");
+            console.log("... clearing cookies from the browser ...");
+                
+            req.session.destroy();  // destroy user session data in passport
+            store.session.set("login", "User Logout sucessfully. Please Login !"); // using store module and cannot use flash module for alert messaging because req.session is destroyed
+
+            console.log("... clearing cookies completed ...");
+            console.log("... redireting ...");
+
+            res.redirect(303, config.view_urls.login);  // redirect to login get page
+        }
 
     } catch (error) {
-        console.log("** Error:: Login view **", error);
+        console.log("** Error:: Logout view **", error);
+        res.redirect("500");
     }
 };
 const view_404 = async (req, res, next) => {
     try {
         console.log("** Inside 404 view **");
 
-        res.render("/");  // redirect to login get page
+        res.render("404");  // redirect to login get page
 
     } catch (error) {
-        console.log("** Error:: Login view **", error);
+        console.log("** Error:: 404 view **", error);
+        res.redirect("500");
     }
 };
 const view_500 = async (req, res, next) => {
     try {
         console.log("** Inside 500 view **");
     
-        res.redirect(303, "/api/get/user/500");  // redirect to login get page
+        res.render("500");  // redirect to login get page
 
     } catch (error) {
-        console.log("** Error:: Login view **", error);
+        console.log("** Error:: 500 view **", error);
+        res.redirect("500");
     }
 };
+const view_purchase = async (req, res, next) => {
+    try {
+        let context = {}, user_alert = "";
+        console.log("** inside purchase view");
+
+
+
+
+
+
+        console.log("... wrapping context before rendering ...");
+
+        const flash_msg = req.flash("purchase");
+        context.message = flash_msg;
+        context.config = config;
+
+        console.log("... context completed ...");
+        console.log("... rendering ...");
+        
+        res.render("purchase", { context });
+
+    } catch (error) {
+        console.log("** Error:: View Purchase **", error);
+        res.redirect("500");
+    }
+};
+const view_purchase_preview = async (req, res, next) => {
+    try {
+        let context = {}, user_alert = "";
+        console.log("** inside preview view");
+
+
+
+
+
+
+        console.log("... wrapping context before rendering ...");
+
+        const flash_msg = req.flash("preview");
+        context.message = flash_msg;
+        context.config = config;
+
+        console.log("... context completed ...");
+        console.log("... rendering ...");
+        
+        res.render("preview", { context });
+
+    } catch (error) {
+        console.log("** Error:: View preview **", error);
+        res.redirect("500");
+    }
+};
+const view_purchase_responds = async (req, res, next) => {
+    try {
+        let context = {}, user_alert = "";
+        console.log("** inside purchases_responds view");
+        console.log("... wrapping context before rendering ...");
+
+        const flash_msg = req.flash("purchases_responds");
+        context.message = flash_msg;
+        context.config = config;
+
+        console.log("... context completed ...", context);
+        console.log("... rendering ...");
+
+        res.json(context);
+
+    } catch (error) {
+        console.log("** Error:: View purchases responds **", error);
+        res.redirect("500");
+    }
+};
+
 
 
 
@@ -231,4 +350,5 @@ const view_500 = async (req, res, next) => {
 
 
 module.exports = { view_login, view_signup, view_logout, view_registration, view_404, view_500, view_dashboard,
-        view_OTP, view_reset_password, view_forgot_password_initiate, view_forgot_password_confirm }
+        view_OTP, view_reset_password, view_forgot_password_initiate, view_forgot_password_confirm, view_purchase,
+        view_purchase_preview, view_purchase_responds }

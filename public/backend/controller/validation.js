@@ -117,6 +117,10 @@ const signupValidation = async (req, res, next) => {
             msg = "Error. Provide Your Active Contact Number";
             status = true;
 
+        }else if (data.tel.length >= 11) {
+            msg = "Error. Contact Number must be max 10 digits";
+            status = true;
+            
         }else if (validator.isEmpty(data.date_of_birth)) {
             msg = "Error. Provide Your Date of Birth";
             status = true;

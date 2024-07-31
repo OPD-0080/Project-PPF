@@ -11,6 +11,7 @@
     @include trans-05s;
     opacity: 0;
     visibility: hidden;
+    z-index: 10010;
 
     &.show {
         opacity: 1;
@@ -23,27 +24,36 @@
         @include trans-05s;
     }
 
-    .i {
-        width: 40px;
-        height: 40px;
-        background:  #9a0a0a;
+    .notification-container {
         @include flex(row, center, center);
-        
-        div {
-            width: 30px;
-            height: 30px;
-            background: url("../img/svg/information-white.svg");
-            @include background-initializer;
-            background-size: cover;
+        background:  #9a0a0a;
+
+        &.sucess { background: green; }
+        &.proceed { background: #6e6e6e; }
+    
+        .i {
+            width: 40px;
+            height: 40px;
+            background: transparent;
+            @include flex(row, center, center);
             
+            div {
+                width: 30px;
+                height: 30px;
+                background: url("../img/svg/information-white.svg");
+                @include background-initializer;
+                background-size: cover;
+                
+            }
         }
-    }
-    .notification-text {
-        position: relative;
-        padding: 10px 15px;
-        background: #9a0a0a;
-        font-size: smaller;
-        text-align: center;
+        .notification-text {
+            position: relative;
+            padding: 10px 15px;
+            background: transparent;
+            font-size: smaller;
+            text-align: center;
+            color: white;
+        }
     }
 }
 .auth-form {
@@ -92,8 +102,6 @@
                 display: none;
                 justify-content: flex-start;
                 align-items: flex-start;
-                //flex-wrap: wrap;
-                //visibility: hidden;
                 
                 &.show {
                     display: flex;
@@ -103,6 +111,7 @@
                     font-size: smaller;
                     @include flex(row, center, center);
                     margin-right: $margin-s;
+                    color: white;
 
                     .i {
                         width: 30px;
@@ -136,4 +145,42 @@
             }
         }
     }
+}
+
+// FOR PURCHASES SECTION
+.purchases-form-wrapper {
+    .purchases-form-container {
+        .cells {
+            .row {  
+                .col-form-label {
+                    .text-danger {
+                        visibility: visible;
+                        opacity: 1;
+                        
+                        &.hide {
+                            visibility: hidden;
+                            opacity: 0;
+                        }
+                    }
+                }
+            }
+            .purchases-button-wrapper {
+                .ms-auto {
+                    @include flex(row, flex-start, center);
+                }
+            }
+        }
+    }
+}
+.loading-gif {
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    background-image: url("../img/gif/Dual_Bal_red_black.gif");
+    @include background-initializer;
+    background-size: cover;
+    visibility: hidden;
+    opacity: 0;
+
+    &.show { visibility: visible; opacity: 1; } 
 }

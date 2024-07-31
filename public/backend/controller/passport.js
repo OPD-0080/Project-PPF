@@ -2,15 +2,15 @@
 require("dotenv").config();
 const LocalStrategy = require('passport-local');
 const passport = require("passport");
-const crypto = require("crypto");
 const moment = require("moment");
 const validator = require("validator");
 const store = require("store2");
 // ....
 // IMPORTATION OF FILES 
-const { LoginModel, DateTimeTracker, UserModel, RegistrationModel } = require("../../database/schematics");
-const { encrypt_access_code, verify_access_code } = require("../controller/encryption");
+const { LoginModel, DateTimeTracker, UserModel, RegistrationModel, AuthorizationModel } = require("../../database/schematics");
+const { encrypt_access_code } = require("../controller/encryption");
 const  config  = require("../config/config");
+const { authorization_code } = require("../utils/code_generator");
 // ...
 
 // PASSPORT VERIFYING LOGIN CREDDENTIALS LOCALLY 
@@ -38,7 +38,8 @@ const verify = async(username, password, cb) => {
             email: biodata[0].email,
             company: biodata[0].businessName,
             userID: biodata[0].ceo, // important !. the userID become the CEO name for user with superuser role.
-            role: biodata[0].role
+            role: biodata[0].role,
+            companyRefID: biodata[0].uuid, 
         };
         console.log("getting user payload ...", payload);
         console.log("... validating user credentials before redirecting ...");
@@ -46,7 +47,12 @@ const verify = async(username, password, cb) => {
 
         if (await update_login_credentials(payload, biodata, username)) { 
             // confirm encryted password before login user
-                if (biodata[0].password === hashed_pass) { return cb(null, payload) }
+                if (biodata[0].password === hashed_pass) { 
+                    const codes = await authorization_code();
+                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization": codes, "authorization_status": true })
+        
+                    return cb(null, payload) 
+                }
                 else {
                     store.session.set("login", "Error. Password Invalid. Provide Valid Credentails !") 
                     return cb(null, false) 
@@ -69,7 +75,8 @@ const verify = async(username, password, cb) => {
             email: user[0].email,
             company: user[0].company,
             userID: user[0].userID,
-            role: user[0].role
+            role: user[0].role,
+            companyRefID: user[0].companyRefID, 
         };
 
         console.log("... validating user credentials before redirecting ...");
@@ -77,7 +84,12 @@ const verify = async(username, password, cb) => {
         if (await update_login_credentials(payload, user, username)) {
             if (user[0].password.match(config.default_pass_regexp)) {
 
-                if (user[0].password === password) { return cb(null, payload) }
+                if (user[0].password === password) { 
+                    const codes = await authorization_code();
+                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization": codes, "authorization_status": true })
+
+                    return cb(null, payload) 
+                }
                 else {
                     store.session.set("login", " Error. Password Invalid. Provide Valid Credentails !") 
                     return cb(null, false) 
@@ -186,7 +198,9 @@ const update_login_credentials = async (payload, user, username) => {
             }else {
                 await DateTimeTracker.updateOne({ 
                     "login_date": `${moment().format("YYYY-MM-DD")}`,
-                    "login_time": `${moment().format("hh:mm")}`
+                    "login_time": `${moment().format("hh:mm")}`,
+                    "logout_date": null,
+                    "logout_time": null,
                 });
                 return true;
             }
@@ -209,7 +223,6 @@ const update_login_credentials = async (payload, user, username) => {
         }
     }
 };
-// ...
 
 
 module.exports = {
