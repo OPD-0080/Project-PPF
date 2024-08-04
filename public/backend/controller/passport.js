@@ -47,9 +47,8 @@ const verify = async(username, password, cb) => {
 
         if (await update_login_credentials(payload, biodata, username)) { 
             // confirm encryted password before login user
-                if (biodata[0].password === hashed_pass) { 
-                    const codes = await authorization_code();
-                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization": codes, "authorization_status": true })
+                if (biodata[0].password === hashed_pass) {
+                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization_status": false, "authorization_visible": false });
         
                     return cb(null, payload) 
                 }
@@ -85,8 +84,7 @@ const verify = async(username, password, cb) => {
             if (user[0].password.match(config.default_pass_regexp)) {
 
                 if (user[0].password === password) { 
-                    const codes = await authorization_code();
-                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization": codes, "authorization_status": true })
+                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization_status": false, "authorization_visible": false });
 
                     return cb(null, payload) 
                 }

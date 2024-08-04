@@ -221,7 +221,7 @@ const loginValidation = async (req, res, next) => {
             // ...
             // checking if user is a superuser or not and has already signup or not 
                 if (user.length == 0) { // if user has not signup and trying to login 
-                    req.flash("signup", "Error. User not Found. For Signup, Contact Admin !"); // send user an alert message
+                    req.flash("login", "Error. User not Found. For Signup, Contact Admin !"); // send user an alert message
                     res.redirect(303, `${config.view_urls.login}`) // redirect user to the signup page
 
                 }else if ( (user.length > 0) && (login_resp.length <= 0) ) { // if user has signup and trying to login 

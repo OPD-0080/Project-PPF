@@ -223,3 +223,24 @@ a {
   visibility: visible;
   opacity: 1;
 }
+
+.tb-wrapper .tb-body-wrapper .each-list-cell {
+  background: transparent;
+}
+.tb-wrapper .tb-body-wrapper .each-list-cell.selected {
+  background: #ffd3d3;
+}
+.tb-wrapper .tb-body-wrapper .each-list-cell td {
+  text-align: center;
+}
+.tb-wrapper .tb-body-wrapper .each-list-cell .purchases-buttons-wrapper {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: green;
+}
+.tb-wrapper .tb-body-wrapper .each-list-cell .purchases-buttons-wrapper .purchase-buttons {
+  width: 20px;
+  height: 20px;
+}

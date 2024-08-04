@@ -184,3 +184,27 @@
 
     &.show { visibility: visible; opacity: 1; } 
 }
+//  FOR PURCHASES PREIVEW
+.tb-wrapper {
+    .tb-body-wrapper {
+        .each-list-cell {
+            background: transparent;
+            &.selected { background: #ffd3d3 }
+
+            td { text-align: center }
+            .purchases-buttons-wrapper {
+                @include flex(column, center, center);
+                background: green;
+
+                .purchase-buttons {
+                    width: 20px;
+                    height: 20px;
+                    // background: grey;
+                }
+            }
+        }
+    }
+
+}
+
+// END

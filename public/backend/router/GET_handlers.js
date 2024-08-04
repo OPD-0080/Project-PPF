@@ -5,7 +5,7 @@ const moment = require("moment");
 
 // IMPORTATION OF FILES
 const config = require("../config/config");
-const { UserModel, LoginModel, RegistrationModel, DateTimeTracker, AuthorizationModel } = require("../../database/schematics");
+const { UserModel, LoginModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel } = require("../../database/schematics");
 const { randomPassword } = require("../utils/code_generator");
 // ...
 
@@ -297,26 +297,26 @@ const view_purchase = async (req, res, next) => {
 const view_purchase_preview = async (req, res, next) => {
     try {
         let context = {}, user_alert = "";
-        console.log("** inside preview view");
+        console.log("** inside pruchases preview view");
+        console.log("... loading all data from the database ...");
 
-
-
-
-
-
+        const purchases = await PurchaseModel.find();
+        
+        console.log("... loading data from database completed ...", purchases);
         console.log("... wrapping context before rendering ...");
 
         const flash_msg = req.flash("preview");
         context.message = flash_msg;
         context.config = config;
+        context.purchases = purchases;
 
         console.log("... context completed ...");
         console.log("... rendering ...");
         
-        res.render("preview", { context });
+        res.render("purchase_preview", { context });
 
     } catch (error) {
-        console.log("** Error:: View preview **", error);
+        console.log("** Error:: View pruchases preview **", error);
         res.redirect("500");
     }
 };
