@@ -21,6 +21,7 @@ const registration_schema = new mongoose.Schema({
     ceo: { type: String, required: true },
     password: { type: String, required: true, unique: true },
     role: { type: String, required: true, unique: false, default: "Admin" },
+    previliges: { type: String, required: false, unique: false, default: "super"},
     otp: {type: String, required: false, unique: false, default: null},
     is_active: {type: String, required: false, unique: false, default: true}
 });
@@ -38,6 +39,7 @@ const user_schema = new mongoose.Schema({
     department: {type: String, required: false, unique: false},
     userID: {type: String, required: true, unique: true},
     role: { type: String, required: false, unique: false, default: "staff"},
+    previliges: { type: String, required: false, unique: false, default: null},
     photo: {type: String, required: false, unique: false, default: null},
     ID_card_type: {type: String, required: false, unique: false, default: null},
     ID_card_number: {type: String, required: false, unique: false, default: null},

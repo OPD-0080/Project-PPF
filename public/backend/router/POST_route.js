@@ -51,7 +51,6 @@ router.post("/password/forgot/resend", isUSerAuthenticated, resend_OTP_code_hand
 // PURCHASES 
 router.post("/purchases/entry", isUSerAuthenticated, purchases_handler );
 
-
 // END
 
 

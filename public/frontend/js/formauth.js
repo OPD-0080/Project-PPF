@@ -44,12 +44,14 @@ const sending_data_to_server = async (url, payload) => {
         return false;
     }
 };
-const load_data_from_server = async (url, payload) => {
+const load_data_from_server = async (url) => {
     try {
         const response = await fetch(url, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
         });
+
+        console.log(response);
 
         if (response.status === 200 && response.statusText === "OK") { return await response.json(); }
         else { return 400 }

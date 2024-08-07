@@ -297,26 +297,26 @@ const view_purchase = async (req, res, next) => {
 const view_purchase_preview = async (req, res, next) => {
     try {
         let context = {}, user_alert = "";
-        console.log("** inside pruchases preview view");
+        console.log("** inside purchases preview view");
         console.log("... loading all data from the database ...");
-
-        const purchases = await PurchaseModel.find();
         
-        console.log("... loading data from database completed ...", purchases);
+        console.log("... loading data from database completed ...");
         console.log("... wrapping context before rendering ...");
 
         const flash_msg = req.flash("preview");
         context.message = flash_msg;
         context.config = config;
-        context.purchases = purchases;
+        context.user = req.session.passport.user;
+        // context.purchases = purchases;
 
         console.log("... context completed ...");
         console.log("... rendering ...");
         
+        
         res.render("purchase_preview", { context });
 
     } catch (error) {
-        console.log("** Error:: View pruchases preview **", error);
+        console.log("** Error:: View purchases preview **", error);
         res.redirect("500");
     }
 };
@@ -326,9 +326,14 @@ const view_purchase_responds = async (req, res, next) => {
         console.log("** inside purchases_responds view");
         console.log("... wrapping context before rendering ...");
 
+        const purchases = await PurchaseModel.find();
+        
+        console.log("... query responds ...", purchases);
+        console.log("... Loading purchases completed ...");
+
         const flash_msg = req.flash("purchases_responds");
         context.message = flash_msg;
-        context.config = config;
+        context.purchases = purchases;
 
         console.log("... context completed ...", context);
         console.log("... rendering ...");
@@ -340,9 +345,6 @@ const view_purchase_responds = async (req, res, next) => {
         res.redirect("500");
     }
 };
-
-
-
 
 
 

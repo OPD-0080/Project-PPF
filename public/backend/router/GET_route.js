@@ -27,6 +27,6 @@ router.get("/dashboard", isUSerAuthenticated, view_dashboard);
 router.get("/purchases", isUSerAuthenticated, view_purchase);
 router.get("/purchasepreview", isUSerAuthenticated, view_purchase_preview);
 
-// router.get("/purchasesresponds", isUSerAuthenticated, view_purchase_responds);
+router.get("/purchasesresponds", isUSerAuthenticated, view_purchase_responds);
 // ...
 module.exports = router
