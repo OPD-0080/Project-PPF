@@ -4,23 +4,25 @@ import { randomNumbers, randomLetters } from "../utils/generate-code.js";
 import { load_data_from_server, sending_data_to_server, notify_user, validating_input_before_submission, 
     activate_gif_loader, deactivate_gif_loader } from "./formauth.js"; 
 
+// GLOBAL FUNCTION
+    const activate_input_indicator = (e) => {
+        e.target.parentElement.previousElementSibling.querySelector(".text-danger").classList.remove("hide");
+        return
+    };
+    const deactivate_input_indicator = (e) => {
+        e.target.parentElement.previousElementSibling.querySelector(".text-danger").classList.add("hide");
+        return
+    };
+    const isValueANumbers = async (value) => {
+        if (isNaN(value)) { return false }
+        else { return true }
+    };
+// END
+
 // PURCHASES ENTRY PAGE SECTION
 (async () => {
     const purchases_wrapper = document.querySelector(".purhases-wrapper");
     if (purchases_wrapper !== null) {
-        const activate_input_indicator = (e) => {
-            e.target.parentElement.previousElementSibling.querySelector(".text-danger").classList.remove("hide");
-            return
-        };
-        const deactivate_input_indicator = (e) => {
-            e.target.parentElement.previousElementSibling.querySelector(".text-danger").classList.add("hide");
-            return
-        };
-        const isValueANumbers = async (value) => {
-            if (isNaN(value)) { return false }
-            else { return true }
-        };
-
 
         const form_controls = purchases_wrapper.querySelectorAll(".form-control");
         const form_button = purchases_wrapper.querySelector(".purchases-button");
@@ -193,8 +195,9 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         const auth_page_wrapper = document.querySelector(".auth-page-wrapper");
         const auth_page_container = auth_page_wrapper.querySelector(".auth-page-container");
         const auth_page_button = auth_page_wrapper.querySelector(".auth-page-button");
-        const auth_close_button = auth_page_wrapper.querySelector(".auth-close-button")
         const gif_loader = auth_page_wrapper.querySelector(".loading-gif");
+        const form_button = overlay_page_wrapper.querySelector(".purchases-button");
+        
 
 
 
@@ -323,26 +326,9 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 if (input.classList.contains("quantity")) { input.value = payload_as_object.quantity; }
                 if (input.classList.contains("price")) { input.value = payload_as_object.price; }
                 if (input.classList.contains("amount")) { input.value = payload_as_object.amount; }
+                
             }
-
-
         };
-        // const updating_data_at_dumpsite = (payload_as_array) => {
-        //     if (sessionStorage.getItem("dumpsite")) {
-        //         const responds = JSON.parse(sessionStorage.getItem("dumpsite"));
-        //         for (let i = 0; i < responds.length; i++) {
-        //             const uuid = responds[i];
-        //             // cross checking server data with the data at dumpsite
-        //             const index = payload_as_array.findIndex(data => { return data.uuid === uuid }); 
-
-        //             if (index < 0) { // means data is been deleted from the database if result is -1
-        //                 const uuid_location = responds.findIndex(data => { return data === uuid });
-        //                 responds.splice(uuid_location, 1);
-        //                 sessionStorage.setItem("dumpsite", JSON.stringify(responds));
-        //             }
-        //         }
-        //     }
-        // };
 
 
 
@@ -418,6 +404,88 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 }
             });
         // end
+
+        // validating inputs field 
+            let payload = {};
+            form_controls.forEach(input => {
+                input.onkeyup = async (e) => {
+                    if (e.target.classList.contains("supplier")) {
+                        const value = e.target.value;
+                        payload.supplier = value.toLocaleLowerCase(); 
+                        
+                        if (value.length !== 0) { deactivate_input_indicator(e); }
+                        else { activate_input_indicator(e); }
+                    };
+                    if (e.target.classList.contains("invoice-number")) {
+                        const value = e.target.value;
+                        if (await isValueANumbers(value)) {
+                            payload.invoice_number = value;
+                            deactivate_input_indicator(e);
+                        }else {
+                            notify_user("Error. 'Invoice Number' must be only number(s) !")
+                            activate_input_indicator(e);
+                        }
+                    };
+                    if (e.target.classList.contains("particular")) {
+                        const value = e.target.value;
+                        payload.particular = value.toLocaleLowerCase(); 
+                        
+                        if (value.length !== 0) { deactivate_input_indicator(e); }
+                        else { activate_input_indicator(e); }
+                    };
+                    if (e.target.classList.contains("quantity")) {
+                        const value = e.target.value;
+                        if (await isValueANumbers(value)) {
+                            payload.quantity = value;
+                            deactivate_input_indicator(e);
+                        }else {
+                            notify_user("Error. 'Quantity' must be only numbers(s) !")
+                            activate_input_indicator(e);
+                        }
+                    };
+                    if (e.target.classList.contains("price")) {
+                        const value = e.target.value;
+                        if (await isValueANumbers(value)) {
+                            payload.price = value;
+                            deactivate_input_indicator(e);
+
+                            if (payload.hasOwnProperty("quantity")) {
+                                if (payload.quantity == "") {
+                                    notify_user("Error. Provide 'Quantity' input first before 'Price' input."); 
+                                    activate_input_indicator(e);
+                                    purchases_wrapper.querySelector(".price").value = "";
+                                }else {
+                                    payload.amount = (Number(payload.quantity) * Number(payload.price)).toFixed(2);
+                                    purchases_wrapper.querySelector(".amount").value = payload.amount;
+                                }
+                            }
+                            else { 
+                                notify_user("Error. Provide 'Quantity' input first before 'Price' input."); 
+                                activate_input_indicator(e);
+                            }
+                        }else {
+                            notify_user("Error. 'Price' must be only numbers(s) !")
+                            activate_input_indicator(e);
+                        }
+                    };
+                };
+                input.onchange = (e) => {
+                    if (e.target.classList.contains("invoice-date")) {
+                        const date = e.target.value.split("-").reverse();
+                        const value = date.join("-");
+
+                        if (value.match("[0-9]{2}-[0-9]{2}-[0-9]{4}")) {
+                            payload.invoice_date = value;
+                            deactivate_input_indicator(e);
+                        }else {
+                            notify_user("Error. Invalid date format. Format required 'dd-mm-yyyy'.");
+                            activate_input_indicator(e); 
+                        }
+                    }
+                }
+            });
+        // end
+        
         // Trigger the modification button to make modification when overlay shows
             modification_buttons.forEach(button => {
                 button.onclick = async (e) => {
@@ -457,16 +525,19 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     if (gif_loader !== undefined) { deactivate_gif_loader(gif_loader); };
                 };
             });
-            overlay_submit_button.onclick = (e) => {
-                // show auth page overlay buton is triggered
-                    auth_page_wrapper.classList.add("show");
-                    setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
-                // 
+            overlay_submit_button.onclick = async (e) => {
+                if (await validating_input_before_submission(form_controls)) {
+                    // show auth page overlay buton is triggered
+                        auth_page_wrapper.classList.add("show");
+                        setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
+                    // 
+                }
+                else { notify_user("Error. Misssing input. All input are required !");  }
             };
             auth_page_button.onclick = (e) => {
                 activate_gif_loader(gif_loader);
                  // sumitting payload to server
-                    
+
 
 
 
