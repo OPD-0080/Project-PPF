@@ -3,7 +3,7 @@ const validator = require("validator");
 const moment = require("moment");
 
 
-const { UserModel, LoginModel, DateTimeTracker, RegistrationModel } = require("../../database/schematics");
+const { UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel } = require("../../database/schematics");
 const config = require("../config/config");
 
 // ...
@@ -398,8 +398,24 @@ const getting_auth_user_data = async (auth_user) => {
     (auth_user.role == "admin")? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
     return user
 };
+const reset_authorization_code = async (req, res, next) => {
+    try {
+        const user = req.session.passport.user;
+        const query_resp = await AuthorizationModel.findOne( {"email": user.email, "companyRefID": user.companyRefID, "userID": user.userID } )
+        
+        if (query_resp === undefined) { next() }
+        else {
+            await AuthorizationModel.updateOne( {"email": query_resp.email}, { "authorization_active": false, "authorization_visible": false } )
+            next();
+        }
+        
+    } catch (error) {
+        console.log("... Error @ reset authorization code middleware ...", error);
+        res.redirect(303, config.view_urls.logout);        
+    }
+}
 
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
     is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
-    getting_auth_user_data
+    getting_auth_user_data, reset_authorization_code
 }

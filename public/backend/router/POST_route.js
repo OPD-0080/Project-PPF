@@ -13,7 +13,7 @@ const { signup_handler, registration_handler, OTP_verification_handler, is_OTP_v
 const config = require("../config/config");
 const { isUSerAuthenticated } = require("../controller/passport")
 const { loginValidation, signupValidation, OTPValidation, registrationValidation, resetPasswordValidation,
-    forgotPasswordInitiateValidation, forgotPasswordConfirmValidation } = require("../controller/validation");
+    forgotPasswordInitiateValidation, forgotPasswordConfirmValidation, reset_authorization_code } = require("../controller/validation");
 const { authorization_code } = require("../utils/code_generator");
 // ...
 // MULTER SECION FOR UPLOADING DATA
@@ -41,7 +41,7 @@ const upload = multer({ storage: storage });
 // AUHTHENTICATION
 router.post("/register", registrationValidation, registration_handler, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. Unable to login. Try Agin !", failureMessage: true, successMessage: "User Authenicated", successRedirect: `${config.view_urls.otp}` }) );
 router.post("/user-register", isUSerAuthenticated, signupValidation, signup_handler );
-router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. User already login", failureMessage: true}), is_OTP_verified, is_password_secured );
+router.post("/login", loginValidation, passport.authenticate("local", { failureRedirect: `${config.view_urls.login}`, failureFlash: "Error. User already login", failureMessage: true}), reset_authorization_code, is_OTP_verified, is_password_secured );
 router.post("/otpverification", isUSerAuthenticated, OTPValidation, OTP_verification_handler );
 router.post("/password/reset",  isUSerAuthenticated, resetPasswordValidation, password_reset_handler );
 router.post("/password/forgot/initiate", forgotPasswordInitiateValidation, forgot_password_initiate_handler );

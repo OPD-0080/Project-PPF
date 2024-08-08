@@ -74,7 +74,7 @@ const authorization_schema = new mongoose.Schema({
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     role: {type: String, required: true},
     authorization: {type: String, required: true, unique: true, default: null},
-    authorization_status: {type: Boolean, required: false, unique: false, default: false},
+    authorization_active: {type: Boolean, required: false, unique: false, default: false},
     authorization_visible: {type: Boolean, required: false, unique: false, default: false},
 }, {timestamps: true});
 

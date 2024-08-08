@@ -9,6 +9,7 @@ const { view_login, view_signup, view_logout, view_registration, view_404, view_
         view_dashboard, view_OTP, view_reset_password, view_forgot_password_initiate, view_forgot_password_confirm,
         view_purchase, view_purchase_preview, view_purchase_responds  } = require("./GET_handlers");
 const { isUSerAuthenticated } = require("../controller/passport");
+const { reset_authorization_code } = require("../controller/validation");
 // ...
 
 
@@ -20,7 +21,7 @@ router.get("/resetpassword", view_reset_password);
 router.get("/forgotpasswordinitiate", view_forgot_password_initiate);
 router.get("/forgotpasswordconfirm", view_forgot_password_confirm);
 router.get("/login", view_login);
-router.get("/logout", view_logout);
+router.get("/logout", reset_authorization_code, view_logout);
 router.get("/404", view_404);
 router.get("/500", view_500);
 router.get("/dashboard", isUSerAuthenticated, view_dashboard);

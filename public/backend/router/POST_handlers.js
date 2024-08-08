@@ -483,7 +483,8 @@ const forgot_password_initiate_handler = async (req, res, next) => {
         }
 
         if (user_email !== "") {
-            console.log(config.company_name);
+            console.log("... sending email to user ...");
+
             const nodemail_resp = await sending_email_with_html_template(
                 config.company_name,
                 "Forgot Password",
@@ -494,7 +495,7 @@ const forgot_password_initiate_handler = async (req, res, next) => {
             console.log("** is email sent to user :", nodemail_resp);
 
             if (nodemail_resp == null) {
-                req.flash("fpass_initiate", "Error. Couldn't Auth Credential. Try Again !");
+                req.flash("fpass_initiate", "Error. Couldn't Auth Credential / Internet Err. Try Again !");
                 res.redirect(303, `${config.view_urls.forgot_password_initiate}`);
 
             }else if (nodemail_resp !== undefined) {
@@ -502,6 +503,9 @@ const forgot_password_initiate_handler = async (req, res, next) => {
 
                 req.session.fpass_username = user_email;    // register email or userID in request session data storage for setting new password in the next route 
                 req.flash("fpass_initiate", "Almost there. Email sent. Confirm !");
+                res.redirect(303, `${config.view_urls.forgot_password_initiate}`);
+            }else {
+                req.flash("fpass_initiate", "Error. Couldn't Auth Credential / Internet Err. Try Again !");
                 res.redirect(303, `${config.view_urls.forgot_password_initiate}`);
             }
         }else {
@@ -653,12 +657,23 @@ const purchases_preview_handler = async (req, res, next) => {
         
         const payload = req.body;
 
+        console.log("... data collected ...", payload);
+        console.log("... verifying user authorization code ...");
+
+        
+        
+        
+
         payload.companyRefID = req.session.passport.user.companyRefID;
         payload.initiator = req.session.passport.user.userID;
         payload.company = req.session.passport.user.company;
 
         console.log("... payload collected completed ...", payload);
         console.log("... inserting payload into database ...");
+
+        const new_payload = {
+
+        }
 
         // const query_resp = await PurchaseModel.insertMany(payload);
         

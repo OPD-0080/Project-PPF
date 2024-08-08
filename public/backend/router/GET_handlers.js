@@ -157,7 +157,7 @@ const view_forgot_password_initiate = async (req, res, next) => {
 
         // notification section
             const error_alert = req.flash("validate_forgot_password");
-            const flash_msg = req.flash("forgot_password");
+            const flash_msg = req.flash("fpass_initiate");
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
@@ -231,7 +231,6 @@ const view_logout = async (req, res, next) => {
             await LoginModel.deleteOne( {"email": req.session.passport.user.email});
             await DateTimeTracker.updateOne( {"email": req.session.passport.user.email}, 
                 {"logout_date": `${moment().format("YYYY-MM-DD")}`, "logout_time": `${moment().format("hh:mm")}`}); 
-            await AuthorizationModel.updateOne( {"email": req.session.passport.user.email}, { "authorization_status": false, "authorization_visible": false } )
 
             req.session.destroy();  // destroy user session data in passport
             store.session.set("login", "User Logout sucessfully. Please Login !"); // using store module and cannot use flash module for alert messaging because req.session is destroyed

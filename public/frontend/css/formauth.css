@@ -206,6 +206,10 @@ a {
   background: black;
 }
 
+.form-control {
+  color: black;
+}
+
 .purchases-form-wrapper .purchases-form-container .cells .row .col-form-label .text-danger {
   visibility: visible;
   opacity: 1;

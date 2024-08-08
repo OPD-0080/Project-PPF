@@ -1,6 +1,7 @@
 @import "./variables.scss";
 @import "./reset.scss";
 
+
 .notification-wrapper {
     position: fixed;
     bottom: 0px;
@@ -148,8 +149,10 @@
 }
 .otp-form-button {
     @include flex(row, center, center);
-    button { margin: 5px; &:hover { background: black; }}
-    
+    button { margin: 5px; &:hover { background: black; }}   
+}
+.form-control {
+    color: black;
 }
 
 // FOR PURCHASES SECTION
