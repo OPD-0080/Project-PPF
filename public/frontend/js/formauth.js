@@ -91,6 +91,20 @@ const validating_input_before_submission = async (input_el_in_array, iteration_n
 };
 const activate_gif_loader = (div_element) => { div_element.classList.add("show"); };
 const deactivate_gif_loader = (div_element) => { div_element.classList.remove("show"); };
+const submit_form_template = (url, payload) => {
+    const form = document.createElement("form");
+    const input = document.createElement("input");
+    const submit = document.createElement("input");
+    form.setAttribute("action", `${url}`);
+    form.setAttribute("method", `post`);
+    input.setAttribute("name", `payload`);
+    input.setAttribute("value", `${payload}`);
+    input.setAttribute("type", "text");
+    submit.setAttribute("type", "submit");
+    form.append(input); form.append(submit);
+    document.body.append(form);
+    submit.click();
+}
 
 // ....
 // DEPARTMENT MULTIPLE OPTIONS
@@ -192,11 +206,11 @@ const deactivate_gif_loader = (div_element) => { div_element.classList.remove("s
         }
     }
     const populate_filtered_data = (array, value, div) => {
-        const filtered_data = array.filter(data => { return data.trim().startsWith(value.trim()) });
+        const filtered_data = array.filter(data => { return data.name.trim().startsWith(value.trim()) });
         let show = "";
         filtered_data.forEach(data => {
             show += `
-                <li class="preview-opts"><div class="i"></div><div>${data}</div></li>
+                <li class="preview-opts"><img src="${(data.photo)? data.photo : '/img/svg/home-black.svg'}" class="i"></img><div>${data.name}</div></li>
             `;
             div.innerHTML = show;
         });
@@ -224,4 +238,4 @@ const deactivate_gif_loader = (div_element) => { div_element.classList.remove("s
 
 
 export { load_data_from_server, sending_data_to_server, notify_user, validating_input_before_submission, 
-    activate_gif_loader, deactivate_gif_loader }
+    activate_gif_loader, deactivate_gif_loader, submit_form_template }

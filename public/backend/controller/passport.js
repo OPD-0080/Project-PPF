@@ -166,7 +166,7 @@ const is_user_admin = async (username) => {
     else { biodata = await RegistrationModel.find({ "ceo": username }) }
 
     if (biodata.length > 0) {
-        (biodata[0].role.trim() == "Admin")? is_user_admin = true : is_user_admin = false;
+        (biodata[0].role.trim() == "admin")? is_user_admin = true : is_user_admin = false;
     }
     return is_user_admin;
 };
@@ -207,6 +207,18 @@ const update_login_credentials = async (payload, user, username) => {
         console.log("Error in Update login credentials ...", error);
 
         if (error.code == "1100" & error.writeErrors[0].err.errmsg.includes("uuid")) {
+            // delete user login data from db
+                await DateTimeTracker.updateOne(
+                    { "uuid": user[0].uuid }, // filter to get user data from db
+                    { $set: { // then update that data
+                        "logout_date": `${moment().format("YYYY-MM-DD")}`,
+                        "logout_time": `${moment().format("hh:mm")}`
+                    }}
+                );
+                await LoginModel.deleteOne({ "uuid": user[0].uuid });
+            // ...
+            return false;
+        }else if (error.code == "1100") {
             // delete user login data from db
                 await DateTimeTracker.updateOne(
                     { "uuid": user[0].uuid }, // filter to get user data from db

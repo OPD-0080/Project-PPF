@@ -14,6 +14,7 @@ const config = {
         user_register: `${POST_base_url}/user-register`,
         login: `${POST_base_url}/login`,
         otp: `${POST_base_url}/otpverification`,
+        otp_resend: `${POST_base_url}//password/forgot/resend`,
         reset_password: `${POST_base_url}/password/reset`,
         forgot_password_initiate: `${POST_base_url}/password/forgot/initiate`,
         forgot_password_confirm: `${POST_base_url}/password/forgot/confirmation`,

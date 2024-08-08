@@ -77,7 +77,7 @@
                             <input type="text" class="" placeholder="Enter code here" name="auth_code" id="auth_code">
                             <div class="loading-gif"></div>
                         </div>
-                        <button type="button" class="auth-page-button" data-auth="<% if (context !== undefined) { %><%- context.config.post_urls.purchases_entry %><% } %>">Proceed</button>
+                        <button type="button" class="auth-page-button" data-url="<% if (context !== undefined) { %><%- context.config.post_urls.purchases_preview %><% } %>">Proceed</button>
                     </div>
                 </div>
             </div>

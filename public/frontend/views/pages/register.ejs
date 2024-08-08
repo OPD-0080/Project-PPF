@@ -25,13 +25,13 @@
                             <div class="col-xl-12">
                                 <div class="auth-form">
 									<div class="text-center mb-12 logo-wrapper">
-									    <a href="index.html" class="logo-img-wrapper">
+									    <a href="<% if (context !== undefined) { %><%- context.config.view_urls.login %><% } %>" class="logo-img-wrapper">
                                             <img src="../../img/svg" alt="">
                                             <div class="logo-content"> Logo Content </div>
                                         </a>
 									</div>
                                     <h4 class="text-center mb-1 text-white"> Register Your Business </h4>
-                                    <form action="<% if (context !== undefined) { %><%- context.register_url %><% } %>" method="post">
+                                    <form action="<% if (context !== undefined) { %><%- context.config.post_urls.register %><% } %>" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>
@@ -100,23 +100,13 @@
                                             
                                             <div class="form-group; col-md-4 form-cell">
                                                 <label class="mb-1 text-white"><strong>Password</strong></label>
-                                                <input type="password" class="form-control" value="Password" name="new_pass">
+                                                <input type="password" class="form-control" name="new_pass">
                                             </div> 
                                             <div class="form-group; col-md-4 form-cell">
                                                 <label class="mb-1 text-white"><strong>Confirm Password</strong></label>
-                                                <input type="password" class="form-control" value="Password" name="password">
+                                                <input type="password" class="form-control" name="password">
                                             </div> 
-                                            <!-- <div class="form-group; col-md-6 form-cell">
-                                                <label class="mb-1 text-white"><strong> Departments (if applicable) </strong></label>
-                                                <select class="form-control" name="department" id="department-option">
-                                                    <option value=""> Select Opt(s) </option>
-                                                    <option value="departmemnt 1"> departmemnt 1 </option>
-                                                    <option value="departmemnt 2"> departmemnt 2 </option>
-                                                    <option value="departmemnt 3"> departmemnt 3 </option>
-                                                </select>
-                                                <div class="department-preview">
-                                                </div>
-                                            </div> -->
+    
                                             
                                             <div class="text-center mt-4" style="margin-top: 10px;">
                                                 <button type="submit" class="btn bg-white text-primary btn-block"> Register </button>

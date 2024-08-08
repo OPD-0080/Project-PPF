@@ -20,18 +20,21 @@
                         <div class="row no-gutters">
                             <div class="col-xl-12">
                                 <div class="auth-form">
+                                    <!-- NOTIFICATION SECTION  -->
+                                    <%- include ("../partial/notificatiion.ejs")  %>
+                                    <!-- NOTIFICATION SECTION  -->
 									<div class="text-center mb-3">
-										<a href="index.html"><img src="images/" alt=""></a>
+										<a href="<% if (context !== undefined) { %><%- context.config.view_urls.login %><% } %>"><img src="/frontend/images/" alt=""></a>
 									</div>
-                                    <h4 class="text-center mb-4 text-white">F-Password-Confirm</h4>
-                                    <form action="https://welly.dexignzone.com/django/xhtml/index.html">
+                                    <h4 class="text-center mb-4 text-white">Change Password</h4>
+                                    <form action="<% if (context !== undefined) { %><%- context.config.post_urls.forgot_password_confirm %><% } %>" method="post">
                                         <div class="form-group">
                                             <label class="text-white"><strong>New Password</strong></label>
-                                            <input type="password" class="form-control" value="hello@example.com">
+                                            <input type="password" class="form-control" name="new_pass">
                                         </div>
                                         <div class="form-group">
                                             <label class="text-white"><strong>Confirm Password</strong></label>
-                                            <input type="password" class="form-control" value="hello@example.com">
+                                            <input type="password" class="form-control" name="confirm_pass">
                                         </div>
                                         <div class="text-center">
                                             <button type="submit" class="btn bg-white text-primary btn-block">SUBMIT</button>

@@ -234,7 +234,7 @@ const OTP_verification_handler = async (req, res, next) => {
 
         if (proceed) {
             if (user[0].otp == data.otp.trim()) {
-                if (auth_user.role == "Admin") {
+                if (auth_user.role == "admin") {
                     await RegistrationModel.updateOne({ "email": auth_user.email }, { "otp": "verified" })
                     proceed = true;
 
@@ -254,7 +254,7 @@ const OTP_verification_handler = async (req, res, next) => {
         console.log("... Redirecting based on user credentials ...");
 
         if (proceed) {
-            if (user[0].role == "Admin") {
+            if (user[0].role == "admin") {
                 req.flash("dashboard", "User is authenticated");
                 res.redirect(303, `${config.view_urls.dashboard}`);
 
@@ -282,7 +282,7 @@ const is_OTP_verified = async (req, res, next) => {
 
         console.log("... checking user role ...");
 
-        (auth_user.role == "Admin")? proceed = true : proceed = false;
+        (auth_user.role == "admin")? proceed = true : proceed = false;
 
         console.log("... checking user role completed ...", proceed);
         console.log("... Intializing User credential verification ...");
@@ -302,9 +302,20 @@ const is_OTP_verified = async (req, res, next) => {
 
                 next()
             }else {
-                console.log("... Sending OTP code via email ...");
+                console.log("... OTP not verified ...");
+                console.log("... generating new OTP code and updating database ...");
+
 
                 const otp = await randomSerialCode(5);
+                if (user[0].role === "admin") {
+                    await RegistrationModel.updateOne( {"email": req.session.passport.user.email}, {"otp": otp} );
+                }else { await UserModel.updateOne( {"email": req.session.passport.user.email}, {"otp": otp} ); }
+
+
+                console.log("... OTP geneartion and update of database completed ...");
+                console.log("... Sending OTP code via email ...");
+
+
                 const nodemail_resp = await sending_email(
                     config.company_name,
                     "Email Authentication",
@@ -314,15 +325,36 @@ const is_OTP_verified = async (req, res, next) => {
                 console.log("** is email sent to company :", nodemail_resp);
 
                 if (nodemail_resp == null) {
+                    console.log("... Email Sent ...");
+                    console.log("... OTP not sent ...");
+                    console.log("... redireting ...");
+                    
+                    
                     req.flash("otp", `Error. OTP code not sent. Resend OTP code !`);
                     res.redirect(303, config.view_urls.otp);
                     
+                }else  if (nodemail_resp === undefined) {
+                    console.log("... Email Sent ...");
+                    console.log("... OTP not sent ...");
+                    console.log("... redireting ...");
+                    
+
+                    req.flash("otp", `Error. OTP code not sent. Resend OTP code !`);
+                    res.redirect(303, config.view_urls.otp);
+
                 }else  if (nodemail_resp !== undefined) {
+                    console.log("... Email Sent ...");
+                    console.log("... OTP sent ...");
+                    console.log("... redireting ...");
+
                     req.flash("otp", `Provide OTP code for email verification !`);
                     res.redirect(303, config.view_urls.otp);
                 }
             }
         }else {
+            console.log("... user credentail revoked ...");
+            console.log("... redirecting ...");
+        
             req.flash("login", `User ${user[0].userID} credential is revoked. Contact Admin !`);
             res.redirect(303, config.view_urls.login);
         }
@@ -398,7 +430,7 @@ const password_reset_handler = async (req, res, next) => {
         console.log("... Initializing password reset ...");
 
         let is_user_updated = "";
-        if (user[0].role == "Admin") {
+        if (user[0].role == "admin") {
             is_user_updated = await RegistrationModel.updateOne({ "email": auth_user.email }, { "password": hashed_pass });
         }
         else {
@@ -549,7 +581,7 @@ const resend_OTP_code_handler = async (req, res, next) => {
         if (nodemail_resp == null) {
             console.log("... Email notification failed. Redirecting...");
 
-            req.flash("otp", "Error. OTP not sent. Try again !");
+            req.flash("otp", "Error. OTP not sent. Check Internet connection & Try again !");
             res.redirect(303, `${config.view_urls.otp}`);
 
         }else if (nodemail_resp !== undefined) {
@@ -614,12 +646,58 @@ const purchases_handler = async (req, res, next) => {
         res.redirect(303, `${config.view_urls._500}`);
     }
 };
+const purchases_preview_handler = async (req, res, next) => {
+    let context = {};
+    try {
+        console.log("** Collecting data for purchases preview submission **");
+        
+        const payload = req.body;
 
+        payload.companyRefID = req.session.passport.user.companyRefID;
+        payload.initiator = req.session.passport.user.userID;
+        payload.company = req.session.passport.user.company;
+
+        console.log("... payload collected completed ...", payload);
+        console.log("... inserting payload into database ...");
+
+        // const query_resp = await PurchaseModel.insertMany(payload);
+        
+        // console.log("... query responds ...", query_resp);
+        console.log("... insertion of payload completed ...");
+        console.log("... wrapping context before redirecting ...");
+
+        const msg = "Purchase submission completed";
+        context.msg = msg;
+        // context.response = query_resp
+
+        console.log("... wrapping context completed ...");
+        console.log("... redireting reponses ....");
+
+        // res.json(context);
+        
+    } catch (error) {
+        console.log("** Error:: Purchases Handler **", error);
+
+        if (error.code == "11000") { //  for duplicate of business name 
+            console.log("... wrapping context before redirecting ...");
+
+            const error_msg = "Error. Data is duplicated . Try Again !";
+            context.msg = error_msg;
+
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+
+            res.json(context);
+        }
+
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+};
 // END
 
 
 
 module.exports = { signup_handler, OTP_verification_handler, registration_handler,
     is_OTP_verified, is_password_secured,  password_reset_handler, forgot_password_initiate_handler, 
-    forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_handler
+    forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_handler, purchases_preview_handler
 }

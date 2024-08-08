@@ -24,13 +24,13 @@
                             <div class="col-xl-12">
                                 <div class="auth-form">
 									<div class="text-center mb-12 logo-wrapper">
-                                        <a href="index.html" class="logo-img-wrapper">
+                                        <a href="<% if (context !== undefined) { %><%- context.config.view_urls.login %><% } %>" class="logo-img-wrapper">
                                             <img src="../../img/svg" alt="">
                                             <div class="logo-content"> Logo Content </div>
                                         </a>
 									</div>
                                     <h4 class="text-center mb-4 text-white"> Login into your account  </h4>
-                                    <form action="<% if (context !== undefined) { %><%- context.login_url %><% } %>" method="post">
+                                    <form action="<% if (context !== undefined) { %><%- context.config.post_urls.login %><% } %>" method="post">
                                         <div class="form-group form-cell">
                                             <label class="mb-1 text-white"><strong>Email / User ID</strong></label>
                                             <input type="text" class="form-control" placeholder="hello@example.com / comxxxxx" name="username">
@@ -47,7 +47,7 @@
                                         </div>
                                         <div class="row d-flex justify-content-between mt-4 mb-2">
                                             <div class="form-group">
-                                                <a class="text-white" href="page-forgot-password.html">Forgot Password?</a>
+                                                <a class="text-white" href="<% if (context !== undefined) { %><%- context.config.view_urls.forgot_password_initiate %><% } %>">Forgot Password?</a>
                                             </div>
                                         </div>
                                         <div class="text-center">
@@ -55,7 +55,7 @@
                                         </div>
                                     </form>
                                     <div class="new-account mt-3">
-                                        <p class="text-white">Don't have an account? <a class="text-white" href="register.html">Sign up</a></p>
+                                        <!-- <p class="text-white">Don't have an account? <a class="text-white" href="register.html">Sign up</a></p> -->
                                     </div>
                                 </div>
                             </div>

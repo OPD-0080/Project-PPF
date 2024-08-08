@@ -22,13 +22,13 @@
                             <div class="col-xl-12">
                                 <div class="auth-form">
 									<div class="text-center mb-12 logo-wrapper">
-                                        <a href="index.html" class="logo-img-wrapper">
+                                        <a href="<% if (context !== undefined) { %><%- context.config.view_urls.dashboard %><% } %>" class="logo-img-wrapper">
                                             <img src="../../img/svg" alt="">
                                             <div class="logo-content"> Logo Content </div>
                                         </a>
 									</div>
                                     <h4 class="text-center mb-1 text-white"> SignUp Your Account </h4>
-                                    <form action="<% if (context !== undefined) { %><%- context.signup_url %><% } %>" method="post">
+                                    <form action="<% if (context !== undefined) { %><%- context.config.post_urls.user_register %><% } %>" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; form-cell col-md-6">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>

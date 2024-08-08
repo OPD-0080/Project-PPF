@@ -21,7 +21,7 @@ const view_registration = async (req, res, next) => {
         // ...
         // wrapping data into context object
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.register_url = config.post_urls.register;
+            context.config = config;
         // ...
         
         res.render("register", { context });
@@ -48,7 +48,7 @@ const view_signup = async (req, res, next) => {
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.signup_url = config.post_urls.user_register;
+            context.config = config;
             context.random_default_pass = random_default_pass;
         // ...
         console.log(context);
@@ -70,7 +70,7 @@ const view_login = async (req, res, next) => {
             const biodata = await RegistrationModel.find();
             for (let i = 0; i < biodata.length; i++) {
                 const data = biodata[i];
-                businesses.push(data.businessName.trim());
+                businesses.push({name: data.businessName.trim(), photo: data.photo});
             }
         // ...
         // notification section
@@ -84,7 +84,7 @@ const view_login = async (req, res, next) => {
             }
             else {(error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg; }
             context.businesses = JSON.stringify(businesses);
-            context.login_url = config.post_urls.login;
+            context.config = config
         // ...
         console.log(context);
 
@@ -107,7 +107,7 @@ const view_OTP = async (req, res, next) => {
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.otp_url = config.post_urls.otp;
+            context.config = config;
         // ...
         console.log(context);
 
@@ -130,7 +130,7 @@ const view_reset_password = async (req, res, next) => {
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.reset_pass_url = config.post_urls.reset_password;
+            context.config = config;
         // ...
         console.log(context);
 
@@ -146,6 +146,14 @@ const view_forgot_password_initiate = async (req, res, next) => {
         console.log("** Inside forgot password initiate view **");
         let context = {}, user_alert = "";
 
+         // getting all business name from DB and populate it on DOM 
+            let businesses = [];
+            const biodata = await RegistrationModel.find();
+            for (let i = 0; i < biodata.length; i++) {
+                const data = biodata[i];
+                businesses.push({name: data.businessName.trim(), photo: data.photo});
+            }
+        // ...
 
         // notification section
             const error_alert = req.flash("validate_forgot_password");
@@ -153,7 +161,8 @@ const view_forgot_password_initiate = async (req, res, next) => {
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.fpass_initiate_url = config.post_urls.forgot_password_initiate;
+            context.config = config;
+            context.businesses = JSON.stringify(businesses);
         // ...
         console.log(context);
 
@@ -176,7 +185,7 @@ const view_forgot_password_confirm = async (req, res, next) => {
         // ...
         // wrapping data into context object 
             (error_alert.length !== 0)? context.message = error_alert : context.message = flash_msg;
-            context.fpass_confirm_url = config.post_urls.forgot_password_confirm;
+            ccontext.config = config;
         // ...
         console.log(context);
 

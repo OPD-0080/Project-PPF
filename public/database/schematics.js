@@ -20,9 +20,10 @@ const registration_schema = new mongoose.Schema({
     town: { type: String, required: true },
     ceo: { type: String, required: true },
     password: { type: String, required: true, unique: true },
-    role: { type: String, required: true, unique: false, default: "Admin" },
+    role: { type: String, required: true, unique: false, default: "admin" },
     previliges: { type: String, required: false, unique: false, default: "super"},
     otp: {type: String, required: false, unique: false, default: null},
+    photo: {type: String, required: false, unique: false, default: null},
     is_active: {type: String, required: false, unique: false, default: true}
 });
 const user_schema = new mongoose.Schema({
@@ -39,12 +40,12 @@ const user_schema = new mongoose.Schema({
     department: {type: String, required: false, unique: false},
     userID: {type: String, required: true, unique: true},
     role: { type: String, required: false, unique: false, default: "staff"},
-    previliges: { type: String, required: false, unique: false, default: null},
+    previliges: { type: Object, required: true, unique: false, default: null},
     photo: {type: String, required: false, unique: false, default: null},
-    ID_card_type: {type: String, required: false, unique: false, default: null},
-    ID_card_number: {type: String, required: false, unique: false, default: null},
-    ID_photo_font: {type: String, required: false, unique: false, default: null},
-    ID_photo_back: {type: String, required: false, unique: false, default: null},
+    ID_card_type: {type: String, required: true, unique: false, default: null},
+    ID_card_number: {type: String, required: true, unique: false, default: null},
+    ID_photo_font: {type: String, required: true, unique: false, default: null},
+    ID_photo_back: {type: String, required: true, unique: false, default: null},
     otp: {type: String, required: false, unique: false, default: null},
     is_active: {type: String, required: false, unique: false, default: true}
 }, {timestamps: true}  // for this will add createdAt and updatedAt to the schema automatically 
@@ -73,16 +74,16 @@ const authorization_schema = new mongoose.Schema({
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     role: {type: String, required: true},
     authorization: {type: String, required: true, unique: true, default: null},
-    authorization_status: {type: String, required: false, unique: false, default: false},
-    authorization_last_used: {type: String, required: false, unique: false, default: null},
-    authorization_used_on: {type: String, required: false, unique: false, default: null},
-    authorization_visible: {type: String, required: false, unique: false, default: false},
+    authorization_status: {type: Boolean, required: false, unique: false, default: false},
+    authorization_visible: {type: Boolean, required: false, unique: false, default: false},
 }, {timestamps: true});
 
 const purchases_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     company: {type: String, required: true, unique: false, default: null},
+    initiator: {type: String, required: true, unique: false, default: null},
+    userID: {type: String, required: true, unique: false},
     supplier: {type: String, required: true, unique: false, default: null},
     invoice_date: {type: String, required: true, unique: false, default: null},
     invoice_number: {type: String, required: true, unique: false, default: null},
@@ -91,7 +92,39 @@ const purchases_schema = new mongoose.Schema({
     quantity: {type: String, required: true, unique: false, default: null},
     price: {type: String, required: true, unique: false, default: null},
     amount: {type: String, required: true, unique: false, default: null},
+},{timestamps: true});
+
+const comparism_schema = new mongoose.Schema({
+    uuid: {type: String, required: true, unique: true, default: uuid},
+    companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
+    company: {type: String, required: true, unique: false, default: null},
     initiator: {type: String, required: true, unique: false, default: null},
+    userID: {type: String, required: true, unique: false},
+    role: {type: String, required: true, unique: false, default: null},
+    previous_payload: {type: Object, required: true, unique: false, default: null},
+    incoming_payload: {type: Object, required: true, unique: false, default: null},
+    remarks: {type: String, required: true, unique: false, default: "conflict"},
+    comment: {type: String, required: true, unique: false, default: "no comment"},
+    message: {type: String, required: true, unique: false, default: null},
+},{timestamps: true});
+
+const tracking_schema = new mongoose.Schema({
+    uuid: {type: String, required: true, unique: true, default: uuid},
+    companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
+    company: {type: String, required: true, unique: false, default: null},
+    initiator: {type: String, required: true, unique: false, default: null},
+    userID: {type: String, required: true, unique: false},
+    role: {type: String, required: true, unique: false, default: null},
+
+    authorization: {type: Object, required: true, unique: false, default: null},
+    users: {type: Object, required: true, unique: false, default: null},
+    purchases: {type: Object, required: true, unique: false, default: null},
+    sales: {type: Object, required: true, unique: false, default: null},
+    comparism: {type: Object, required: true, unique: false, default: null},
+    cash: {type: Object, required: true, unique: false, default: null},
+    inventory_management: {type: Object, required: true, unique: false, default: null},
+    reports: {type: Object, required: true, unique: false, default: null},
+
 },{timestamps: true});
 
 // ...
@@ -103,6 +136,8 @@ const DateTimeTracker = mongoose.model("DateTimeTracker", date_time_schema);
 const RegistrationModel = mongoose.model("Registration", registration_schema);
 const AuthorizationModel = mongoose.model("Authorization", authorization_schema);
 const PurchaseModel = mongoose.model("Purchases", purchases_schema);
+const ComparismeModel = mongoose.model("Comparism", comparism_schema);
+const TrackingModel = mongoose.model("Tracking", tracking_schema);
 
 
 // ...

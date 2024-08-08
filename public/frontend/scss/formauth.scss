@@ -113,7 +113,7 @@
                     margin-right: $margin-s;
                     color: white;
 
-                    .i {
+                    img {
                         width: 30px;
                         height: 25px;
                         background: whitesmoke;
@@ -145,6 +145,11 @@
             }
         }
     }
+}
+.otp-form-button {
+    @include flex(row, center, center);
+    button { margin: 5px; &:hover { background: black; }}
+    
 }
 
 // FOR PURCHASES SECTION

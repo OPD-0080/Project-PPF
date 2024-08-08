@@ -18,20 +18,20 @@
                         <div class="row no-gutters">
                             <div class="col-xl-12">
                                 <div class="auth-form otp-wrapper">
-                                    <div class="form-alert-wrapper">
-                                        <div class="i"></div>
-                                        <div class="alert-text"> Alert </div>
-                                    </div>
+                                    <!-- NOTIFICATION SECTION  -->
+                                    <%- include ("../partial/notificatiion.ejs")  %>
+                                    <!-- NOTIFICATION SECTION  -->
 									<div class="text-center mb-3">
-										<a href="dashboard.ejs"><img src="/frontend/images/" alt=""></a>
+										<a href="<% if (context !== undefined) { %><%- context.config.view_urls.login %><% } %>"><img src="/frontend/images/" alt=""></a>
 									</div>
                                     <h4 class="text-center mb-4 text-white">OTP Verification</h4>
-                                    <form class="otp-form-wrapper" action="<% if (context !== undefined) { %><%- context.otp_url %><% } %>" method="post">
+                                    <form class="otp-form-wrapper" action="<% if (context !== undefined) { %><%- context.config.post_urls.otp %><% } %>" method="post">
                                         <div class="form-group">
                                             <label class="text-white"><strong>OTP</strong></label>
                                             <input type="text" class="form-control otp-input" name="otp" value="">
                                         </div>
-                                        <div class="text-center otp-form-button">
+                                        <div class="text-center otp-form-button mb-4">
+                                            <button type="button" class="btn bg-white text-primary btn-block resend" data-url="<% if (context !== undefined) { %><%- context.config.post_urls.otp_resend %><% } %>">Resend OTP Code</button>
                                             <button type="submit" class="btn bg-white text-primary btn-block">SUBMIT</button>
                                         </div>
                                     </form>
@@ -49,13 +49,10 @@
         Scripts
     ***********************************-->
     
-    <script src="/frontend/js/otp-verification.js"></script>
+    <script src="/frontend/js/otp-verification.js" type="module"></script>
     <!-- General js -->
     <%- include ("../partial/meta-js.ejs") %>
     
 
 </body>
-
-
-<!-- Mirrored from welly.dexignzone.com/django/xhtml/page-forgot-password.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 20 Feb 2024 11:24:00 GMT -->
 </html>

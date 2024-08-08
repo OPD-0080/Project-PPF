@@ -163,7 +163,7 @@ a {
   margin-right: 20px;
   color: white;
 }
-.auth-form form .form-cell .preview-company-wrapper li .i {
+.auth-form form .form-cell .preview-company-wrapper li img {
   width: 30px;
   height: 25px;
   background: whitesmoke;
@@ -191,6 +191,19 @@ a {
   color: white;
   font-weight: bolder;
   font-size: 20px;
+}
+
+.otp-form-button {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+.otp-form-button button {
+  margin: 5px;
+}
+.otp-form-button button:hover {
+  background: black;
 }
 
 .purchases-form-wrapper .purchases-form-container .cells .row .col-form-label .text-danger {

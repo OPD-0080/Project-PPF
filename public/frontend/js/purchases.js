@@ -73,6 +73,16 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     if (await isValueANumbers(value)) {
                         payload.quantity = value;
                         deactivate_input_indicator(e);
+
+                        if (payload.hasOwnProperty("price")) {
+                            if (payload.price == "") {
+                                notify_user("Error. 'Pirce' input is required !."); 
+                                activate_input_indicator(e);
+                            }else {
+                                payload.amount = (Number(payload.quantity) * Number(payload.price)).toFixed(2);
+                                overlay_page_wrapper.querySelector(".amount").value = payload.amount;
+                            }
+                        }
                     }else {
                         notify_user("Error. 'Quantity' must be only numbers(s) !")
                         activate_input_indicator(e);
@@ -138,7 +148,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         });
                     }, 3000);
                 }
-                else if ((typeof responses === "Number") && (responses === 400)) { notify_user("Error. Purchase submission failed. Try Again"); }
+                else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Purchase submission failed. Try Again"); }
                 else { notify_user("Error. Network Connection Bad. Check Net Connection !"); }
             }
             else { notify_user("Error. Misssing input. All input are required !");  }
@@ -195,12 +205,12 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         const auth_page_wrapper = document.querySelector(".auth-page-wrapper");
         const auth_page_container = auth_page_wrapper.querySelector(".auth-page-container");
         const auth_page_button = auth_page_wrapper.querySelector(".auth-page-button");
+        const auth_input = auth_page_wrapper.querySelector("#auth_code");
         const gif_loader = auth_page_wrapper.querySelector(".loading-gif");
         const form_button = overlay_page_wrapper.querySelector(".purchases-button");
         
 
-
-
+        let payload = {};
         const loading_purchases_from_database = async () => {
             const url = tb_wrapper.getAttribute("data-url");
             return await load_data_from_server(`${url}`);
@@ -318,18 +328,35 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             for (let i = 0; i < form_controls.length; i++) {
                 const input = form_controls[i];
                 
-                if (input.classList.contains("supplier")) { input.value = payload_as_object.supplier; }
-                if (input.classList.contains("invoice-date")) { input.value = payload_as_object.invoice_date.split("-").reverse().join("-"); }
-                if (input.classList.contains("invoice-number")) { input.value = payload_as_object.invoice_number; }
-                if (input.classList.contains("item-code")) { input.value = payload_as_object.item_code; }
-                if (input.classList.contains("particular")) { input.value = payload_as_object.particular; }
-                if (input.classList.contains("quantity")) { input.value = payload_as_object.quantity; }
-                if (input.classList.contains("price")) { input.value = payload_as_object.price; }
-                if (input.classList.contains("amount")) { input.value = payload_as_object.amount; }
+                if (input.classList.contains("supplier")) { input.value = payload_as_object.supplier; payload.supplier = payload_as_object.supplier; }
+                if (input.classList.contains("invoice-date")) { input.value = payload_as_object.invoice_date.split("-").reverse().join("-"); payload.invoice_date = payload_as_object.invoice_date.split("-").reverse().join("-") }
+                if (input.classList.contains("invoice-number")) { input.value = payload_as_object.invoice_number; payload.invoice_number = payload_as_object.invoice_number; }
+                if (input.classList.contains("item-code")) { input.value = payload_as_object.item_code; payload.item_code = payload_as_object.item_code;  }
+                if (input.classList.contains("particular")) { input.value = payload_as_object.particular; payload.particular = payload_as_object.particular;  }
+                if (input.classList.contains("quantity")) { 
+                    input.value = payload_as_object.quantity; 
+                    payload.quantity = payload_as_object.quantity; 
+                }
+                if (input.classList.contains("price")) { 
+                    input.value = payload_as_object.price; 
+                    payload.price = payload_as_object.price; 
+                }
+                if (input.classList.contains("amount")) { 
+                    const total = Number(payload.quantity) * Number(payload.price);
+                    input.value = total; 
+                    payload.amount = total; 
+                } 
                 
             }
         };
-
+        const remove_all_overlays_pages = () => {
+            overlay_page_wrapper.classList.remove("show");
+            overlay_page_container.classList.remove("show");
+            purchases_modify_button_wrapper.classList.add("show-buttons");
+            auth_page_wrapper.classList.remove("show");
+            auth_page_container.classList.remove("show");
+            if (gif_loader !== undefined) { deactivate_gif_loader(gif_loader); };
+        };
 
 
         // loading payload from database and populating data in DOM
@@ -406,7 +433,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         // end
 
         // validating inputs field 
-            let payload = {};
             form_controls.forEach(input => {
                 input.onkeyup = async (e) => {
                     if (e.target.classList.contains("supplier")) {
@@ -435,9 +461,20 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     };
                     if (e.target.classList.contains("quantity")) {
                         const value = e.target.value;
+                        
                         if (await isValueANumbers(value)) {
                             payload.quantity = value;
                             deactivate_input_indicator(e);
+
+                            if (payload.hasOwnProperty("price")) {
+                                if (payload.price == "") {
+                                    notify_user("Error. 'Pirce' input is required !."); 
+                                    activate_input_indicator(e);
+                                }else {
+                                    payload.amount = (Number(payload.quantity) * Number(payload.price)).toFixed(2);
+                                    overlay_page_wrapper.querySelector(".amount").value = payload.amount;
+                                }
+                            }
                         }else {
                             notify_user("Error. 'Quantity' must be only numbers(s) !")
                             activate_input_indicator(e);
@@ -453,10 +490,10 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                                 if (payload.quantity == "") {
                                     notify_user("Error. Provide 'Quantity' input first before 'Price' input."); 
                                     activate_input_indicator(e);
-                                    purchases_wrapper.querySelector(".price").value = "";
+                                    overlay_page_wrapper.querySelector(".price").value = "";
                                 }else {
                                     payload.amount = (Number(payload.quantity) * Number(payload.price)).toFixed(2);
-                                    purchases_wrapper.querySelector(".amount").value = payload.amount;
+                                    overlay_page_wrapper.querySelector(".amount").value = payload.amount;
                                 }
                             }
                             else { 
@@ -517,12 +554,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             });
             overlay_page_close_button.forEach(button => {
                 button.onclick = () => {
-                    overlay_page_wrapper.classList.remove("show");
-                    overlay_page_container.classList.remove("show");
-                    purchases_modify_button_wrapper.classList.add("show-buttons");
-                    auth_page_wrapper.classList.remove("show");
-                    auth_page_container.classList.remove("show");
-                    if (gif_loader !== undefined) { deactivate_gif_loader(gif_loader); };
+                    remove_all_overlays_pages();
                 };
             });
             overlay_submit_button.onclick = async (e) => {
@@ -534,10 +566,24 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 }
                 else { notify_user("Error. Misssing input. All input are required !");  }
             };
-            auth_page_button.onclick = (e) => {
+            auth_page_button.onclick = async (e) => {
                 activate_gif_loader(gif_loader);
-                 // sumitting payload to server
+                // submitting payload to server 
+                    console.log("... geting the final payload ...", payload);
 
+                    const url = e.target.dataset.url;
+                    payload.authorization_code = auth_input.value;
+                    const responses = await sending_data_to_server(url, payload);
+                
+                    if (typeof responses === "object") { 
+                        setTimeout(() => {  
+                            notify_user("Sucess. Request changes will be verify for approval."); 
+                            deactivate_gif_loader(gif_loader); 
+                            remove_all_overlays_pages();
+                        }, 3000);
+                    }
+                    else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); }
+                    else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); }
 
 
 

@@ -395,7 +395,7 @@ const is_user_active = async (user) => {
 };
 const getting_auth_user_data = async (auth_user) => {
     let user = "";
-    (auth_user.role == "Admin")? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
+    (auth_user.role == "admin")? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
     return user
 };
 
