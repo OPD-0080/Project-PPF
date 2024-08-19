@@ -144,7 +144,7 @@ const signupValidation = async (req, res, next) => {
             console.log("** Validation Completed **");
             const user = req.session.passport.user;
             // checking if comapny is registered or not
-                const biodata = await RegistrationModel.find({ businessName: user.company.trim() }); // getting company biodata from db
+                const biodata = await RegistrationModel.find({ "businessName": user.company.trim() }); // getting company biodata from db
                 console.log("getting biodata from db ...", biodata);
 
                 if (biodata.length == 0) { // server could not find registered biodata from db
@@ -152,7 +152,14 @@ const signupValidation = async (req, res, next) => {
                     res.redirect(303, `${config.view_urls.user_register}`)
 
                 }else { // server found biodata 
-                    next() // move to the next middelware 
+                    console.log("... verifying if email already found i database ...");
+                    const is_email_found = await UserModel.find({ "email": data.username })
+
+                    if (is_email_found === null) {   next() } // move to the next middelware
+                    else {
+                        req.flash("signup", `Error. Email already used. Try using another email !`) // send messge to user 
+                        res.redirect(303, `${config.view_urls.user_register}`)
+                    }
                 }
         }
 
@@ -428,7 +435,7 @@ const tracking_payload_initials = async (req, user_profile) => {
 }
 const checking_authorization_code_and_previliges = async (req, payload) => {
     try {
-        console.log("... getting authorization code ...", payload.authorization);
+        console.log("... getting authorization code ...", payload.authorization_code);
         console.log("... checking if auth-user has authorization payload ...");
 
         const auth_payload = await AuthorizationModel.findOne({ "email": req.session.passport.user.email });
@@ -439,7 +446,7 @@ const checking_authorization_code_and_previliges = async (req, payload) => {
             console.log("... payload not found ...");
             console.log("... checking for breach of authorization code ...");
 
-            const breached_payload = await AuthorizationModel.findOne({ "authorization": payload.authorization });
+            const breached_payload = await AuthorizationModel.findOne({ "authorization": payload.authorization_code });
             console.log("... getting breached payload ...", breached_payload);
             
             if (breached_payload == null) {  return undefined;}
@@ -452,6 +459,9 @@ const checking_authorization_code_and_previliges = async (req, payload) => {
 
                 let proceed = "";
                 const user_profile = await getting_auth_user_data(req.session.passport.user.email);
+                console.log("... user profile ...", user_profile);
+                
+
                 if (typeof user_profile[0].previliges === "string" && user_profile[0].role === "admin" && user_profile[0].previliges === "super") {
                     proceed =  true;
 
@@ -516,7 +526,7 @@ const checking_authorization_code_and_previliges = async (req, payload) => {
                     console.log("... verification previlges completed ...");
                     console.log("... verifying authorization code ...");
                     
-                    if (auth_code.trim() === auth_payload.authorization.trim()) {
+                    if (payload.authorization_code.trim() === auth_payload.authorization.trim()) {
                         console.log("... code verification completed ...");
                         console.log("... updating database ...");
     
