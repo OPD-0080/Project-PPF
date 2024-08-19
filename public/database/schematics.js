@@ -1,6 +1,24 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
 
+/* @note
+    CEO or admin will have a preivelges of a string only.
+    
+    1. for user previlige must be an array of objects
+    2. with the key paramters "type" accepting values of 'document / user'.
+        and paramter "value" accespting value of [ { '', '', '' } ]
+
+        [
+            {
+                type: "document / user",
+                value: ['', '', '']
+            }
+        ]
+
+
+*/
+
+
 // generating uuid
 const uuid = uuidv4();
 
@@ -24,14 +42,15 @@ const registration_schema = new mongoose.Schema({
     previliges: { type: String, required: false, unique: false, default: "super"},
     otp: {type: String, required: false, unique: false, default: null},
     photo: {type: String, required: false, unique: false, default: null},
-    is_active: {type: String, required: false, unique: false, default: true}
+    is_active: {type: String, required: false, unique: false, default: true},
+    lockdown_mode: {type: Boolean, required: false, unique: false, default: false},
 });
 const user_schema = new mongoose.Schema({
     uuid: {type: String, required: true, unique: true, default: uuid},
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'}, 
     first_name: {type: String, required: true, unique: false, trim: true},
     last_name: {type: String, required: true, unique: false, trim: true},
-    middle_name: {type: String, required: true, unique: false, trim: true},
+    middle_name: {type: String, required: false, unique: false, trim: true},
     date_of_birth: {type: String, required: true, unique: false, trim: true},
     tel: {type: String, required: true, unique: true},
     email: {type: String, required: true, unique: true},
@@ -39,15 +58,16 @@ const user_schema = new mongoose.Schema({
     company: {type: String, required: true, unique: false},
     department: {type: String, required: false, unique: false},
     userID: {type: String, required: true, unique: true},
-    role: { type: String, required: false, unique: false, default: "staff"},
-    previliges: { type: Object, required: true, unique: false, default: null},
+    role: { type: String, required: true, unique: false, default: "staff"},
+    previliges: { type: Array, required: false, unique: false, default: null}, // will be in an array of object with paramters "type: 'document / user', value: array of strings"
     photo: {type: String, required: false, unique: false, default: null},
-    ID_card_type: {type: String, required: true, unique: false, default: null},
-    ID_card_number: {type: String, required: true, unique: false, default: null},
-    ID_photo_font: {type: String, required: true, unique: false, default: null},
-    ID_photo_back: {type: String, required: true, unique: false, default: null},
+    ID_card_type: {type: String, required: false, unique: false, default: null},
+    ID_card_number: {type: String, required: false, unique: false, default: null},
+    ID_photo_font: {type: String, required: false, unique: false, default: null},
+    ID_photo_back: {type: String, required: false, unique: false, default: null},
     otp: {type: String, required: false, unique: false, default: null},
-    is_active: {type: String, required: false, unique: false, default: true}
+    is_active: {type: String, required: false, unique: false, default: true},
+    lockdown_mode: {type: Boolean, required: false, unique: false, default: false},
 }, {timestamps: true}  // for this will add createdAt and updatedAt to the schema automatically 
 ); 
 const login_schema = new mongoose.Schema({
@@ -103,9 +123,9 @@ const comparism_schema = new mongoose.Schema({
     role: {type: String, required: true, unique: false, default: null},
     previous_payload: {type: Object, required: true, unique: false, default: null},
     incoming_payload: {type: Object, required: true, unique: false, default: null},
-    remarks: {type: String, required: true, unique: false, default: "conflict"},
+    remarks: {type: String, required: true, unique: false, default: "conflict"}, // or verified 
     comment: {type: String, required: true, unique: false, default: "no comment"},
-    message: {type: String, required: true, unique: false, default: null},
+    message: {type: String, required: true, unique: false, default: "no messsage"},
 },{timestamps: true});
 
 const tracking_schema = new mongoose.Schema({
@@ -124,6 +144,9 @@ const tracking_schema = new mongoose.Schema({
     cash: {type: Object, required: true, unique: false, default: null},
     inventory_management: {type: Object, required: true, unique: false, default: null},
     reports: {type: Object, required: true, unique: false, default: null},
+    breaches: {type: Object, required: true, unique: false, default: null},
+
+    is_breach_alert_activated: {type: Boolean, required: true, unique: false, default: false},
 
 },{timestamps: true});
 
@@ -144,6 +167,6 @@ const TrackingModel = mongoose.model("Tracking", tracking_schema);
 
 // EXPORT SCHEMATICS
 module.exports = { 
-    UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel, PurchaseModel
+    UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel, PurchaseModel, TrackingModel
 }
 // ..

@@ -536,9 +536,12 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                             const selected_data = purchases.find(data => { return data.uuid === session_data });
                             await populate_data_upon_modifiation(selected_data);
                         // end
+                        payload.type = "document";
+                        payload.trigger = "modify"; // very important 
                     }
                     else if (e.target.classList.contains("delete")) { 
-
+                        payload.type = "document";
+                        payload.trigger = "delete"; // very important 
 
 
 
@@ -567,25 +570,33 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 else { notify_user("Error. Misssing input. All input are required !");  }
             };
             auth_page_button.onclick = async (e) => {
-                activate_gif_loader(gif_loader);
                 // submitting payload to server 
                     console.log("... geting the final payload ...", payload);
 
                     const url = e.target.dataset.url;
-                    payload.authorization_code = auth_input.value;
-                    const responses = await sending_data_to_server(url, payload);
+                    const previliges = e.target.dataset.previleges;
+                    const pageon = e.target.dataset.pageon;
+
+                    if (auth_input.value == "") { notify_user("Error. Authorization code required !");   }
+                    else { 
+                        activate_gif_loader(gif_loader);
+                        
+                        payload.authorization_code = auth_input.value; 
+                        payload.pageon = pageon;
+                        payload.previliges = previliges;
+
+                        const responses = await sending_data_to_server(url, payload);
                 
-                    if (typeof responses === "object") { 
-                        setTimeout(() => {  
-                            notify_user("Sucess. Request changes will be verify for approval."); 
-                            deactivate_gif_loader(gif_loader); 
-                            remove_all_overlays_pages();
-                        }, 3000);
+                        if (typeof responses === "object") { 
+                            setTimeout(() => {  
+                                notify_user("Sucess. Request changes will be verify for approval."); 
+                                deactivate_gif_loader(gif_loader); 
+                                remove_all_overlays_pages();
+                            }, 3000);
+                        }
+                        else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); }
+                        else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); }
                     }
-                    else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); }
-                    else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); }
-
-
 
                 //  end
             };

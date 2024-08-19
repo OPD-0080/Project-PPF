@@ -5,11 +5,12 @@ const validator = require("validator");
 // ....
 // IMPORTATION OF FILES 
 const config = require("../config/config");
-const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel } = require("../../database/schematics");
+const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel, TrackingModel } = require("../../database/schematics");
 const { encrypt_access_code } = require("../controller/encryption");
 const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
-const { is_user_active, getting_auth_user_data } = require("../controller/validation");
+const { is_user_active, getting_auth_user_data, checking_authorization_code_and_previliges, tracking_payload_initials } = require("../controller/validation");
+const { get_date_and_time } = require("../utils/date_time");
 
 //
 // AUTHENTICATION
@@ -653,37 +654,152 @@ const purchases_handler = async (req, res, next) => {
 const purchases_preview_handler = async (req, res, next) => {
     let context = {};
     try {
-        console.log("** Collecting data for purchases preview submission **");
-        
+        console.log("** inside purchases preview submission **");
+        console.log("... collection of data payload ...");
+
         const payload = req.body;
 
-        console.log("... data collected ...", payload);
-        console.log("... verifying user authorization code ...");
-
+        console.log("... payload from ui ...", payload);
         
-        
-        
-
         payload.companyRefID = req.session.passport.user.companyRefID;
         payload.initiator = req.session.passport.user.userID;
         payload.company = req.session.passport.user.company;
 
-        console.log("... payload collected completed ...", payload);
-        console.log("... inserting payload into database ...");
+        console.log("... payload collected completed ...");
+        console.log("... getting user profile bases on level of crendential ");
 
-        const new_payload = {
-
-        }
-
-        // const query_resp = await PurchaseModel.insertMany(payload);
+        const user_profile = await getting_auth_user_data(req.session.passport.user.email)
         
-        // console.log("... query responds ...", query_resp);
-        console.log("... insertion of payload completed ...");
-        console.log("... wrapping context before redirecting ...");
+        console.log("... user is found ...");
+        console.log("... verifying user authorization code ...");
 
-        const msg = "Purchase submission completed";
-        context.msg = msg;
-        // context.response = query_resp
+        const auth_response = await checking_authorization_code_and_previliges(req, payload);
+        if (auth_response == undefined) {
+            console.log("... User is not authorized ...");
+            console.log("... wrapping context before rediecting ...");
+            
+            context.msg = "Error. User is not authorized !";
+            res.json(context);
+
+        }else if (typeof auth_response === "object") {
+            if (auth_response.status.trim() === "breach") {
+                let tracking_payload = {}, proceed = "", update_resp = "";
+
+                console.log("... breached of authorization codes ...");
+                console.log("... preparing payload for update of database ...");
+
+                const breach_msg = `Breach! ${breached_payload.userID} authorization code is breached by ${tracking_payload.initiator} with ID ${tracking_payload.userID} on Purchases`;
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.breaches = [{
+                    msg: breach_msg,
+                    ...await get_date_and_time(),
+                }];
+                tracking_payload.purchases = {  
+                    ...await get_date_and_time(),
+                    msg: `Request to make changes on purchase item #${payload.item_code}`,
+                }
+                tracking_payload.is_breach_alert_activated = true;
+                
+                console.log("... payload completed ...");
+                console.log("... updating database ...");
+
+                const tracking_query_response = await TrackingModel.findOne({ "companyRefID": tracking_payload.companyRefID, "userID": tracking_payload.userID });
+                if (tracking_query_response === null) {
+                    update_resp = await TrackingModel.insertOne(tracking_payload);
+                    proceed = true;
+
+                }else {
+                    const payload_update = {
+                        msg: breach_msg,
+                        ...await get_date_and_time(),
+                    };
+
+                    tracking_query_response.breaches.push(payload_update);
+                    update_resp = await TrackingModel.updateOne({ "companyRefID": req.session.passport.user.companyRefID, "userID": req.session.passport.user.userID }, 
+                        { "breaches": tracking_query_response.breaches, "is_breach_alert_activated": true });
+                    proceed = true;
+                }
+
+                if (proceed) {
+                    console.log("... updating database completed ...");
+                    console.log("... sending email to company admin and user as notification ...");
+                    
+                    const company_data = await RegistrationModel.findOne({ "uuid": req.session.passport.user.comapnyRefID });
+                    const email_response_1 = await sending_email(
+                        config.company_name,
+                        "Authorization Code Breached !",
+                        company_data.email,
+                        `Hi Admin, There has been a breach of authorization code. We recommend to you to check it out.`
+                    );
+                    const email_response_2 = await sending_email(
+                        config.company_name,
+                        "Authorization Code Breached !",
+                        auth_response.data.email,
+                        `Hi ${auth_response.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
+                    );
+
+                    console.log("... is email sent to Admin ...",email_response_1, email_response_2);
+                    console.log("... flagging the breach alert to user ...");
+                    
+                    if (update_resp !== "") {
+                        console.log("... getting final query responds from the database ...", update_resp);
+                        console.log("... wrapping context before redirecting responds ...");
+                        
+                        context.msg = "Error. Authorization breach !";
+                        context.is_data_breach = update_resp.is_breach_alert_activated;
+                        context.response = "";
+
+                        res.json(context);
+                    }
+                    
+                }
+            }
+        }else if (typeof auth_response === "string") {
+            if (auth_response.trim() === "not_activated") {
+                console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
+                console.log("... wrapping context before redirecting ...");
+
+                context.msg = "Error. Authorization not activated. Activate Authorization code before usage !";
+                res.json(context);
+
+            }else if (auth_response.trim() === "err") { 
+                console.log("... invalid authorization code ...");
+                console.log("... wrapping context before redirecting ...");
+
+                context.msg = "Error. Invalid authorization code !";
+                res.json(context);
+            
+            }else if (auth_response.trim() === "denied") {
+                console.log("... user does not have previleges. ...");
+                console.log("... wrapping context before redirecting ...");
+
+                context.msg = "Error. Operation denied. Contact Admin !";
+                res.json(context);
+                
+            }else if (auth_response.trim() === "verified") { 
+                console.log("... user is authorized to proceed ...");
+                
+
+
+            }
+        };
+
+
+        // console.log("... inserting payload into database ...");
+
+        // const new_payload = {
+
+        // }
+
+        // // const query_resp = await PurchaseModel.insertMany(payload);
+        
+        // // console.log("... query responds ...", query_resp);
+        // console.log("... insertion of payload completed ...");
+        // console.log("... wrapping context before redirecting ...");
+
+        // const msg = "Purchase submission completed";
+        // context.msg = msg;
+        // // context.response = query_resp
 
         console.log("... wrapping context completed ...");
         console.log("... redireting reponses ....");

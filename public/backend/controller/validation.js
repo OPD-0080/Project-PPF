@@ -6,6 +6,7 @@ const moment = require("moment");
 const { UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel } = require("../../database/schematics");
 const config = require("../config/config");
 
+
 // ...
 const registrationValidation = async (req, res, next) => {
     try {
@@ -387,7 +388,6 @@ const forgotPasswordConfirmValidation = async (req, res, next) => {
 };
 
 
-
 const is_user_active = async (user) => {
     let msg = "";
     (user.is_active)? msg = true : msg = false;
@@ -413,9 +413,133 @@ const reset_authorization_code = async (req, res, next) => {
         console.log("... Error @ reset authorization code middleware ...", error);
         res.redirect(303, config.view_urls.logout);        
     }
+};
+const tracking_payload_initials = async (req, user_profile) => {
+    let payload = {};
+    if (user_profile[0].hasOwnProperty("ceo")) {  payload.initiator = user_profile[0].ceo }
+    else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}` };
+
+    payload.companyRefID = req.session.passport.user.companyRefID;
+    payload.userID = req.session.passport.user.userID;
+    payload.company = req.session.passport.user.company;
+    payload.role = req.session.passport.user.role;
+
+    return payload;
 }
+const checking_authorization_code_and_previliges = async (req, payload) => {
+    try {
+        console.log("... getting authorization code ...", payload.authorization);
+        console.log("... checking if auth-user has authorization payload ...");
+
+        const auth_payload = await AuthorizationModel.findOne({ "email": req.session.passport.user.email });
+        console.log("... authorization payload ...", auth_payload);
+
+        
+        if (auth_payload == null) {
+            console.log("... payload not found ...");
+            console.log("... checking for breach of authorization code ...");
+
+            const breached_payload = await AuthorizationModel.findOne({ "authorization": payload.authorization });
+            console.log("... getting breached payload ...", breached_payload);
+            
+            if (breached_payload == null) {  return undefined;}
+            else { return { status: "breach", data: breached_payload } }
+            
+        }else {
+            if (auth_payload.authorization_visible) {
+                console.log("... authorization code visible ...");
+                console.log("... verifying user previliges ...");
+
+                let proceed = "";
+                const user_profile = await getting_auth_user_data(req.session.passport.user.email);
+                if (typeof user_profile[0].previliges === "string" && user_profile[0].role === "admin" && user_profile[0].previliges === "super") {
+                    proceed =  true;
+
+                }else {
+                    if (user_profile[0].role === "staff" && user_profile[0].previliges === null) {
+                        console.log("... user NOT having previlges to perform operation. ...");   
+                        return "denied";
+                    
+                    }else {
+                        if (user_profile[0].previliges === null) {
+                            console.log("... user NOT having previlges to perform operation. ...");   
+                            return "denied";
+                        }else {
+                            if (user_profile[0].role.trim() === payload.pageon.trim()) {
+                                let user_previliges_obj = "", obj1 = "", obj2 = "";
+
+                                console.log("... checking previliges type ...");
+                                
+                                const is_type_resp_1 = user_profile[0].previliges.findIndex(el => { return el.type  === "document" });
+                                const is_type_resp_2 = user_profile[0].previliges.findIndex(el => { return el.type  === "user" });
+                                if ((is_type_resp_1 >= 0 ) && (is_type_resp_2 < 0)) {
+                                    console.log("... for DOCUMENT TYPE ...");
+                                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "document" });
+
+                                }else if ((is_type_resp_1 < 0 ) && (is_type_resp_2 >= 0)) {
+                                    console.log("... for USER TYPE ...");
+                                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "user" });
+
+                                }else if ((is_type_resp_1 >= 0 ) && (is_type_resp_2 >= 0)) {
+                                    obj1 = user_profile[0].previliges.find(el => { return el.type  === "document" });
+                                    obj2 = user_profile[0].previliges.find(el => { return el.type  === "user" });
+                                    user_previliges_obj = true;
+
+                                }else { return "denied" };
+                                console.log("... checking completed ...", user_previliges_obj);
+
+                                if (user_previliges_obj !== "" && user_previliges_obj !== undefined) {
+                                    if (typeof user_previliges_obj === "object") { 
+
+                                        if (user_previliges_obj.value.find(el => { return el === payload.trigger.trim() }) === undefined) { return "denied" }
+                                        else { proceed = true };
+
+                                    }else if (typeof user_previliges_obj === "boolean" && user_previliges_obj) {
+                                            
+                                        if ((typeof obj1 === "object") && (typeof obj2 === "object")) {
+                                            if ( obj1.value.find(el => { return el === payload.trigger.trim() }) === undefined) { 
+                                                if (obj2.value.find(el => { return el === payload.trigger.trim() }) === undefined) { return "denied" }
+                                                else { proceed = true };
+                                            }else { proceed = true };
+                                        }else { return undefined }
+                                    }
+                                }
+                            }else {
+                                console.log("... user on the wrong page of operation ...");
+                                return "denied";
+                            }
+                        }
+                    }
+                }
+
+                if (proceed && proceed !== "") {
+                    console.log("... verification previlges completed ...");
+                    console.log("... verifying authorization code ...");
+                    
+                    if (auth_code.trim() === auth_payload.authorization.trim()) {
+                        console.log("... code verification completed ...");
+                        console.log("... updating database ...");
+    
+                        await AuthorizationModel.updateOne({ "userID": req.session.passport.user.userID, "companyRefID": req.session.passport.user.companyRefID },
+                            { "authorization_active": true });
+                        
+                        console.log("... database update completed ...");
+                        return "verified";
+
+                    }else { return "err" };
+                }
+            }else { return "not_activated"; }
+        }
+    } catch (error) {
+        console.log("Error. @ checking user authorization code ...", error);
+    }
+};
+
+
+
+
 
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
     is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
-    getting_auth_user_data, reset_authorization_code
+    getting_auth_user_data, reset_authorization_code,checking_authorization_code_and_previliges, tracking_payload_initials
 }

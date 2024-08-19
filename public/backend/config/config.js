@@ -1,10 +1,42 @@
 const GET_base_url = "/api/get/user";
 const POST_base_url = "/api/post/user";
 
+const previliges_options = {
+    modify: "modify",
+    delete: "delete",
+    create: "create",
+} 
 const config = {
     company_name: "Project PPF",
     userID_regexp: "[a-z]{3}[0-9]{5}",
     default_pass_regexp: "[a-z]{6}[0-9]{5}",
+    previliges: {
+        documents: {
+            ...previliges_options,
+            report: "report",
+        },
+        user: {
+            ...previliges_options,
+        }
+    },
+    pageon: {
+        purchases: "purchases",
+    },
+    roles: {
+        admin: "admin",
+        managing_director: "managing_director",
+        operation_manager: "operation_manager",
+        
+        sales_lead: "sales_lead",
+        inventory_lead: "inventory_lead",
+        purchases_lead: "purchases_lead",
+        account_lead: "account_lead",
+
+        sales: "sales",
+        inventory: "inventory",
+        purchases: "purchases",
+        account: "account",
+    },
 
     GET_url: GET_base_url,
     POST_url: POST_base_url,
