@@ -5,7 +5,7 @@ const previliges_options = {
     modify: "modify",
     delete: "delete",
     create: "create",
-} 
+};
 const config = {
     company_name: "Project PPF",
     userID_regexp: "[a-z]{3}[0-9]{5}",

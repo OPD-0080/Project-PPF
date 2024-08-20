@@ -121,11 +121,26 @@ const comparism_schema = new mongoose.Schema({
     initiator: {type: String, required: true, unique: false, default: null},
     userID: {type: String, required: true, unique: false},
     role: {type: String, required: true, unique: false, default: null},
-    previous_payload: {type: Object, required: true, unique: false, default: null},
-    incoming_payload: {type: Object, required: true, unique: false, default: null},
-    remarks: {type: String, required: true, unique: false, default: "conflict"}, // or verified 
-    comment: {type: String, required: true, unique: false, default: "no comment"},
-    message: {type: String, required: true, unique: false, default: "no messsage"},
+    payload: {type: Array, required: true, unique: false, default: null},
+    /*
+        payload will be sturctured as llustrated below:
+        [
+            {
+                current_data: as object
+                incoming_data: as object
+                remarks: as string 'conflict / verified'
+                user_comment ast string
+                lead_comment: as string
+                entry_date_time: as date 
+                response_date_time: as date 
+            }
+        ]
+    */
+    // previous_payload: {type: Object, required: true, unique: false, default: null},
+    // incoming_payload: {type: Object, required: true, unique: false, default: null},
+    // remarks: {type: String, required: true, unique: false, default: "conflict"}, // or verified 
+    // comment: {type: String, required: true, unique: false, default: "no comment"},
+    // message: {type: String, required: true, unique: false, default: "no messsage"},
 },{timestamps: true});
 
 const tracking_schema = new mongoose.Schema({
@@ -167,6 +182,7 @@ const TrackingModel = mongoose.model("Tracking", tracking_schema);
 
 // EXPORT SCHEMATICS
 module.exports = { 
-    UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel, PurchaseModel, TrackingModel
+    UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel, PurchaseModel, TrackingModel, 
+    ComparismeModel
 }
 // ..

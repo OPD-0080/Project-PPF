@@ -45,7 +45,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             };
             input.onkeyup = async (e) => {
                 if (e.target.classList.contains("supplier")) {
-                    const value = e.target.value;
+                    const value = e.target.value.trim();
                     payload.supplier = value.toLocaleLowerCase(); 
                     
                     if (value.length !== 0) { deactivate_input_indicator(e); }
@@ -62,7 +62,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     }
                 };
                 if (e.target.classList.contains("particular")) {
-                    const value = e.target.value;
+                    const value = e.target.value.trim();
                     payload.particular = value.toLocaleLowerCase(); 
                     
                     if (value.length !== 0) { deactivate_input_indicator(e); }
@@ -370,7 +370,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             else { 
                 display_purchases_content(purchases); 
                 sessionStorage.removeItem("dumpsite");
-                // updating_data_at_dumpsite(purchases);
             }
         //  End
 
@@ -505,6 +504,13 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                             activate_input_indicator(e);
                         }
                     };
+                    if (e.target.classList.contains("comment")) {
+                        const value = e.target.value;
+                        payload.comment = value.toLocaleLowerCase(); 
+                        
+                        if (value.length !== 0) { deactivate_input_indicator(e); }
+                        else { activate_input_indicator(e); }
+                    };
                 };
                 input.onchange = (e) => {
                     if (e.target.classList.contains("invoice-date")) {
@@ -571,33 +577,44 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             };
             auth_page_button.onclick = async (e) => {
                 // submitting payload to server 
-                    console.log("... geting the final payload ...", payload);
+                    if (typeof payload.trigger === "string" && payload.trigger.trim() === "modify") {
+                        console.log("... geting the final payload ...", payload);
 
-                    const url = e.target.dataset.url;
-                    const previliges = e.target.dataset.previleges;
-                    const pageon = e.target.dataset.pageon;
+                        const url = e.target.dataset.url;
+                        const previliges = e.target.dataset.previleges;
+                        const pageon = e.target.dataset.pageon;
 
-                    if (auth_input.value == "") { notify_user("Error. Authorization code required !");   }
-                    else { 
-                        activate_gif_loader(gif_loader);
-                        
-                        payload.authorization_code = auth_input.value; 
-                        payload.pageon = pageon;
-                        payload.previliges = previliges;
+                        if (auth_input.value == "") { notify_user("Error. Authorization code required !"); }
+                        else { 
+                            activate_gif_loader(gif_loader);
+                            
+                            payload.authorization_code = auth_input.value; 
+                            payload.pageon = pageon;
+                            payload.previliges = previliges;
 
-                        const responses = await sending_data_to_server(url, payload);
-                
-                        if (typeof responses === "object") { 
-                            setTimeout(() => {  
-                                notify_user("Sucess. Request changes will be verify for approval."); 
-                                deactivate_gif_loader(gif_loader); 
-                                remove_all_overlays_pages();
-                            }, 3000);
-                        }
-                        else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); }
-                        else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); }
-                    }
+                            const responses = await sending_data_to_server(url, payload);
+                    
+                            if (typeof responses === "object") { 
+                                setTimeout(() => {  
+                                    notify_user("Sucess. Request is sent and will be verify for approval."); 
+                                    deactivate_gif_loader(gif_loader); 
+                                    remove_all_overlays_pages();
+                                    // then update data on the UI 
 
+                                    // 
+
+                                }, 3000);
+                            }
+                            else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); }
+                            else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); }
+                        };
+                    };
+                    if (typeof payload.trigger === "string" && payload.trigger.trim() === "delete") {
+
+
+
+
+                    };
                 //  end
             };
         // end

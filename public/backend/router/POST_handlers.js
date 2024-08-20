@@ -1,11 +1,12 @@
 // IMPORATION OF MODULES 
-const store = require("store2");
+const moment = require("moment");
 const validator = require("validator");
 
 // ....
 // IMPORTATION OF FILES 
 const config = require("../config/config");
-const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel, TrackingModel } = require("../../database/schematics");
+const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel, TrackingModel,
+    ComparismeModel } = require("../../database/schematics");
 const { encrypt_access_code } = require("../controller/encryption");
 const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
@@ -657,15 +658,15 @@ const purchases_preview_handler = async (req, res, next) => {
         console.log("** inside purchases preview submission **");
         console.log("... collection of data payload ...");
 
+        let proceed = "";
         const payload = req.body;
-
-        console.log("... payload from ui ...", payload);
+        const incoming_payload = req.body;
         
         payload.companyRefID = req.session.passport.user.companyRefID;
         payload.initiator = req.session.passport.user.userID;
         payload.company = req.session.passport.user.company;
 
-        console.log("... payload collected completed ...");
+        console.log("... payload collected completed ...", payload);
         console.log("... getting user profile bases on level of crendential ");
 
         const user_profile = await getting_auth_user_data(req.session.passport.user.email)
@@ -776,36 +777,49 @@ const purchases_preview_handler = async (req, res, next) => {
                 context.msg = "Error. Operation denied. Contact Admin !";
                 res.json(context);
                 
-            }else if (auth_response.trim() === "verified") { 
-                console.log("... user is authorized to proceed ...");
-                
-
-
-            }
+            }else if (auth_response.trim() === "verified") { proceed = true; };
         };
 
+        if (typeof proceed === "boolean" && proceed) {
+            console.log("... user is authorized to proceed ...");
+            console.log("... inserting data into database for comparism and verification ...");
 
-        // console.log("... inserting payload into database ...");
+            const current_payload = await PurchaseModel.findOne({ 
+                "$and": [
+                    { "companyRefID": req.session.passport.user.companyRefID },
+                    { "supplier": payload.supplier },
+                    { "item_code": payload.item_code }
+                ]
+            });
+            const comparism_payload = {
+                companyRefID: req.session.passport.user.companyRefID,
+                initiator: req.session.passport.user.userID,
+                company: req.session.passport.user.company,
+                userID: req.session.passport.user.userID,
+                role: req.session.passport.user.role,
+                payload: [
+                    {
+                        current_data: current_payload,
+                        incoming_data: incoming_payload,
+                        remarks: 'conflict',
+                        user_comment: payload.comment,
+                        lead_comment: null,
+                        entry_date_time: `${(await get_date_and_time()).date}-${(await get_date_and_time()).time}`,
+                        response_date_time: null,
+                        headline: "modify",
+                    }
+                ],
+            };
+            const insertion_resp = await ComparismeModel.insertMany(comparism_payload);
+            
+            console.log("... insertion responds ...", insertion_resp);
+            console.log("... insertion of payload completed ...");
+            console.log("... wrapping context before redirecting ...");
 
-        // const new_payload = {
-
-        // }
-
-        // // const query_resp = await PurchaseModel.insertMany(payload);
-        
-        // // console.log("... query responds ...", query_resp);
-        // console.log("... insertion of payload completed ...");
-        // console.log("... wrapping context before redirecting ...");
-
-        // const msg = "Purchase submission completed";
-        // context.msg = msg;
-        // // context.response = query_resp
-
-        console.log("... wrapping context completed ...");
-        console.log("... redireting reponses ....");
-
-        // res.json(context);
-        
+            const msg = "Request is sent and awaiting for verification !";
+            context.msg = msg;
+            res.json(context);
+        };      
     } catch (error) {
         console.log("** Error:: Purchases Handler **", error);
 
