@@ -458,7 +458,7 @@ const checking_authorization_code_and_previliges = async (req, payload) => {
                 console.log("... verifying user previliges ...");
 
                 let proceed = "";
-                const user_profile = await getting_auth_user_data(req.session.passport.user.email);
+                const user_profile = await getting_auth_user_data(req.session.passport.user);
                 console.log("... user profile ...", user_profile);
 
                 if (typeof user_profile[0].previliges === "string" && user_profile[0].role === "admin" && user_profile[0].previliges === "super") {

@@ -1,7 +1,7 @@
 const moment = require("moment");
 const get_date_and_time = async () => {
     return {
-        date: moment().format("dd-mm-yyyy"),
+        date: moment().format("dd-hh-mm-yyyy"),
         time: moment().format("hh:mm")
     }
 };

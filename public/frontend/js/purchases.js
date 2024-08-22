@@ -357,20 +357,25 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             auth_page_container.classList.remove("show");
             if (gif_loader !== undefined) { deactivate_gif_loader(gif_loader); };
         };
-
-
-        // loading payload from database and populating data in DOM
+        const updating_purchases_data = async () => {
             const server_payload = await loading_purchases_from_database();
             const purchases = server_payload.purchases;
             if (server_payload === 404) { 
                 display_purchases_content(null);
-                notify_user("Error. Inernet Connection Bad. Try Again !") 
+                notify_user("Error. Inernet Connection Bad. Try Again !");
+                return
             }
-            else if (purchases.length <= 0) { display_purchases_content(null); }
+            else if (purchases.length <= 0) { display_purchases_content(null); return purchases }
             else { 
                 display_purchases_content(purchases); 
                 sessionStorage.removeItem("dumpsite");
+                return purchases;
             }
+        };
+
+
+        // loading payload from database and populating data in DOM
+            const purchases = await updating_purchases_data();
         //  End
 
         //  Highligth and get data upon selection
@@ -593,20 +598,21 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                             payload.previliges = previliges;
 
                             const responses = await sending_data_to_server(url, payload);
+                            console.log("... getting responses from server ...", responses);
+                            
                     
                             if (typeof responses === "object") { 
-                                setTimeout(() => {  
-                                    notify_user("Sucess. Request is sent and will be verify for approval."); 
+                                setTimeout(async () => {  
+                                    notify_user(`${responses.msg}`); 
                                     deactivate_gif_loader(gif_loader); 
                                     remove_all_overlays_pages();
                                     // then update data on the UI 
-
+                                    await updating_purchases_data()
                                     // 
-
                                 }, 3000);
                             }
-                            else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); }
-                            else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); }
+                            else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
+                            else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  }
                         };
                     };
                     if (typeof payload.trigger === "string" && payload.trigger.trim() === "delete") {

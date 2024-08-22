@@ -782,43 +782,59 @@ const purchases_preview_handler = async (req, res, next) => {
 
         if (typeof proceed === "boolean" && proceed) {
             console.log("... user is authorized to proceed ...");
-            console.log("... inserting data into database for comparism and verification ...");
+            console.log("... inserting data into database for comparism and verification base on data existence ...");
 
-            const current_payload = await PurchaseModel.findOne({ 
-                "$and": [
-                    { "companyRefID": req.session.passport.user.companyRefID },
-                    { "supplier": payload.supplier },
-                    { "item_code": payload.item_code }
-                ]
-            });
-            const comparism_payload = {
-                companyRefID: req.session.passport.user.companyRefID,
-                initiator: req.session.passport.user.userID,
-                company: req.session.passport.user.company,
-                userID: req.session.passport.user.userID,
-                role: req.session.passport.user.role,
-                payload: [
-                    {
-                        current_data: current_payload,
-                        incoming_data: incoming_payload,
-                        remarks: 'conflict',
-                        user_comment: payload.comment,
-                        lead_comment: null,
-                        entry_date_time: `${(await get_date_and_time()).date}-${(await get_date_and_time()).time}`,
-                        response_date_time: null,
-                        headline: "modify",
-                    }
-                ],
-            };
-            const insertion_resp = await ComparismeModel.insertMany(comparism_payload);
-            
-            console.log("... insertion responds ...", insertion_resp);
-            console.log("... insertion of payload completed ...");
-            console.log("... wrapping context before redirecting ...");
+            const current_payload = await PurchaseModel.findOne({ "item_code": payload.item_code });
+            console.log("... getting the current payload from database ...", current_payload);
 
-            const msg = "Request is sent and awaiting for verification !";
-            context.msg = msg;
-            res.json(context);
+            if (current_payload.companyRefID !== req.session.passport.user.companyRefID) {  
+                console.log("... data does not belong to the right company ...");
+                console.log("... wrapping context before redirecting ...");
+                
+                context.msg = "Error. Couldn't submit. Try Again !";
+                res.json(context);
+            }else {
+                const comparism_payload = {
+                    companyRefID: req.session.passport.user.companyRefID,
+                    initiator: req.session.passport.user.userID,
+                    company: req.session.passport.user.company,
+                    userID: req.session.passport.user.userID,
+                    role: req.session.passport.user.role,
+                    payload: [
+                        {
+                            current_data: current_payload,
+                            incoming_data: incoming_payload,
+                            remarks: 'conflict',
+                            user_comment: payload.comment,
+                            lead_comment: null,
+                            entry_date_time: `${(await get_date_and_time()).date}/${(await get_date_and_time()).time}`,
+                            response_date_time: null,
+                            headline: "modify",
+                        }
+                    ],
+                };
+    
+                let is_data_inserted = "";
+                const comparism_obj = await ComparismeModel.findOne({ "userID": comparism_payload.userID });
+                if (comparism_obj === null) {
+                    await ComparismeModel.insertMany(comparism_payload);
+                    is_data_inserted = true;
+                }else {
+                    const updated_payload = comparism_obj.payload.push(comparism_payload.payload[0]);
+                    await ComparismeModel.updateOne({ "userID": comparism_payload.userID },
+                        { "payload": updated_payload });
+                        is_data_inserted = true;
+                }
+                if (typeof is_data_inserted === "boolean" && is_data_inserted) {
+                    console.log("... insertion responds ...");
+                    console.log("... insertion of payload completed ...");
+                    console.log("... wrapping context before redirecting ...");
+    
+                    const msg = "Sucess. Request is sent and will be verify for approval !";
+                    context.msg = msg;
+                    res.json(context);
+                }
+            }
         };      
     } catch (error) {
         console.log("** Error:: Purchases Handler **", error);
