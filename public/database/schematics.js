@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const { v4: uuidv4 } = require("uuid");
+// const { v4: uuidv4 } = require("uuid");
 
 /* @note
     CEO or admin will have a preivelges of a string only.
@@ -19,12 +19,8 @@ const { v4: uuidv4 } = require("uuid");
 */
 
 
-// generating uuid
-const uuid = uuidv4();
-
 // DEFINING SCHEMATICS
 const registration_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     email: {type: String, required: true, unique: true},
     businessName: { type: String, required: true },
     natureOfBusiness: {type: String, required: true},
@@ -46,7 +42,6 @@ const registration_schema = new mongoose.Schema({
     lockdown_mode: {type: Boolean, required: false, unique: false, default: false},
 });
 const user_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'}, 
     first_name: {type: String, required: true, unique: false, trim: true},
     last_name: {type: String, required: true, unique: false, trim: true},
@@ -71,7 +66,6 @@ const user_schema = new mongoose.Schema({
 }, {timestamps: true}  // for this will add createdAt and updatedAt to the schema automatically 
 ); 
 const login_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     email: {type: String, required: true, unique: true},
     company: {type: String, required: true, unique: false},
     userID: {type: String, required: true, unique: true},
@@ -87,7 +81,6 @@ const date_time_schema = new mongoose.Schema({
     logout_time: {type: String, required: false, unique: false, default: null},
 });
 const authorization_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     email: {type: String, required: true, unique: true},
     company: {type: String, required: true, unique: false},
     userID: {type: String, required: true, unique: true},
@@ -99,7 +92,6 @@ const authorization_schema = new mongoose.Schema({
 }, {timestamps: true});
 
 const purchases_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     company: {type: String, required: true, unique: false, default: null},
     initiator: {type: String, required: true, unique: false, default: null},
@@ -115,7 +107,6 @@ const purchases_schema = new mongoose.Schema({
 },{timestamps: true});
 
 const comparism_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     company: {type: String, required: true, unique: false, default: null},
     initiator: {type: String, required: true, unique: false, default: null},
@@ -136,15 +127,9 @@ const comparism_schema = new mongoose.Schema({
             }
         ]
     */
-    // previous_payload: {type: Object, required: true, unique: false, default: null},
-    // incoming_payload: {type: Object, required: true, unique: false, default: null},
-    // remarks: {type: String, required: true, unique: false, default: "conflict"}, // or verified 
-    // comment: {type: String, required: true, unique: false, default: "no comment"},
-    // message: {type: String, required: true, unique: false, default: "no messsage"},
 },{timestamps: true});
 
 const tracking_schema = new mongoose.Schema({
-    uuid: {type: String, required: true, unique: true, default: uuid},
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     company: {type: String, required: true, unique: false, default: null},
     initiator: {type: String, required: true, unique: false, default: null},

@@ -94,7 +94,7 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-														<input type="text" class="form-control supplier" id="validationCustom01"  placeholder="" required>
+														<input type="text" class="form-control supplier" name="supplier" id="validationCustom01"  placeholder="" required>
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
@@ -102,7 +102,7 @@
 														<span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="date" class="form-control invoice-date" id="validationCustom02"  placeholder="" required>
+                                                        <input type="date" class="form-control invoice-date" name="invoice_date" id="validationCustom02"  placeholder="" required>
                                                     </div>
                                                 </div>
                                                 <div class="mb-3 row">
@@ -110,7 +110,7 @@
 														<span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="text" class="form-control invoice-number" id="validationCustom02"  placeholder="" required>
+                                                        <input type="text" class="form-control invoice-number" name="invoice_number" id="validationCustom02"  placeholder="" required>
                                                     </div>
                                                 </div>
 												<div class="mb-3 row">
@@ -118,7 +118,7 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="text" class="form-control item-code" id="validationCustom02"  placeholder="" required readonly>
+                                                        <input type="text" class="form-control item-code" name="item_code" id="validationCustom02"  placeholder="" required readonly>
                                                     </div>
                                                 </div>
 												<div class="card-body">
@@ -140,7 +140,7 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="text" class="form-control particular" id="validationCustom06" placeholder="" required>
+                                                        <input type="text" class="form-control particular" name="particular" id="validationCustom06" placeholder="" required>
 														<!-- <div class="invalid-feedback">
 															Please enter a Currency.
 														</div> -->
@@ -151,7 +151,7 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="text" class="form-control quantity" id="validationCustom07"  placeholder="" required>
+                                                        <input type="text" class="form-control quantity" name="quantity" id="validationCustom07"  placeholder="" required>
 														<!-- <div class="invalid-feedback">
 															Please enter a url.
 														</div> -->
@@ -162,7 +162,7 @@
                                                         <span class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="text" class="form-control price" id="validationCustom08" placeholder="" required>
+                                                        <input type="text" class="form-control price" name="price" id="validationCustom08" placeholder="" required>
 														<!-- <div class="invalid-feedback">
 															Please enter a phone no.
 														</div> -->
@@ -173,7 +173,7 @@
                                                             class="text-danger">*</span>
                                                     </label>
                                                     <div class="col-lg-6">
-                                                        <input type="text" class="form-control amount" id="validationCustom09"  placeholder="" required>
+                                                        <input type="text" class="form-control amount" name="amount" id="validationCustom09"  placeholder="" required>
 														<!-- <div class="invalid-feedback">
 															Please enter a digits.
 														</div> -->
@@ -182,7 +182,7 @@
                                                 
                                                 <div class="mb-3 row purchases-button-wrapper" data-purchases="<% if (context !== undefined) { %><%- context.config.post_urls.purchases_entry %><% } %>">
                                                     <div class="col-lg-8 ms-auto">
-                                                        <a><button type="button" class="btn btn-primary purchases-button">Submit</button></a>
+                                                        <button type="button" class="btn btn-primary purchases-button">Submit</button>
                                                         <div class="loading-gif"></div>
                                                     </div>
                                                 </div>

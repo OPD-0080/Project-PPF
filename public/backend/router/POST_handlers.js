@@ -64,12 +64,13 @@ const registration_handler = async (req, res, next) => {
             
             const biodata = await RegistrationModel.findOne({ "email": email });
             console.log("... getting registration data ...", biodata);
+
             const auth_payload = {
                 email: biodata.email,
                 company: biodata.businessName,
                 userID: biodata.ceo, // important !. the userID become the CEO name for user with superuser role.
                 role: biodata.role,
-                companyRefID: biodata.uuid, 
+                companyRefID: biodata._id, 
                 authorization: await authorization_code(),
             };
             await AuthorizationModel.insertMany(auth_payload);
@@ -91,14 +92,19 @@ const registration_handler = async (req, res, next) => {
     } catch (error) {
         console.log("Error from Registeration ..", error);
 
-        // handling duplicate UUID keys err
+        // handling duplicate _id keys err
             if (error.code == "11000") { //  for duplicate of business name 
                 req.flash("register", `Error. ${businessName} already registered !`);
                 res.redirect(303, `${config.view_urls.register}`);
-            }
+            };
             if (error, error.code == "11000" && Object.keys(error.keyValue) == "password") { // for duplicate of password 
                 req.flash("register", `Error. Provided Password already used !`);
                 res.redirect(303, `${config.view_urls.register}`);
+            };
+            if (error, error.code == "11000" && Object.keys(error.keyValue) == "authorizations") {
+                console.log("... authorization code id duplicated. But registration sucess. ...");
+                console.log("... move to the next middelware...");
+                next();
             }
         // ...
     }
@@ -130,7 +136,7 @@ const signup_handler = async (req, res, next) => {
             password: data.confirm_pass,
             company: user.company,
             userID: `${user.company.slice(0, 3).trim()}${await randomSerialCode(5)}`,
-            companyRefID: biodata[0].uuid,
+            companyRefID: biodata[0]._id,
             otp: otp_code,
         };
         console.log("** final payload **", payload);
@@ -613,11 +619,18 @@ const purchases_handler = async (req, res, next) => {
         const payload = req.body;
 
         payload.companyRefID = req.session.passport.user.companyRefID;
-        payload.initiator = req.session.passport.user.userID;
+        payload.userID = req.session.passport.user.userID;
         payload.company = req.session.passport.user.company;
 
         console.log("... payload collected completed ...", payload);
         console.log("... inserting payload into database ...");
+
+        const user_profile = await  getting_auth_user_data(req.session.passport.user);
+        if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
+        else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
+
+        console.log("... getting final payload ...", payload);
+        
 
         const query_resp = await PurchaseModel.insertMany(payload);
         
@@ -625,19 +638,21 @@ const purchases_handler = async (req, res, next) => {
         console.log("... insertion of payload completed ...");
         console.log("... wrapping context before redirecting ...");
 
-        const msg = "Purchase submission completed";
-        context.msg = msg;
-        context.response = query_resp
-
         console.log("... wrapping context completed ...");
         console.log("... redireting reponses ....");
 
+        context.msg = "Purchase submission sucess";
+        context.data = query_resp;
+        // req.flash("purchase", context.msg);
+        // res.redirect(303, config.view_urls.purchase);
         res.json(context);
         
     } catch (error) {
         console.log("** Error:: Purchases Handler **", error);
 
         if (error.code == "11000") { //  for duplicate of business name 
+            console.log("... data is duplicated ...");
+            
             console.log("... wrapping context before redirecting ...");
 
             const error_msg = "Error. Data is duplicated . Try Again !";
@@ -646,6 +661,8 @@ const purchases_handler = async (req, res, next) => {
             console.log("... wrapping context completed ...");
             console.log("... redireting reponses ....");
 
+            // req.flash("purchase", context.msg);
+            // res.redirect(303, config.view_urls.purchase);
             res.json(context);
         }
 
@@ -689,8 +706,11 @@ const purchases_preview_handler = async (req, res, next) => {
                 console.log("... breached of authorization codes ...");
                 console.log("... preparing payload for update of database ...");
 
-                const breach_msg = `Breach! ${breached_payload.userID} authorization code is breached by ${tracking_payload.initiator} with ID ${tracking_payload.userID} on Purchases`;
+                const breach_msg = `Breach! ${auth_response.data.userID} authorization code is breached by ${payload.initiator} on Purchases`;
                 tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                // tracking_payload.breached_by = {
+                    
+                // }
                 tracking_payload.breaches = [{
                     msg: breach_msg,
                     ...await get_date_and_time(),
@@ -725,7 +745,7 @@ const purchases_preview_handler = async (req, res, next) => {
                     console.log("... updating database completed ...");
                     console.log("... sending email to company admin and user as notification ...");
                     
-                    const company_data = await RegistrationModel.findOne({ "uuid": req.session.passport.user.comapnyRefID });
+                    const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
                     const email_response_1 = await sending_email(
                         config.company_name,
                         "Authorization Code Breached !",

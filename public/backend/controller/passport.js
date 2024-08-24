@@ -10,7 +10,6 @@ const store = require("store2");
 const { LoginModel, DateTimeTracker, UserModel, RegistrationModel, AuthorizationModel } = require("../../database/schematics");
 const { encrypt_access_code } = require("../controller/encryption");
 const  config  = require("../config/config");
-const { authorization_code } = require("../utils/code_generator");
 // ...
 
 // PASSPORT VERIFYING LOGIN CREDDENTIALS LOCALLY 
@@ -19,9 +18,8 @@ const verify = async(username, password, cb) => {
     console.log("... Initiating password encryption ...");
 
     const hashed_pass = await encrypt_access_code(password);
-    console.log("** hashing user password **", hashed_pass); 
-    
 
+    console.log("** hashing user password **", hashed_pass); 
     console.log("... Password encryption completed ...");
     console.log("... verifiying if user is admin or not ...");
 
@@ -39,7 +37,7 @@ const verify = async(username, password, cb) => {
             company: biodata[0].businessName,
             userID: biodata[0].ceo, // important !. the userID become the CEO name for user with superuser role.
             role: biodata[0].role,
-            companyRefID: biodata[0].uuid, 
+            companyRefID: biodata[0]._id, 
         };
         console.log("getting user payload ...", payload);
         console.log("... validating user credentials before redirecting ...");
@@ -84,7 +82,7 @@ const verify = async(username, password, cb) => {
             if (user[0].password.match(config.default_pass_regexp)) {
 
                 if (user[0].password === password) { 
-                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization_status": false, "authorization_visible": false });
+                    await AuthorizationModel.updateOne({"email": payload.email}, {"authorization_active": false, "authorization_visible": false });
 
                     return cb(null, payload) 
                 }
@@ -101,7 +99,7 @@ const verify = async(username, password, cb) => {
             }
         }else {
             store.session.set("login", "Server Error. Try Again !") 
-            return cb(null, false) 
+            // return cb(null, false) 
         }
     }
 }
@@ -186,7 +184,7 @@ const update_login_credentials = async (payload, user, username) => {
         // updating login timer as user login 
             if (date_tracker.length == 0) {
                 await DateTimeTracker.insertMany({ 
-                    "companyRefID": user[0].uuid,
+                    "companyRefID": user[0]._id,
                     "email": payload.email, 
                     "userID": payload.userID, 
                     "login_date": `${moment().format("YYYY-MM-DD")}`,
@@ -204,30 +202,34 @@ const update_login_credentials = async (payload, user, username) => {
             }
         // ...
     } catch (error) {
-        console.log("Error in Update login credentials ...", error);
+        console.log("Error in Update login credentials ...", error, error.writeErrors[0].err.errmsg);
 
-        if (error.code == "1100" & error.writeErrors[0].err.errmsg.includes("uuid")) {
+        if (error.code == "1100" & error.writeErrors[0].err.errmsg.includes("_id")) {
+            console.log("aaaaaaaaaaaa");
+            
             // delete user login data from db
                 await DateTimeTracker.updateOne(
-                    { "uuid": user[0].uuid }, // filter to get user data from db
+                    { "_id": user[0]._id }, // filter to get user data from db
                     { $set: { // then update that data
                         "logout_date": `${moment().format("YYYY-MM-DD")}`,
                         "logout_time": `${moment().format("hh:mm")}`
                     }}
                 );
-                await LoginModel.deleteOne({ "uuid": user[0].uuid });
+                await LoginModel.deleteOne({ "_id": user[0]._id });
             // ...
             return false;
         }else if (error.code == "1100") {
+            console.log("bbbbbbbbbbbb");
+            
             // delete user login data from db
                 await DateTimeTracker.updateOne(
-                    { "uuid": user[0].uuid }, // filter to get user data from db
+                    { "_id": user[0]._id }, // filter to get user data from db
                     { $set: { // then update that data
                         "logout_date": `${moment().format("YYYY-MM-DD")}`,
                         "logout_time": `${moment().format("hh:mm")}`
                     }}
                 );
-                await LoginModel.deleteOne({ "uuid": user[0].uuid });
+                await LoginModel.deleteOne({ "_id": user[0]._id });
             // ...
             return false;
         }

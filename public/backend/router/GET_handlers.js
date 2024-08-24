@@ -86,7 +86,7 @@ const view_login = async (req, res, next) => {
             context.businesses = JSON.stringify(businesses);
             context.config = config
         // ...
-        console.log(context);
+        // console.log(context);
 
         res.render("login", { context })
 
@@ -291,6 +291,10 @@ const view_purchase = async (req, res, next) => {
         const flash_msg = req.flash("purchase");
         context.message = flash_msg;
         context.config = config;
+        console.log(context.message);
+        
+
+        setTimeout(() => { req.flash("purchase", "") }, 500);
 
         console.log("... context completed ...");
         console.log("... rendering ...");

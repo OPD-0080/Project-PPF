@@ -2,7 +2,7 @@
 
 import { randomNumbers, randomLetters } from "../utils/generate-code.js"; 
 import { load_data_from_server, sending_data_to_server, notify_user, validating_input_before_submission, 
-    activate_gif_loader, deactivate_gif_loader } from "./formauth.js"; 
+    activate_gif_loader, deactivate_gif_loader, submit_form_template } from "./formauth.js"; 
 
 // GLOBAL FUNCTION
     const activate_input_indicator = (e) => {
@@ -25,6 +25,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
     if (purchases_wrapper !== null) {
 
         const form_controls = purchases_wrapper.querySelectorAll(".form-control");
+        const purchase_form_wrapaper = document.querySelector(".purchases-form-wrapper");
         const form_button = purchases_wrapper.querySelector(".purchases-button");
         const form_button_wrapper = purchases_wrapper.querySelector(".purchases-button-wrapper");
         const copy_paste_buttons = purchases_wrapper.querySelectorAll(".purchases-copy-paste-button");
@@ -135,9 +136,17 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 notify_user("__Sumission initiated."); 
                 activate_gif_loader(gif_loader);
 
+
+                // const url = form_button_wrapper.getAttribute("data-purchases");
+                // purchase_form_wrapaper.action = `${url}`;
+                // purchase_form_wrapaper.method = "post";
+                // form_button.type = "submit";
+
                 const url = form_button_wrapper.getAttribute("data-purchases");
                 const responses = await sending_data_to_server(`${url}`, payload);
+                console.log("... server responds ...", responses);
                 
+
                 if (typeof responses === "object") { 
                     setTimeout(() => {  
                         notify_user("Purchase submisson sucess"); 
@@ -149,7 +158,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     }, 3000);
                 }
                 else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Purchase submission failed. Try Again"); }
-                else { notify_user("Error. Network Connection Bad. Check Net Connection !"); }
+                else { notify_user("Error. Server not responding !"); }
             }
             else { notify_user("Error. Misssing input. All input are required !");  }
         };
