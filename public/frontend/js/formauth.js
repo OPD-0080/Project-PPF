@@ -11,13 +11,13 @@ const notify_user = (msg) => {
         const remove_alert = () => { notification_wrapper.classList.remove("show") };
         const show_alert = () => {
             notification_wrapper.classList.add("show");
-            setTimeout(() => { remove_alert() }, 3000);
+            setTimeout(() => { remove_alert() }, 5000);
         };
     // ...
     // setting logic for showing notification 
         if (notification_wrapper.classList.contains("show2")) {
             notification_wrapper.classList.add("show");
-            setTimeout(() => { notification_wrapper.classList.remove("show2") }, 8000);
+            setTimeout(() => { notification_wrapper.classList.remove("show2") }, 10000);
         }
         if (msg == undefined) { remove_alert() } 
         else {

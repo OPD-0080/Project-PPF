@@ -136,12 +136,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 notify_user("__Sumission initiated."); 
                 activate_gif_loader(gif_loader);
 
-
-                // const url = form_button_wrapper.getAttribute("data-purchases");
-                // purchase_form_wrapaper.action = `${url}`;
-                // purchase_form_wrapaper.method = "post";
-                // form_button.type = "submit";
-
                 const url = form_button_wrapper.getAttribute("data-purchases");
                 const responses = await sending_data_to_server(`${url}`, payload);
                 console.log("... server responds ...", responses);
@@ -275,7 +269,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     const number = indexes[i];
                     
                     show +=`
-                        <tr class="each-list-cell" data-uid="${data.uuid}">
+                        <tr class="each-list-cell" data-uid="${data._id}">
                             <td>
                                 <div class="form-check custom-checkbox checkbox-success check-lg me-3">
                                     <input type="checkbox" class="form-check-input selected-box" id="customCheckBox2" required="">
@@ -301,10 +295,10 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 const selected_items = JSON.parse(sessionStorage.getItem("dumpsite"));                                    
 
                 if (typeof selected_items === "object") {
-                    const is_data_duplicated = selected_items.find(uid => { return uid ===  selected_item.uuid});
+                    const is_data_duplicated = selected_items.find(uid => { return uid ===  selected_item._id});
 
                     if (is_data_duplicated === undefined) {
-                        selected_items.push(selected_item.uuid);
+                        selected_items.push(selected_item._id);
                         sessionStorage.setItem("dumpsite", JSON.stringify(selected_items));
                         modification_buttons.forEach(button => { button.setAttribute("data-uid", JSON.stringify(selected_items))});
                         return true;
@@ -312,7 +306,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     }else { return false };
                 }
             }else {
-                sessionStorage.setItem("dumpsite", JSON.stringify([selected_item.uuid]));
+                sessionStorage.setItem("dumpsite", JSON.stringify([selected_item._id]));
                 modification_buttons.forEach(button => { button.setAttribute("data-uid", JSON.stringify(JSON.parse(sessionStorage.getItem("dumpsite"))) )});
             }
         };
@@ -321,7 +315,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 const selected_items = JSON.parse(sessionStorage.getItem("dumpsite"));                                    
 
                 if (typeof selected_items === "object") {
-                    const item_index = selected_items.findIndex(uid => { return uid ===  selected_item.uuid});
+                    const item_index = selected_items.findIndex(uid => { return uid ===  selected_item._id});
 
                     if (item_index >= 0) {
                         selected_items.splice(item_index, 1);
@@ -369,6 +363,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         const updating_purchases_data = async () => {
             const server_payload = await loading_purchases_from_database();
             const purchases = server_payload.purchases;
+            
             if (server_payload === 404) { 
                 display_purchases_content(null);
                 notify_user("Error. Inernet Connection Bad. Try Again !");
@@ -378,6 +373,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             else { 
                 display_purchases_content(purchases); 
                 sessionStorage.removeItem("dumpsite");
+                purchases_modify_button_wrapper.classList.remove("show-buttons"); 
                 return purchases;
             }
         };
@@ -406,13 +402,13 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     };
                     if (box.classList.contains("selected-box")) {
                         const selected_row = box.parentElement.parentElement.parentElement;
-                        const selected_item_uuid = selected_row.getAttribute("data-uid");
+                        const selected_item_id = selected_row.getAttribute("data-uid");
 
                         if (box.checked) {
                             await highlight_selected_list(selected_row, null);
                             
                             // getting selected data upon selection and saving the items in sessionStorage
-                                const selected_item = purchases.find(data => { return data.uuid === selected_item_uuid });
+                                const selected_item = purchases.find(data => { return data._id === selected_item_id });
                                 await save_selected_items(selected_item);
                             // end
                             //  showing and removing modified btutton depnding on the number of data in dumpsite upon multiple selection
@@ -429,7 +425,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                             form_check_input.forEach(el => { if (el.classList.contains("checkall")) { el.checked = false; } });
 
                             // remving selected items and updating data in session storage 
-                                const selected_item = purchases.find(data => { return data.uuid === selected_item_uuid });
+                                const selected_item = purchases.find(data => { return data._id === selected_item_id });
                                 await remove_selected_items(selected_item);
                             // end
                             //  showing and removing modified btutton depnding on the number of data in dumpsite upon multiple selection
@@ -551,17 +547,24 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         setTimeout(() => { overlay_page_container.classList.add("show"); }, 100);
                         purchases_modify_button_wrapper.classList.remove("show-buttons");
 
-                        // getting selected data for editing and populate it in DOM
-                            const session_data = JSON.parse(sessionStorage.getItem("dumpsite"))[0];
-                            const selected_data = purchases.find(data => { return data.uuid === session_data });
-                            await populate_data_upon_modifiation(selected_data);
-                        // end
-                        payload.type = "document";
-                        payload.trigger = "modify"; // very important 
+                        if (sessionStorage.getItem("dumpsite")) {
+                             // getting selected data for editing and populate it in DOM
+                                const session_data = JSON.parse(sessionStorage.getItem("dumpsite"))[0];
+                                const selected_data = purchases.find(data => { return data._id === session_data });
+                                await populate_data_upon_modifiation(selected_data);
+                            // end
+                            payload.type = "document";
+                            payload.trigger = config.previliges_options.modify; // very important 
+                        }else {  
+                            notify_user("Error. Selecte data to proceed modifiation");
+                            deactivate_gif_loader(gif_loader); 
+                            remove_all_overlays_pages();
+                            purchases_modify_button_wrapper.classList.remove("show-buttons"); 
+                        }
                     }
                     else if (e.target.classList.contains("delete")) { 
                         payload.type = "document";
-                        payload.trigger = "delete"; // very important 
+                        payload.trigger = config.previliges_options.delete; // very important 
 
 
 
@@ -591,7 +594,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             };
             auth_page_button.onclick = async (e) => {
                 // submitting payload to server 
-                    if (typeof payload.trigger === "string" && payload.trigger.trim() === "modify") {
+                    if (typeof payload.trigger === "string" && payload.trigger.trim() === config.previliges_options.modify) {
                         console.log("... geting the final payload ...", payload);
 
                         const url = e.target.dataset.url;

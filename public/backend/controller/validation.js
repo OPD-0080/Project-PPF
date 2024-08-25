@@ -402,7 +402,7 @@ const is_user_active = async (user) => {
 };
 const getting_auth_user_data = async (auth_user) => {
     let user = "";
-    (auth_user.role == "admin")? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
+    (auth_user.role == config.roles.admin)? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
     return user
 };
 const reset_authorization_code = async (req, res, next) => {
@@ -432,8 +432,8 @@ const tracking_payload_initials = async (req, user_profile) => {
     payload.role = req.session.passport.user.role;
 
     return payload;
-}
-const checking_authorization_code_and_previliges = async (req, payload) => {
+};
+const verifying_authorization_code_and_previliges = async (req, payload) => {
     try {
         console.log("... getting authorization code ...", payload.authorization_code);
         console.log("... checking if auth-user has authorization payload ...");
@@ -461,7 +461,7 @@ const checking_authorization_code_and_previliges = async (req, payload) => {
                 const user_profile = await getting_auth_user_data(req.session.passport.user);
                 console.log("... user profile ...", user_profile);
 
-                if (typeof user_profile[0].previliges === "string" && user_profile[0].role === "admin" && user_profile[0].previliges === "super") {
+                if (typeof user_profile[0].previliges === "string" && user_profile[0].role === config.roles.admin && user_profile[0].previliges === "super") {
                     proceed =  true;
 
                 }else {
@@ -543,12 +543,59 @@ const checking_authorization_code_and_previliges = async (req, payload) => {
         console.log("Error. @ checking user authorization code ...", error);
     }
 };
+const verifying_user_restriction = async (restriction_paramter = null, user_obj) => {
+    if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.admin) { return true }
+    else if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.staff) { return false }
+    else {
+        if (restriction_paramter.trim() === user_obj.role.trim()) { return true }
+        else { return false }
+    };
+};
+const verifying_previliges_only = async (req, previliges_type, previlges_opt) => {
+    const user_profile = await getting_auth_user_data(req.session.passport.user);
+    console.log("... user profile ...", user_profile);
 
+    if (typeof user_profile[0].previliges === "string" && user_profile[0].role === config.roles.admin && user_profile[0].previliges === "super") {
+        return true;
+
+    }else {
+        if (user_profile[0].role === config.roles.staff && user_profile[0].previliges === null) {
+            console.log("... user NOT having previlges to perform operation. ...");   
+            return false;
+        
+        }else {
+            if (user_profile[0].previliges === null) {
+                console.log("... user NOT having previlges to perform operation. ...");   
+                return false;
+            }else {
+                console.log("... checking previliges type ...");
+                let user_previliges_obj = "";
+                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === "document") {
+                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "document" });
+                };
+                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === "user") {
+                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "user" });
+                };
+                console.log("... getting user previlges object responds ...", user_previliges_obj);
+
+                if (user_previliges_obj !== "" && user_previliges_obj !== undefined) {
+                    if (typeof user_previliges_obj === "object") { 
+                        if (typeof previliges_type === "string" && previliges_type.trim() === user_previliges_obj.type) {
+                            if (user_previliges_obj.value.find(el => { return el === previlges_opt.trim() }) === undefined) { return false }
+                            else { return true };    
+                        }else { return false }
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 
 
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
     is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
-    getting_auth_user_data, reset_authorization_code,checking_authorization_code_and_previliges, tracking_payload_initials
+    getting_auth_user_data, reset_authorization_code,verifying_authorization_code_and_previliges, tracking_payload_initials,
+    verifying_user_restriction, verifying_previliges_only
 }

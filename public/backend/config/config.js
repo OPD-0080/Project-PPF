@@ -10,6 +10,7 @@ const config = {
     company_name: "Project PPF",
     userID_regexp: "[a-z]{3}[0-9]{5}",
     default_pass_regexp: "[a-z]{6}[0-9]{5}",
+    previliges_options: previliges_options,
     previliges: {
         documents: {
             ...previliges_options,
@@ -36,6 +37,7 @@ const config = {
         inventory: "inventory",
         purchases: "purchases",
         account: "account",
+        staff: "staff"
     },
 
     GET_url: GET_base_url,

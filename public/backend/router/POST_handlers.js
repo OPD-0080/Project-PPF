@@ -10,7 +10,8 @@ const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, Purch
 const { encrypt_access_code } = require("../controller/encryption");
 const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
-const { is_user_active, getting_auth_user_data, checking_authorization_code_and_previliges, tracking_payload_initials } = require("../controller/validation");
+const { is_user_active, getting_auth_user_data, verifying_authorization_code_and_previliges, tracking_payload_initials,
+    verifying_user_restriction, verifying_previliges_only } = require("../controller/validation");
 const { get_date_and_time } = require("../utils/date_time");
 
 //
@@ -612,7 +613,7 @@ const resend_OTP_code_handler = async (req, res, next) => {
 // END 
 // PURCHASES
 const purchases_handler = async (req, res, next) => {
-    let context = {};
+    let context = {}, proceed = "";
     try {
         console.log("** Collecting data for purchases entry submission **");
         
@@ -623,30 +624,49 @@ const purchases_handler = async (req, res, next) => {
         payload.company = req.session.passport.user.company;
 
         console.log("... payload collected completed ...", payload);
-        console.log("... inserting payload into database ...");
 
         const user_profile = await  getting_auth_user_data(req.session.passport.user);
         if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
         else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
 
         console.log("... getting final payload ...", payload);
-        
+        console.log("... verifying if user is permitted to proceed operation ...");
 
-        const query_resp = await PurchaseModel.insertMany(payload);
-        
-        console.log("... query responds ...", query_resp);
-        console.log("... insertion of payload completed ...");
-        console.log("... wrapping context before redirecting ...");
+        if (await verifying_user_restriction(null, req.session.passport.user)) { proceed = true }
+        else { 
+            if (await verifying_user_restriction(config.roles.purchases, req.session.passport.user)) { 
+                console.log("... verifying user previleges ...");
+                proceed = await verifying_previliges_only(req, "document", {trigger: config.previliges_options.create});
+            }
+            else { proceed = false }; 
+        };
 
-        console.log("... wrapping context completed ...");
-        console.log("... redireting reponses ....");
-
-        context.msg = "Purchase submission sucess";
-        context.data = query_resp;
-        // req.flash("purchase", context.msg);
-        // res.redirect(303, config.view_urls.purchase);
-        res.json(context);
+        if (proceed) {
+            console.log("... user is permitted for operation ...");
+            console.log("... user is previlged to poroceed ...");
+            console.log("... inserting payload into database ...");
+            
+            const query_resp = await PurchaseModel.insertMany(payload);
         
+            console.log("... query responds ...", query_resp);
+            console.log("... insertion of payload completed ...");
+            console.log("... wrapping context before redirecting ...");
+    
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+    
+            context.msg = "Purchase submission sucess";
+            context.data = query_resp;
+            
+            res.json(context);
+        }else {
+            console.log("... user is NOT previlges to proceed ...");
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+
+            context.msg = `Hey ${eq.session.passport.user.userID}. you are not permitted for operation !`;
+            res.json(context);
+        }
     } catch (error) {
         console.log("** Error:: Purchases Handler **", error);
 
@@ -691,7 +711,7 @@ const purchases_preview_handler = async (req, res, next) => {
         console.log("... user is found ...");
         console.log("... verifying user authorization code ...");
 
-        const auth_response = await checking_authorization_code_and_previliges(req, payload);
+        const auth_response = await verifying_authorization_code_and_previliges(req, payload);
         if (auth_response == undefined) {
             console.log("... User is not authorized ...");
             console.log("... wrapping context before rediecting ...");

@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
     
     1. for user previlige must be an array of objects
     2. with the key paramters "type" accepting values of 'document / user'.
-        and paramter "value" accespting value of [ { '', '', '' } ]
+        and paramter "value" accepting value of [ { '', '', '' } ]
 
         [
             {
