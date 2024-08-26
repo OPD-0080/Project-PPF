@@ -405,6 +405,19 @@ const getting_auth_user_data = async (auth_user) => {
     (auth_user.role == config.roles.admin)? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
     return user
 };
+const is_user_found_in_company = async (user_id, companyRefID) => {
+    try {
+    if ((typeof user_id === "string") && (typeof companyRefID === "string")) {
+        let data = await RegistrationModel.findOne({ "_id": user_id });
+        if (data !== null) { return true }
+        else { 
+            data = await UserModel.findOne({ "_id": user_id })
+            if (data.companyRefID === companyRefID.trim()) { return true }
+            else { return false };
+        }; 
+    }
+    } catch (error) { return undefined; }
+};
 const reset_authorization_code = async (req, res, next) => {
     try {
         const user = req.session.passport.user;
@@ -597,5 +610,5 @@ const verifying_previliges_only = async (req, previliges_type, previlges_opt) =>
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
     is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
     getting_auth_user_data, reset_authorization_code,verifying_authorization_code_and_previliges, tracking_payload_initials,
-    verifying_user_restriction, verifying_previliges_only
+    verifying_user_restriction, verifying_previliges_only, is_user_found_in_company
 }
