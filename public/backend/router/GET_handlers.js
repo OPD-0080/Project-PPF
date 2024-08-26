@@ -6,7 +6,7 @@ const moment = require("moment");
 // IMPORTATION OF FILES
 const config = require("../config/config");
 const { UserModel, LoginModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel } = require("../../database/schematics");
-const { randomPassword } = require("../utils/code_generator");
+const { randomPassword, randomSerialCode } = require("../utils/code_generator");
 // ...
 
 
@@ -38,7 +38,7 @@ const view_signup = async (req, res, next) => {
 
 
         // providing a default random password for users for the first time
-            const random_default_pass = `defpass${await randomPassword(5)}`;
+            const random_default_pass = `defpass${await randomSerialCode(5)}`;
             console.log(random_default_pass);
         // ...
         // notification section

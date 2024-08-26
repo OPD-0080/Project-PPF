@@ -11,7 +11,7 @@ const { encrypt_access_code } = require("../controller/encryption");
 const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
 const { is_user_active, getting_auth_user_data, verifying_authorization_code_and_previliges, tracking_payload_initials,
-    verifying_user_restriction, verifying_previliges_only, is_user_found_in_company } = require("../controller/validation");
+    verifying_user_restriction, verifying_user_previliges, verifying_user_authorization_codes, is_user_found_in_company } = require("../controller/validation");
 const { get_date_and_time } = require("../utils/date_time");
 
 //
@@ -229,9 +229,8 @@ const OTP_verification_handler = async (req, res, next) => {
         console.log(".. validating if user is active or revoked ...");
 
 
-        if (user.length > 0) {
-            ( await is_user_active(user[0]) )? proceed = true : proceed = false;
-        }else {
+        if (user.length > 0) { ( await is_user_active(user[0]) )? proceed = true : proceed = false; } 
+        else {
             console.log("... User not found. Redirecting back to OTP page ...");
 
             req.flash("signup", "Error. User not found. Register or Signup !");
@@ -257,6 +256,9 @@ const OTP_verification_handler = async (req, res, next) => {
                 req.flash("otp", "Error. OTP verification Failed. Try Again !");
                 res.redirect(303, `${config.view_urls.otp}`);
             }
+        }else {
+            console.log("... user is not active. Logout user ...");
+            res.redirect(303, `${config.view_urls.logout}`);
         }
 
         console.log("... OTP code verification completed ...");
@@ -897,7 +899,146 @@ const purchases_preview_handler = async (req, res, next) => {
 // END
 
 // DASHBOARD SECIION 
-const change_user_roles_and_previlges_handler = async (req, res, next) => {
+const change_user_roles_handler = async (req, res, next) => {
+    let context = {};
+    try {
+        console.log("** Collecting data to change user roles and previliges **");
+        
+        const payload = req.body;
+        const passport_data = req.session.passport.user;
+
+        console.log("... first payload ...", payload);
+        console.log("... getting params ...", req.params);
+        console.log("... verifying user found in the right company ...");
+
+        const is_user_found = await is_user_found_in_company(req.params.id, passport_data.companyRefID);
+        console.log("... verifcation responds ...", is_user_found);
+        
+        if (is_user_found === undefined) { 
+            console.log("... database server error ...");
+            console.log("... wrapping context before redirecting ...");
+
+            context.msg = "Error. Server not responding. Try Again / contact Admin !";
+            res.json(context);
+
+        }else if (is_user_found) {
+            console.log("... user is foud in the company ...");
+            console.log("... getting selected user data from the database ...");
+            
+            let selected_user_profile = await RegistrationModel.findOne({ "_id": payload.selected_userID.trim() });
+            if (selected_user_profile === null) { selected_user_profile = await UserModel.findOne({ "_id": payload.selected_userID.trim() }) };
+
+            console.log("... selected user is found in database in completion ...", selected_user_profile);
+            console.log("... verifying auth user authorizatin code ...");
+
+            const authorization_data = await AuthorizationModel.findOne({ "email": passport_data.email, "companyRefID": passport_data.comapnyRefID });
+            console.log("... getting authorization data responds ...", authorization_data);
+            
+            if (authorization_data === null) {
+                console.log("... Auth user does not have authorization code to proceed ...");
+                console.log("... wrapping context before redirecting ...");
+
+                context.msg = `Error. User is not permitted to perform operation !`;
+                res.json(context);
+                
+            }else {
+                console.log("... user is permitted to proceed ...");
+                console.log("... verifing for user previlges ...");
+
+
+
+
+                
+                console.log("... checking if authroization code is active or not ...");
+                
+
+                
+
+            }
+
+
+
+        }else {
+            console.log("... user nopt found in the company ...");
+            console.log("... wrapping context before redirecting ...");
+
+            context.msg = "Error. User not registred !";
+            res.json(context);
+        };
+        
+        
+
+        // payload.companyRefID = req.session.passport.user.companyRefID;
+        // payload.userID = req.session.passport.user.userID;
+        // payload.company = req.session.passport.user.company;
+
+        // console.log("... payload collected completed ...", payload);
+
+        // const user_profile = await  getting_auth_user_data(req.session.passport.user);
+        // if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
+        // else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
+
+        // console.log("... getting final payload ...", payload);
+        // console.log("... verifying if user is permitted to proceed operation ...");
+
+        // if (await verifying_user_restriction(null, req.session.passport.user)) { proceed = true }
+        // else { 
+        //     if (await verifying_user_restriction(config.roles.purchases, req.session.passport.user)) { 
+        //         console.log("... verifying user previleges ...");
+        //         proceed = await verifying_previliges_only(req, "document", config.previliges_options.create);
+        //     }
+        //     else { proceed = false }; 
+        // };
+
+        // if (proceed) {
+        //     console.log("... user is permitted for operation ...");
+        //     console.log("... user is previlged to poroceed ...");
+        //     console.log("... inserting payload into database ...");
+            
+        //     const query_resp = await PurchaseModel.insertMany(payload);
+        
+        //     console.log("... query responds ...", query_resp);
+        //     console.log("... insertion of payload completed ...");
+        //     console.log("... wrapping context before redirecting ...");
+    
+        //     console.log("... wrapping context completed ...");
+        //     console.log("... redireting reponses ....");
+    
+        //     context.msg = "Purchase submission sucess";
+        //     context.data = query_resp;
+            
+        //     res.json(context);
+        // }else {
+        //     console.log("... user is NOT previlges to proceed ...");
+        //     console.log("... wrapping context completed ...");
+        //     console.log("... redireting reponses ....");
+
+        //     context.msg = `Hey ${eq.session.passport.user.userID}. you are not permitted for operation !`;
+        //     res.json(context);
+        // }
+    } catch (error) {
+        console.log("** Error:: Change user roles and previlges Handler **", error);
+
+        // if (error.code == "11000") { //  for duplicate of business name 
+        //     console.log("... data is duplicated ...");
+            
+        //     console.log("... wrapping context before redirecting ...");
+
+        //     const error_msg = "Error. Data is duplicated . Try Again !";
+        //     context.msg = error_msg;
+
+        //     console.log("... wrapping context completed ...");
+        //     console.log("... redireting reponses ....");
+
+        //     // req.flash("purchase", context.msg);
+        //     // res.redirect(303, config.view_urls.purchase);
+        //     res.json(context);
+        // }
+
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+}
+const change_user_previlges_handler = async (req, res, next) => {
     let context = {};
     try {
         console.log("** Collecting data to change user roles and previliges **");
@@ -929,7 +1070,8 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
             console.log("... selected user is found in database in completion ...");
             console.log("... verifying auth user authorizatin code ...");
 
-            const authorization_data = await AuthorizationModel.findOne({ "email": passport_data.email, "companyRefID": passport_data.comapnyRefID });
+            const authorization_data = await AuthorizationModel.findOne({ 
+                "email": passport_data.email, "companyRefID": passport_data.comapnyRefID });
             console.log("... getting authroization data responds ...", authorization_data);
             
             if (authorization_data === null) {
@@ -940,7 +1082,7 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
                 res.json(context);
                 
             }else {
-                
+
             }
 
 
@@ -1026,6 +1168,7 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
     }
 }
 
+
 // END
 
 
@@ -1033,5 +1176,5 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
 module.exports = { signup_handler, OTP_verification_handler, registration_handler,
     is_OTP_verified, is_password_secured,  password_reset_handler, forgot_password_initiate_handler, 
     forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_handler, purchases_preview_handler,
-    change_user_roles_and_previlges_handler
+    change_user_roles_handler
 }

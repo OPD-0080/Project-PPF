@@ -152,10 +152,12 @@ const signupValidation = async (req, res, next) => {
                     res.redirect(303, `${config.view_urls.user_register}`)
 
                 }else { // server found biodata 
-                    console.log("... verifying if email already found i database ...");
-                    const is_email_found = await UserModel.find({ "email": data.username })
+                    console.log("... verifying if email already found in database ...");
+                    const is_email_found = await UserModel.findOne({ "email": data.username })
+                    console.log("... gettig final check point ...", is_email_found);
+                    
 
-                    if (is_email_found === null) {   next() } // move to the next middelware
+                    if (is_email_found === null) { next() } // move to the next middelware
                     else {
                         req.flash("signup", `Error. Email already used. Try using another email !`) // send messge to user 
                         res.redirect(303, `${config.view_urls.user_register}`)
@@ -321,7 +323,7 @@ const resetPasswordValidation = async (req, res, next) => {
 
         }else {
             console.log("** Validation Completed **");
-            necx();
+            next();
         }
 
     } catch (error) {
@@ -420,15 +422,16 @@ const is_user_found_in_company = async (user_id, companyRefID) => {
 };
 const reset_authorization_code = async (req, res, next) => {
     try {
-        const user = req.session.passport.user;
-        const query_resp = await AuthorizationModel.findOne( {"email": user.email, "companyRefID": user.companyRefID, "userID": user.userID } )
-        
-        if (query_resp === undefined) { next() }
-        else {
-            await AuthorizationModel.updateOne( {"email": query_resp.email}, { "authorization_active": false, "authorization_visible": false } )
-            next();
-        }
-        
+        if (req.session.hasOwnProperty("passport")) {
+            const user = req.session.passport.user;
+            const query_resp = await AuthorizationModel.findOne( {"email": user.email, "companyRefID": user.companyRefID, "userID": user.userID } )
+            
+            if (query_resp === null) { next() }
+            else {
+                await AuthorizationModel.updateOne( {"email": query_resp.email}, { "authorization_active": false, "authorization_visible": false } )
+                next();
+            }
+        }else { res.redirect(303, config.view_urls.logout) }
     } catch (error) {
         console.log("... Error @ reset authorization code middleware ...", error);
         res.redirect(303, config.view_urls.logout);        
@@ -446,6 +449,100 @@ const tracking_payload_initials = async (req, user_profile) => {
 
     return payload;
 };
+const verifying_user_restriction = async (restriction_paramter = null, user_obj) => {
+    if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.admin) { return true }
+    else if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.staff) { return false }
+    else {
+        if (restriction_paramter.trim() === user_obj.role.trim()) { return true }
+        else { return false }
+    };
+};
+const verifying_user_previliges = async (req, previliges_type, previlges_opt) => {
+    const user_profile = await getting_auth_user_data(req.session.passport.user);
+    console.log("... user profile ...", user_profile);
+
+    if (typeof user_profile[0].previliges === "string" && user_profile[0].role === config.roles.admin && user_profile[0].previliges === "super") {
+        return true;
+
+    }else {
+        if (user_profile[0].role === config.roles.staff && user_profile[0].previliges === null) {
+            console.log("... user NOT having previlges to perform operation. ...");   
+            return false;
+        
+        }else {
+            if (user_profile[0].previliges === null) {
+                console.log("... user NOT having previlges to perform operation. ...");   
+                return false;
+            }else {
+                console.log("... checking previliges type ...");
+                let user_previliges_obj = "";
+                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === "document") {
+                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "document" });
+                };
+                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === "user") {
+                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "user" });
+                };
+                console.log("... getting user previlges object responds ...", user_previliges_obj);
+
+                if (user_previliges_obj !== "" && user_previliges_obj !== undefined) {
+                    if (typeof user_previliges_obj === "object") { 
+                        if (typeof previliges_type === "string" && previliges_type.trim() === user_previliges_obj.type) {
+                            if (user_previliges_obj.value.find(el => { return el === previlges_opt.trim() }) === undefined) { return false }
+                            else { return true };    
+                        }else { return false }
+                    }
+                }
+            }
+        }
+    }
+};
+const verifying_user_authorization_codes = async (req, authorization_code) => {
+    try {
+        console.log("... getting authorization code ...", authorization_code);
+        console.log("... checking if auth-user has authorization payload ...");
+
+        const auth_payload = await AuthorizationModel.findOne({ "email": req.session.passport.user.email });
+        console.log("... authorization payload ...", auth_payload);
+
+        
+        if (auth_payload == null) {
+            console.log("... payload not found ...");
+            console.log("... checking for breach of authorization code ...");
+
+            const breached_payload = await AuthorizationModel.findOne({ "authorization": authorization_code });
+            console.log("... getting breached payload ...", breached_payload);
+            
+            if (breached_payload == null) {  return undefined;}
+            else { return { status: "breach", data: breached_payload } }
+            
+        }else {
+            if (auth_payload.authorization_visible && auth_payload.authorization_active) {
+                console.log("... authorization code visible and is activated and ready for usage ...");
+                console.log("... verifying authorization code ...");
+                    
+                if (authorization_code.trim() === auth_payload.authorization.trim()) {
+                    console.log("... code verification completed ...");
+                    console.log("... updating database ...");
+
+                    await AuthorizationModel.updateOne({ "userID": req.session.passport.user.userID, "companyRefID": req.session.passport.user.companyRefID },
+                        { "authorization_active": true });
+                    
+                    console.log("... database update completed ...");
+                    return "verified";
+
+                }else { return "code_err" };
+            }else { return "not_activated"; }
+        }
+    } catch (error) {
+        console.log("Error @ verifying authorization code ...", error);
+        return undefined;
+    }
+
+
+};
+
+
+
 const verifying_authorization_code_and_previliges = async (req, payload) => {
     try {
         console.log("... getting authorization code ...", payload.authorization_code);
@@ -556,53 +653,7 @@ const verifying_authorization_code_and_previliges = async (req, payload) => {
         console.log("Error. @ checking user authorization code ...", error);
     }
 };
-const verifying_user_restriction = async (restriction_paramter = null, user_obj) => {
-    if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.admin) { return true }
-    else if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.staff) { return false }
-    else {
-        if (restriction_paramter.trim() === user_obj.role.trim()) { return true }
-        else { return false }
-    };
-};
-const verifying_previliges_only = async (req, previliges_type, previlges_opt) => {
-    const user_profile = await getting_auth_user_data(req.session.passport.user);
-    console.log("... user profile ...", user_profile);
 
-    if (typeof user_profile[0].previliges === "string" && user_profile[0].role === config.roles.admin && user_profile[0].previliges === "super") {
-        return true;
-
-    }else {
-        if (user_profile[0].role === config.roles.staff && user_profile[0].previliges === null) {
-            console.log("... user NOT having previlges to perform operation. ...");   
-            return false;
-        
-        }else {
-            if (user_profile[0].previliges === null) {
-                console.log("... user NOT having previlges to perform operation. ...");   
-                return false;
-            }else {
-                console.log("... checking previliges type ...");
-                let user_previliges_obj = "";
-                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === "document") {
-                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "document" });
-                };
-                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === "user") {
-                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === "user" });
-                };
-                console.log("... getting user previlges object responds ...", user_previliges_obj);
-
-                if (user_previliges_obj !== "" && user_previliges_obj !== undefined) {
-                    if (typeof user_previliges_obj === "object") { 
-                        if (typeof previliges_type === "string" && previliges_type.trim() === user_previliges_obj.type) {
-                            if (user_previliges_obj.value.find(el => { return el === previlges_opt.trim() }) === undefined) { return false }
-                            else { return true };    
-                        }else { return false }
-                    }
-                }
-            }
-        }
-    }
-}
 
 
 
@@ -610,5 +661,5 @@ const verifying_previliges_only = async (req, previliges_type, previlges_opt) =>
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
     is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
     getting_auth_user_data, reset_authorization_code,verifying_authorization_code_and_previliges, tracking_payload_initials,
-    verifying_user_restriction, verifying_previliges_only, is_user_found_in_company
+    verifying_user_restriction, verifying_user_previliges, is_user_found_in_company, verifying_user_authorization_codes
 }

@@ -79,11 +79,11 @@ const verify = async(username, password, cb) => {
         console.log("... validating user credentials before redirecting ...");
 
         if (await update_login_credentials(payload, user, username)) {
+            console.log(user[0].password.match(config.default_pass_regexp), user[0].password, config.default_pass_regexp);
+            
             if (user[0].password.match(config.default_pass_regexp)) {
-
                 if (user[0].password === password) { 
                     await AuthorizationModel.updateOne({"email": payload.email}, {"authorization_active": false, "authorization_visible": false });
-
                     return cb(null, payload) 
                 }
                 else {

@@ -38,7 +38,7 @@ const registration_schema = new mongoose.Schema({
     previliges: { type: String, required: false, unique: false, default: "super"},
     otp: {type: String, required: false, unique: false, default: null},
     photo: {type: String, required: false, unique: false, default: null},
-    is_active: {type: String, required: false, unique: false, default: true},
+    is_active: {type: Boolean, required: false, unique: false, default: true},
     lockdown_mode: {type: Boolean, required: false, unique: false, default: false},
 });
 const user_schema = new mongoose.Schema({
@@ -61,7 +61,7 @@ const user_schema = new mongoose.Schema({
     ID_photo_font: {type: String, required: false, unique: false, default: null},
     ID_photo_back: {type: String, required: false, unique: false, default: null},
     otp: {type: String, required: false, unique: false, default: null},
-    is_active: {type: String, required: false, unique: false, default: true},
+    is_active: {type: Boolean, required: false, unique: false, default: true},
     lockdown_mode: {type: Boolean, required: false, unique: false, default: false},
 }, {timestamps: true}  // for this will add createdAt and updatedAt to the schema automatically 
 ); 
