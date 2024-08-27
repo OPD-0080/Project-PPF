@@ -10,8 +10,8 @@ const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, Purch
 const { encrypt_access_code } = require("../controller/encryption");
 const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
-const { is_user_active, getting_auth_user_data, verifying_authorization_code_and_previliges, tracking_payload_initials,
-    verifying_user_restriction, verifying_user_previliges, verifying_user_authorization_codes, is_user_found_in_company } = require("../controller/validation");
+const { is_user_active, getting_auth_user_data, tracking_payload_initials, verifying_user_restriction,
+        verifying_user_previliges, verifying_user_authorization_codes, is_user_found_in_company } = require("../controller/validation");
 const { get_date_and_time } = require("../utils/date_time");
 
 //
@@ -711,116 +711,128 @@ const purchases_preview_handler = async (req, res, next) => {
         const user_profile = await getting_auth_user_data(req.session.passport.user.email)
         
         console.log("... user is found ...");
-        console.log("... verifying user authorization code ...");
+        console.log("... verifying user previlges ...");
 
-        const auth_response = await verifying_authorization_code_and_previliges(req, payload);
-        if (auth_response == undefined) {
-            console.log("... User is not authorized ...");
-            console.log("... wrapping context before rediecting ...");
+        const is_user_permitted = await verifying_user_previliges(req, config.previliges_type.document, config.previliges_options.modify);
+        console.log("... user previlges responds ...", is_user_permitted);
+        
+        if (is_user_permitted) {
+            console.log("... user is permitted to proceed ...");
+            console.log("... verifying auth authorization code ...");
             
-            context.msg = "Error. User is not authorized !";
-            res.json(context);
+            const verification_responds = await verifying_user_authorization_codes(req, payload.authorization_code);
+            
+            console.log("... is user verified to proceed ...", verification_responds);
+            console.log("... verification completed ...");
 
-        }else if (typeof auth_response === "object") {
-            if (auth_response.status.trim() === "breach") {
-                let tracking_payload = {}, proceed = "", update_resp = "";
-
-                console.log("... breached of authorization codes ...");
-                console.log("... preparing payload for update of database ...");
-
-                const breach_msg = `Breach! ${auth_response.data.userID} authorization code is breached by ${payload.initiator} on Purchases`;
-                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                // tracking_payload.breached_by = {
-                    
-                // }
-                tracking_payload.breaches = [{
-                    msg: breach_msg,
-                    ...await get_date_and_time(),
-                }];
-                tracking_payload.purchases = {  
-                    ...await get_date_and_time(),
-                    msg: `Request to make changes on purchase item #${payload.item_code}`,
-                }
-                tracking_payload.is_breach_alert_activated = true;
+            if (verification_responds === undefined) {
+                console.log("... User is not authorized ...");
+                console.log("... wrapping context before rediecting ...");
                 
-                console.log("... payload completed ...");
-                console.log("... updating database ...");
+                context.msg = "Error. User is not authorized !";
+                res.json(context);
 
-                const tracking_query_response = await TrackingModel.findOne({ "companyRefID": tracking_payload.companyRefID, "userID": tracking_payload.userID });
-                if (tracking_query_response === null) {
-                    update_resp = await TrackingModel.insertOne(tracking_payload);
-                    proceed = true;
+            }else if (typeof verification_responds === "object") {
+                if (verification_responds.status.trim() === "breach") {
+                    let tracking_payload = {}, is_data_updated = "", update_resp = "";
 
-                }else {
-                    const payload_update = {
+                    console.log("... breached of authorization codes ...");
+                    console.log("... preparing payload for update of database ...");
+
+                    const breach_msg = `Breach! ${auth_response.data.userID} authorization code is breached by ${payload.initiator} on Purchases`;
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+
+                    // tracking_payload.breached_by = {
+                    
+                    // }
+                    tracking_payload.breaches = [{
                         msg: breach_msg,
                         ...await get_date_and_time(),
-                    };
-
-                    tracking_query_response.breaches.push(payload_update);
-                    update_resp = await TrackingModel.updateOne({ "companyRefID": req.session.passport.user.companyRefID, "userID": req.session.passport.user.userID }, 
-                        { "breaches": tracking_query_response.breaches, "is_breach_alert_activated": true });
-                    proceed = true;
-                }
-
-                if (proceed) {
-                    console.log("... updating database completed ...");
-                    console.log("... sending email to company admin and user as notification ...");
-                    
-                    const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
-                    const email_response_1 = await sending_email(
-                        config.company_name,
-                        "Authorization Code Breached !",
-                        company_data.email,
-                        `Hi Admin, There has been a breach of authorization code. We recommend to you to check it out.`
-                    );
-                    const email_response_2 = await sending_email(
-                        config.company_name,
-                        "Authorization Code Breached !",
-                        auth_response.data.email,
-                        `Hi ${auth_response.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
-                    );
-
-                    console.log("... is email sent to Admin ...",email_response_1, email_response_2);
-                    console.log("... flagging the breach alert to user ...");
-                    
-                    if (update_resp !== "") {
-                        console.log("... getting final query responds from the database ...", update_resp);
-                        console.log("... wrapping context before redirecting responds ...");
-                        
-                        context.msg = "Error. Authorization breach !";
-                        context.is_data_breach = update_resp.is_breach_alert_activated;
-                        context.response = "";
-
-                        res.json(context);
+                    }];
+                    tracking_payload.purchases = {  
+                        ...await get_date_and_time(),
+                        msg: `Request to make changes on purchase item #${payload.item_code}`,
                     }
+                    tracking_payload.is_breach_alert_activated = true;
                     
+                    console.log("... payload completed ...");
+                    console.log("... updating database ...");
+
+                    const tracking_query_response = await TrackingModel.findOne({ "companyRefID": tracking_payload.companyRefID, "userID": tracking_payload.userID });
+                    if (tracking_query_response === null) {
+                        update_resp = await TrackingModel.insertOne(tracking_payload);
+                        is_data_updated = true;
+
+                    }else {
+                        const payload_update = {
+                            msg: breach_msg,
+                            ...await get_date_and_time(),
+                        };
+
+                        tracking_query_response.breaches.push(payload_update);
+                        update_resp = await TrackingModel.updateOne({ "companyRefID": req.session.passport.user.companyRefID, "userID": req.session.passport.user.userID }, 
+                            { "breaches": tracking_query_response.breaches, "is_breach_alert_activated": true });
+                        is_data_updated = true;
+                    }
+
+                    if (is_data_updated) {
+                        console.log("... updating database completed ...");
+                        console.log("... sending email to company admin and user as notification ...");
+                        
+                        const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
+                        const email_response_1 = await sending_email(
+                            config.company_name,
+                            "Authorization Code Breached !",
+                            company_data.email,
+                            `Hi Admin, There has been a breach of authorization code. We recommend to you to check it out.`
+                        );
+                        const email_response_2 = await sending_email(
+                            config.company_name,
+                            "Authorization Code Breached !",
+                            auth_response.data.email,
+                            `Hi ${auth_response.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
+                        );
+
+                        console.log("... is email sent to Admin ...",email_response_1, email_response_2);
+                        console.log("... flagging the breach alert to user ...");
+                        
+                        if (update_resp !== "") {
+                            console.log("... getting final query responds from the database ...", update_resp);
+                            console.log("... wrapping context before redirecting responds ...");
+                            
+                            context.msg = "Error. Authorization breach !";
+                            context.is_data_breach = update_resp.is_breach_alert_activated;
+                            context.response = "";
+
+                            res.json(context);
+                        }
+                        
+                    }
                 }
-            }
-        }else if (typeof auth_response === "string") {
-            if (auth_response.trim() === "not_activated") {
-                console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
-                console.log("... wrapping context before redirecting ...");
-
-                context.msg = "Error. Authorization not activated. Activate Authorization code before usage !";
-                res.json(context);
-
-            }else if (auth_response.trim() === "err") { 
-                console.log("... invalid authorization code ...");
-                console.log("... wrapping context before redirecting ...");
-
-                context.msg = "Error. Invalid authorization code !";
-                res.json(context);
-            
-            }else if (auth_response.trim() === "denied") {
-                console.log("... user does not have previleges. ...");
-                console.log("... wrapping context before redirecting ...");
-
-                context.msg = "Error. Operation denied. Contact Admin !";
-                res.json(context);
+            }else if (typeof verification_responds === "string") {
+                if (verification_responds.trim() === "not_activated") {
+                    console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
+                    console.log("... wrapping context before redirecting ...");
+    
+                    context.msg = "Error. Authorization not activated. Activate Authorization code before usage !";
+                    res.json(context);
+    
+                }else if (verification_responds.trim() === "code_err") { 
+                    console.log("... invalid authorization code ...");
+                    console.log("... wrapping context before redirecting ...");
+    
+                    context.msg = "Error. Invalid authorization code !";
+                    res.json(context);
                 
-            }else if (auth_response.trim() === "verified") { proceed = true; };
-        };
+                }else if (verification_responds.trim() === "verified") { proceed = true };
+            };
+        }else {
+            console.log("... user is not previlged to proceed operation ...");
+            
+            context.msg = "Error. User not privileged to perform operation !";
+            res.json(context);
+        }
+
 
         if (typeof proceed === "boolean" && proceed) {
             console.log("... user is authorized to proceed ...");
@@ -900,7 +912,7 @@ const purchases_preview_handler = async (req, res, next) => {
 
 // DASHBOARD SECIION 
 const change_user_roles_handler = async (req, res, next) => {
-    let context = {};
+    let context = {}, proceed = "", is_data_updated = "";
     try {
         console.log("** Collecting data to change user roles and previliges **");
         
@@ -912,8 +924,14 @@ const change_user_roles_handler = async (req, res, next) => {
         console.log("... verifying user found in the right company ...");
 
         const is_user_found = await is_user_found_in_company(req.params.id, passport_data.companyRefID);
-        console.log("... verifcation responds ...", is_user_found);
         
+        console.log("... verifcation responds ...", is_user_found);
+        console.log("... getting selected user data from the database ...");
+            
+        let selected_user_profile = await RegistrationModel.findOne({ "_id": payload.selected_userID.trim() });
+        if (selected_user_profile === null) { selected_user_profile = await UserModel.findOne({ "_id": payload.selected_userID.trim() }) };
+        console.log("... selected user is found in database in completion ...", selected_user_profile);
+
         if (is_user_found === undefined) { 
             console.log("... database server error ...");
             console.log("... wrapping context before redirecting ...");
@@ -923,15 +941,9 @@ const change_user_roles_handler = async (req, res, next) => {
 
         }else if (is_user_found) {
             console.log("... user is foud in the company ...");
-            console.log("... getting selected user data from the database ...");
-            
-            let selected_user_profile = await RegistrationModel.findOne({ "_id": payload.selected_userID.trim() });
-            if (selected_user_profile === null) { selected_user_profile = await UserModel.findOne({ "_id": payload.selected_userID.trim() }) };
+            console.log("... verifying auth user authorizatin code ...",);
 
-            console.log("... selected user is found in database in completion ...", selected_user_profile);
-            console.log("... verifying auth user authorizatin code ...");
-
-            const authorization_data = await AuthorizationModel.findOne({ "email": passport_data.email, "companyRefID": passport_data.comapnyRefID });
+            const authorization_data = await AuthorizationModel.findOne({ "email": passport_data.email, "companyRefID": passport_data.companyRefID });
             console.log("... getting authorization data responds ...", authorization_data);
             
             if (authorization_data === null) {
@@ -943,21 +955,67 @@ const change_user_roles_handler = async (req, res, next) => {
                 
             }else {
                 console.log("... user is permitted to proceed ...");
-                console.log("... verifing for user previlges ...");
+                console.log("... verifying for user previlges ...");
 
-
-
-
+                const user_profile = await getting_auth_user_data(req.session.passport.user.email);
+                const is_user_permitted = await verifying_user_previliges(req, config.previliges_type.user, config.previliges_options.modify);
+                console.log("... user previlges responds ...", is_user_permitted);
                 
-                console.log("... checking if authroization code is active or not ...");
-                
+                if (is_user_permitted) {
+                    console.log("... user is permitted to proceed ...");
+                    console.log("... verifying auth authorization code ...");
+                    
+                    const verification_responds = await verifying_user_authorization_codes(req, payload.authorization_code);
+                    
+                    console.log("... is user verified to proceed ...", verification_responds);
+                    console.log("... verification completed ...");
 
-                
+                    if (verification_responds === undefined) {
+                        console.log("... User is not authorized ...");
+                        console.log("... wrapping context before rediecting ...");
+                        
+                        context.msg = "Error. User is not authorized !";
+                        res.json(context);
 
+                    }else if (typeof verification_responds === "object") {
+                        if (verification_responds.status.trim() === "breach") {
+                            let tracking_payload = {}, update_resp = "";
+
+                            console.log("... breached of authorization codes ...");
+                            console.log("... preparing payload for update of database ...");
+
+                            const breach_msg = `Breach! ${auth_response.data.userID} authorization code is breached by ${payload.initiator} on Purchases`;
+                            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+
+                            
+
+
+                        }
+                    }else if (typeof verification_responds === "string") {
+                        if (verification_responds.trim() === "not_activated") {
+                            console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
+                            console.log("... wrapping context before redirecting ...");
+            
+                            context.msg = "Error. Authorization not activated. Activate codes before usage !";
+                            res.json(context);
+            
+                        }else if (verification_responds.trim() === "code_err") { 
+                            console.log("... invalid authorization code ...");
+                            console.log("... wrapping context before redirecting ...");
+            
+                            context.msg = "Error. Invalid authorization code !";
+                            res.json(context);
+                        
+                        }else if (verification_responds.trim() === "verified") { proceed = true };
+                    };
+                }else {
+                    console.log("... user is not premitted to proceed opeartion ...");
+                    console.log("... wrapping context before redirecting ...");
+    
+                    context.msg = "Error. User not privileged to perform operation !";
+                    res.json(context);
+                }
             }
-
-
-
         }else {
             console.log("... user nopt found in the company ...");
             console.log("... wrapping context before redirecting ...");
@@ -966,56 +1024,66 @@ const change_user_roles_handler = async (req, res, next) => {
             res.json(context);
         };
         
-        
-
-        // payload.companyRefID = req.session.passport.user.companyRefID;
-        // payload.userID = req.session.passport.user.userID;
-        // payload.company = req.session.passport.user.company;
-
-        // console.log("... payload collected completed ...", payload);
-
-        // const user_profile = await  getting_auth_user_data(req.session.passport.user);
-        // if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
-        // else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
-
-        // console.log("... getting final payload ...", payload);
-        // console.log("... verifying if user is permitted to proceed operation ...");
-
-        // if (await verifying_user_restriction(null, req.session.passport.user)) { proceed = true }
-        // else { 
-        //     if (await verifying_user_restriction(config.roles.purchases, req.session.passport.user)) { 
-        //         console.log("... verifying user previleges ...");
-        //         proceed = await verifying_previliges_only(req, "document", config.previliges_options.create);
-        //     }
-        //     else { proceed = false }; 
-        // };
-
-        // if (proceed) {
-        //     console.log("... user is permitted for operation ...");
-        //     console.log("... user is previlged to poroceed ...");
-        //     console.log("... inserting payload into database ...");
+        if (typeof proceed === "boolean" && proceed) {
+            console.log("... user authorization code verified ...");
+            console.log("... proceed to update database ...");
             
-        //     const query_resp = await PurchaseModel.insertMany(payload);
-        
-        //     console.log("... query responds ...", query_resp);
-        //     console.log("... insertion of payload completed ...");
-        //     console.log("... wrapping context before redirecting ...");
-    
-        //     console.log("... wrapping context completed ...");
-        //     console.log("... redireting reponses ....");
-    
-        //     context.msg = "Purchase submission sucess";
-        //     context.data = query_resp;
-            
-        //     res.json(context);
-        // }else {
-        //     console.log("... user is NOT previlges to proceed ...");
-        //     console.log("... wrapping context completed ...");
-        //     console.log("... redireting reponses ....");
 
-        //     context.msg = `Hey ${eq.session.passport.user.userID}. you are not permitted for operation !`;
-        //     res.json(context);
-        // }
+            if (selected_user_profile.role === config.roles.admin) {
+                console.log("... Admin role cannot be modified ...");
+                console.log("... wrapping context before redirecting ...");
+
+                context.msg = "Error. Admin role cannot be reassigned !";
+                res.json(context);    
+            
+            }else if ( (selected_user_profile.role === config.roles.managing_director) && (passport_data.role === config.roles.operation_manager) ){
+                console.log("... Admin role cannot be modified ...");
+                console.log("... wrapping context before redirecting ...");
+
+                context.msg = `Error. ${config.roles.managing_director} role cannot be reassigned. Contact Admin !`;
+                res.json(context);
+            
+            }else {
+                console.log("... initiating ...");
+                if ((passport_data.role === config.roles.admin) 
+                    || (passport_data.role === config.roles.managing_director)
+                    || (passport_data.role === config.roles.operation_manager)
+                ) {
+                    if (selected_user_profile.role !== config.roles.admin) {
+                        const query_resp = await UserModel.updateOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID },
+                        { "previliges": payload });
+
+                        if (query_resp === null) {
+                            context.msg = `Error. Update failed. Contact Admin !`;
+                            res.json(context);
+
+                        }else { is_data_updated = true }
+                    };
+                }else {
+                    console.log("... User is not permitted to preform operation ...");
+                    console.log("... wrapping context before redirecting ...");
+
+                    context.msg = `Error. User not premitted to perform operation. Contact Admin !`;
+                    res.json(context);
+                    
+                }
+            }
+        };
+
+        if (typeof is_data_updated === "boolean" && is_data_updated) {
+            console.log("... Sucess. User role reassigned ...");
+            console.log("... creating an authorization code to selcted user depending the level of credentials ...");
+
+             await UserModel.findOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID });
+
+
+
+            console.log("... sending email notification to selected user ...");
+
+
+            
+            
+        }
     } catch (error) {
         console.log("** Error:: Change user roles and previlges Handler **", error);
 

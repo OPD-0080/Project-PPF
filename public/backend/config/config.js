@@ -11,6 +11,7 @@ const config = {
     userID_regexp: "[a-z]{3}[0-9]{5}",
     default_pass_regexp: "[a-z]{6}[0-9]{5}",
     previliges_options: previliges_options,
+    previliges_type: { document: "document", user: "user" },
     previliges: {
         documents: {
             ...previliges_options,
