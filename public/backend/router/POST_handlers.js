@@ -930,6 +930,7 @@ const change_user_roles_handler = async (req, res, next) => {
             
         let selected_user_profile = await RegistrationModel.findOne({ "_id": payload.selected_userID.trim() });
         if (selected_user_profile === null) { selected_user_profile = await UserModel.findOne({ "_id": payload.selected_userID.trim() }) };
+        const backup_data = new Array.push(selected_user_profile);
         console.log("... selected user is found in database in completion ...", selected_user_profile);
 
         if (is_user_found === undefined) { 
@@ -1024,10 +1025,11 @@ const change_user_roles_handler = async (req, res, next) => {
             res.json(context);
         };
         
+
+
         if (typeof proceed === "boolean" && proceed) {
             console.log("... user authorization code verified ...");
             console.log("... proceed to update database ...");
-            
 
             if (selected_user_profile.role === config.roles.admin) {
                 console.log("... Admin role cannot be modified ...");
@@ -1050,11 +1052,11 @@ const change_user_roles_handler = async (req, res, next) => {
                     || (passport_data.role === config.roles.operation_manager)
                 ) {
                     if (selected_user_profile.role !== config.roles.admin) {
-                        const query_resp = await UserModel.updateOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID },
-                        { "previliges": payload });
+                        const query_resp = await UserModel.updateOne({ "_id": payload.selected_userID, "companyRefID": passport_data.companyRefID },
+                        { "role": payload.assigned_role, "previliges": payload.assigned_previlges });
 
                         if (query_resp === null) {
-                            context.msg = `Error. Update failed. Contact Admin !`;
+                            context.msg = `Error. User role update failed. Contact Admin !`;
                             res.json(context);
 
                         }else { is_data_updated = true }
@@ -1065,47 +1067,85 @@ const change_user_roles_handler = async (req, res, next) => {
 
                     context.msg = `Error. User not premitted to perform operation. Contact Admin !`;
                     res.json(context);
-                    
                 }
             }
         };
 
+
+
         if (typeof is_data_updated === "boolean" && is_data_updated) {
             console.log("... Sucess. User role reassigned ...");
-            console.log("... creating an authorization code to selcted user depending the level of credentials ...");
+            console.log("... creating and assigning an authorization code to selected user depending the level of credentials ...");
 
-             await UserModel.findOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID });
+            let is_code_updated = "", indexes = [], proceed_auth_code = "";
+            if ((await AuthorizationModel.findOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID })) === null ) {
+                
+                const opts = [config.previliges_options.modify, config.previliges_options.delete, config.previliges.documents.report];
+                payload.assigned_previlges[0].value.forEach(data => {
+                    const index = opts.findIndex(opt => { return opt.trim() === data.trim() });
+                    indexes.push(index);
+                });
+                if (indexes.length === payload.assigned_previlges[0].value.length) { proceed_auth_code = indexes.some(el => { return el < 0 }); }
+                if (typeof proceed_auth_code === "boolean" && proceed_auth_code) {
+                    console.log("... User denied to have an authorization code ...");
+                    
+                    is_code_updated = true;
+                }else {
+                    console.log("... Sucess. Update of selected user authorizaion code . ...");
+                    const auth_payload = {
+                        email: selected_user_profile.email,
+                        company: selected_user_profile.company,
+                        userID: selected_user_profile.userID,
+                        role: payload.assigned_role,
+                        companyRefID: selected_user_profile.companyRefID, 
+                        authorization: await authorization_code(),
+                    };
+                    if (await AuthorizationModel.insertMany(auth_payload)) { is_code_updated = true; }
+                    else {
+                        console.log("... Update of selected user authorizaion code failed. ...");
+                        console.log("... undo the reassigning of role and previlges ...");
+    
+                        await UserModel.updateOne({ "_id": payload.selected_userID, "companyRefID": passport_data.companyRefID },
+                            { "role": backup_data[0].role, "previliges": backup_data[0].previlges });
+    
+                        console.log("... undo completed ...");
+                        console.log("... wrapping context before redirecting ...");
+    
+                        context.msg = `Error. User role and privileges reassign failed. Contact Admin !`;
+                        res.json(context);
+                    };
+                }
+            }else {
+                console.log("... User authorization code data already exist ...");
+                console.log("... wrapping context before redirecting ...");
 
+                context.msg = `Error. ${selected_user_profile.userID} already has authorization code !`;
+                res.json(context);
+            };
 
+            if (typeof is_code_updated === "boolean" && is_code_updated) {
+                console.log("... sending email notification to selected user ...");
 
-            console.log("... sending email notification to selected user ...");
+                const nodemail_resp = await sending_email(
+                    config.company_name,
+                    `Change of User Role`,
+                    selected_user_profile.email,
+                    `Hi ${selected_user_profile.userID}, Your role have been change from ${backup_data[0].role} to ${payload.assigned_role} sucessfully.`
+                );
 
+                console.log("...Email response ...", nodemail_resp);
+                console.log("... sending email completed ...");
+                console.log("... wrapping context before redirecting ...");
 
-            
-            
+                context.msg = `Sucess. User role and privileges reassign !`;
+                res.json(context);
+            };
         }
     } catch (error) {
         console.log("** Error:: Change user roles and previlges Handler **", error);
-
-        // if (error.code == "11000") { //  for duplicate of business name 
-        //     console.log("... data is duplicated ...");
-            
-        //     console.log("... wrapping context before redirecting ...");
-
-        //     const error_msg = "Error. Data is duplicated . Try Again !";
-        //     context.msg = error_msg;
-
-        //     console.log("... wrapping context completed ...");
-        //     console.log("... redireting reponses ....");
-
-        //     // req.flash("purchase", context.msg);
-        //     // res.redirect(303, config.view_urls.purchase);
-        //     res.json(context);
-        // }
-
         res.redirect(303, `${config.view_urls._500}`);
     }
-}
+};
 const change_user_previlges_handler = async (req, res, next) => {
     let context = {};
     try {
@@ -1234,7 +1274,7 @@ const change_user_previlges_handler = async (req, res, next) => {
 
         res.redirect(303, `${config.view_urls._500}`);
     }
-}
+};
 
 
 // END
