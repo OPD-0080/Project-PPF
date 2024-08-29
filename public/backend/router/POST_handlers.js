@@ -912,13 +912,23 @@ const purchases_preview_handler = async (req, res, next) => {
 // END
 
 // DASHBOARD SECIION 
-const change_user_roles_handler = async (req, res, next) => {
+const change_user_roles_and_previlges_handler = async (req, res, next) => {
     let context = {}, proceed = "", is_data_updated = "";
     try {
         console.log("** Collecting data to change user roles and previliges **");
         
         const payload = req.body;
         const passport_data = req.session.passport.user;
+
+        const is_user_payload_for_update_or_not = async (payload) => {
+            if (typeof payload.assigned_role === "string" &&  
+                payload.hasOwnProperty("assigned_role") && payload.assigned_role !== ""
+            ) { return payload; }
+            else {
+                delete payload.assigned_role
+                return payload;
+            }
+        };
 
         console.log("... first payload ...", payload);
         console.log("... getting params ...", req.params);
@@ -1052,10 +1062,16 @@ const change_user_roles_handler = async (req, res, next) => {
                     || (passport_data.role === config.roles.operation_manager)
                 ) {
                     if (selected_user_profile.role !== config.roles.admin) {
-                        const query_resp = await UserModel.updateOne({ "_id": payload.selected_userID, "companyRefID": passport_data.companyRefID },
-                        { "role": payload.assigned_role, "previliges": payload.assigned_previlges });
-
-                        if (query_resp === null) {
+                        let query_resp = "";
+                        const user_payload = await is_user_payload_for_update_or_not(payload);
+                        if (user_payload.hasOwnProperty("role")) {
+                            query_resp = await UserModel.updateOne({ "_id": payload.selected_userID, "companyRefID": passport_data.companyRefID },
+                                { "role": payload.assigned_role, "previliges": payload.assigned_previlges });
+                        }else {
+                            query_resp = await UserModel.updateOne({ "_id": payload.selected_userID, "companyRefID": passport_data.companyRefID },
+                                { "previliges": payload.assigned_previlges });
+                        };
+                        if (query_resp !== "" && query_resp === null) {
                             context.msg = `Error. User role update failed. Contact Admin !`;
                             res.json(context);
 
@@ -1078,18 +1094,19 @@ const change_user_roles_handler = async (req, res, next) => {
             console.log("... creating and assigning an authorization code to selected user depending the level of credentials ...");
 
             let is_code_updated = "", indexes = [], proceed_auth_code = "";
-            if ((await AuthorizationModel.findOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID })) === null ) {
-                
-                const opts = [config.previliges_options.modify, config.previliges_options.delete, config.previliges.documents.report];
-                payload.assigned_previlges[0].value.forEach(data => {
-                    const index = opts.findIndex(opt => { return opt.trim() === data.trim() });
-                    indexes.push(index);
-                });
-                console.log("... getting indexes responds ...", indexes);
-                
+            const auth_data_resp = await AuthorizationModel.findOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID });
+            const opts = [config.previliges_options.modify, config.previliges_options.delete, config.previliges.documents.report];
+            payload.assigned_previlges[0].value.forEach(data => {
+                const index = opts.findIndex(opt => { return opt.trim() === data.trim() });
+                indexes.push(index);
+            });
+            console.log("... getting indexes responds ...", indexes);
+
+            if (auth_data_resp === null ) {
                 if (indexes.length === payload.assigned_previlges[0].value.length) { proceed_auth_code = indexes.some(el => { return el >= 0 }); }
                 if (typeof proceed_auth_code === "boolean" && proceed_auth_code) {
                     console.log("... Sucess. Update of selected user authorizaion code . ...");
+
                     const auth_payload = {
                         email: selected_user_profile.email,
                         company: selected_user_profile.company,
@@ -1120,10 +1137,26 @@ const change_user_roles_handler = async (req, res, next) => {
                 }
             }else {
                 console.log("... User authorization code data already exist ...");
-                console.log("... wrapping context before redirecting ...");
+                console.log("... verifying if user looses authorization codes or not depending on previlges assigned ...");
 
-                context.msg = `Error. ${selected_user_profile.userID} already has authorization code !`;
-                res.json(context);
+                proceed_auth_code = indexes.some(el => { return el >= 0 });
+                if (typeof proceed_auth_code === "boolean" && proceed_auth_code) {
+                    console.log("... Selected User authorization codes maintain ...");
+                    console.log("... wrapping context before redirecting ...");
+
+                    context.msg = `Sucess. User privileges modified !`;
+                    res.json(context);
+
+                }else {
+                    console.log("... Selected User authorization codes Revoked...");
+                    console.log("... deleting user authorizationn codes from database ...");
+                    
+                    await AuthorizationModel.deleteOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID });
+                    
+                    console.log("... wrapping context before redirecting ...");
+                    context.msg = `Sucess. ${selected_user_profile.userID} authorization codes revoked !`;
+                    res.json(context);
+                };
             };
 
             if (typeof is_code_updated === "boolean" && is_code_updated) {
@@ -1149,136 +1182,6 @@ const change_user_roles_handler = async (req, res, next) => {
         res.redirect(303, `${config.view_urls._500}`);
     }
 };
-const change_user_previlges_handler = async (req, res, next) => {
-    let context = {};
-    try {
-        console.log("** Collecting data to change user roles and previliges **");
-        
-        const payload = req.body;
-        const passport_data = req.session.passport.user;
-
-        console.log("... first payload ...", payload);
-        console.log("... getting params ...", req.params);
-        console.log("... verifying user found in the right company ...");
-
-        const is_user_found = await is_user_found_in_company(req.params.id, passport_data.companyRefID);
-        console.log("... verifcation responds ...", is_user_found);
-        
-        if (is_user_found === undefined) { 
-            console.log("... database server error ...");
-            console.log("... wrapping context before redirecting ...");
-
-            context.msg = "Error. Server not responding. Try Again / contact Admin !";
-            res.json(context);
-
-        }else if (is_user_found) {
-            console.log("... user is foud in the company ...");
-            console.log("... getting selected user data from the database ...");
-            
-            let selected_user_profile = await RegistrationModel.findOne({ "_id": payload.selected_userID.trim() });
-            if (selected_user_profile === null) { selected_user_profile = await UserModel.findOne({ "_id": payload.selected_userID.trim() }) };
-
-            console.log("... selected user is found in database in completion ...");
-            console.log("... verifying auth user authorizatin code ...");
-
-            const authorization_data = await AuthorizationModel.findOne({ 
-                "email": passport_data.email, "companyRefID": passport_data.comapnyRefID });
-            console.log("... getting authroization data responds ...", authorization_data);
-            
-            if (authorization_data === null) {
-                console.log("... Auth user does not have authorization code to proceed ...");
-                console.log("... wrapping context before redirecting ...");
-
-                context.msg = `Error. Hey ${selected_user_profile.userID}. You are not permitted to perform operation !`;
-                res.json(context);
-                
-            }else {
-
-            }
-
-
-
-        }else {
-            console.log("... user nopt found in the company ...");
-            console.log("... wrapping context before redirecting ...");
-
-            context.msg = "Error. User not registred !";
-            res.json(context);
-        };
-        
-        
-
-        // payload.companyRefID = req.session.passport.user.companyRefID;
-        // payload.userID = req.session.passport.user.userID;
-        // payload.company = req.session.passport.user.company;
-
-        // console.log("... payload collected completed ...", payload);
-
-        // const user_profile = await  getting_auth_user_data(req.session.passport.user);
-        // if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
-        // else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
-
-        // console.log("... getting final payload ...", payload);
-        // console.log("... verifying if user is permitted to proceed operation ...");
-
-        // if (await verifying_user_restriction(null, req.session.passport.user)) { proceed = true }
-        // else { 
-        //     if (await verifying_user_restriction(config.roles.purchases, req.session.passport.user)) { 
-        //         console.log("... verifying user previleges ...");
-        //         proceed = await verifying_previliges_only(req, "document", config.previliges_options.create);
-        //     }
-        //     else { proceed = false }; 
-        // };
-
-        // if (proceed) {
-        //     console.log("... user is permitted for operation ...");
-        //     console.log("... user is previlged to poroceed ...");
-        //     console.log("... inserting payload into database ...");
-            
-        //     const query_resp = await PurchaseModel.insertMany(payload);
-        
-        //     console.log("... query responds ...", query_resp);
-        //     console.log("... insertion of payload completed ...");
-        //     console.log("... wrapping context before redirecting ...");
-    
-        //     console.log("... wrapping context completed ...");
-        //     console.log("... redireting reponses ....");
-    
-        //     context.msg = "Purchase submission sucess";
-        //     context.data = query_resp;
-            
-        //     res.json(context);
-        // }else {
-        //     console.log("... user is NOT previlges to proceed ...");
-        //     console.log("... wrapping context completed ...");
-        //     console.log("... redireting reponses ....");
-
-        //     context.msg = `Hey ${eq.session.passport.user.userID}. you are not permitted for operation !`;
-        //     res.json(context);
-        // }
-    } catch (error) {
-        console.log("** Error:: Change user roles and previlges Handler **", error);
-
-        // if (error.code == "11000") { //  for duplicate of business name 
-        //     console.log("... data is duplicated ...");
-            
-        //     console.log("... wrapping context before redirecting ...");
-
-        //     const error_msg = "Error. Data is duplicated . Try Again !";
-        //     context.msg = error_msg;
-
-        //     console.log("... wrapping context completed ...");
-        //     console.log("... redireting reponses ....");
-
-        //     // req.flash("purchase", context.msg);
-        //     // res.redirect(303, config.view_urls.purchase);
-        //     res.json(context);
-        // }
-
-        res.redirect(303, `${config.view_urls._500}`);
-    }
-};
-
 
 // END
 
@@ -1287,5 +1190,5 @@ const change_user_previlges_handler = async (req, res, next) => {
 module.exports = { signup_handler, OTP_verification_handler, registration_handler,
     is_OTP_verified, is_password_secured,  password_reset_handler, forgot_password_initiate_handler, 
     forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_handler, purchases_preview_handler,
-    change_user_roles_handler
+    change_user_roles_and_previlges_handler
 }

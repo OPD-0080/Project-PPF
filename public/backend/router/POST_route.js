@@ -8,7 +8,7 @@ const passport = require("passport");
 const { signup_handler, registration_handler, OTP_verification_handler, is_OTP_verified, is_password_secured,
     password_reset_handler, forgot_password_initiate_handler, forgot_password_confirmation_handler, resend_OTP_code_handler,
     purchases_handler, purchases_preview_handler,
-    change_user_roles_handler } = require("./POST_handlers");
+    change_user_roles_and_previlges_handler } = require("./POST_handlers");
 // ...
 // IMPORTATION OF MIDDLEWARES
 const config = require("../config/config");
@@ -58,7 +58,7 @@ router.post("/purchases/preview", isUSerAuthenticated, purchases_preview_handler
 
 
 // DASHBOARD SECTION
-router.post("/dashboard/:company/:id", isUSerAuthenticated, change_user_roles_handler );
+router.post("/dashboard/:company/:id", isUSerAuthenticated, change_user_roles_and_previlges_handler );
 
 
 // END
