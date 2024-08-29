@@ -14,6 +14,7 @@ const { is_user_active, getting_auth_user_data, tracking_payload_initials, verif
         verifying_user_previliges, verifying_user_authorization_codes, is_user_found_in_company } = require("../controller/validation");
 const { get_date_and_time } = require("../utils/date_time");
 
+
 //
 // AUTHENTICATION
 const registration_handler = async (req, res, next) => {
@@ -930,7 +931,6 @@ const change_user_roles_handler = async (req, res, next) => {
             
         let selected_user_profile = await RegistrationModel.findOne({ "_id": payload.selected_userID.trim() });
         if (selected_user_profile === null) { selected_user_profile = await UserModel.findOne({ "_id": payload.selected_userID.trim() }) };
-        const backup_data = new Array.push(selected_user_profile);
         console.log("... selected user is found in database in completion ...", selected_user_profile);
 
         if (is_user_found === undefined) { 
@@ -1085,12 +1085,10 @@ const change_user_roles_handler = async (req, res, next) => {
                     const index = opts.findIndex(opt => { return opt.trim() === data.trim() });
                     indexes.push(index);
                 });
-                if (indexes.length === payload.assigned_previlges[0].value.length) { proceed_auth_code = indexes.some(el => { return el < 0 }); }
+                console.log("... getting indexes responds ...", indexes);
+                
+                if (indexes.length === payload.assigned_previlges[0].value.length) { proceed_auth_code = indexes.some(el => { return el >= 0 }); }
                 if (typeof proceed_auth_code === "boolean" && proceed_auth_code) {
-                    console.log("... User denied to have an authorization code ...");
-                    
-                    is_code_updated = true;
-                }else {
                     console.log("... Sucess. Update of selected user authorizaion code . ...");
                     const auth_payload = {
                         email: selected_user_profile.email,
@@ -1100,13 +1098,15 @@ const change_user_roles_handler = async (req, res, next) => {
                         companyRefID: selected_user_profile.companyRefID, 
                         authorization: await authorization_code(),
                     };
+                    console.log("... final payload before insertion ...", auth_payload);
+                    
                     if (await AuthorizationModel.insertMany(auth_payload)) { is_code_updated = true; }
                     else {
                         console.log("... Update of selected user authorizaion code failed. ...");
                         console.log("... undo the reassigning of role and previlges ...");
     
                         await UserModel.updateOne({ "_id": payload.selected_userID, "companyRefID": passport_data.companyRefID },
-                            { "role": backup_data[0].role, "previliges": backup_data[0].previlges });
+                            { "role": selected_user_profile.role, "previliges": selected_user_profile.previliges });
     
                         console.log("... undo completed ...");
                         console.log("... wrapping context before redirecting ...");
@@ -1114,6 +1114,9 @@ const change_user_roles_handler = async (req, res, next) => {
                         context.msg = `Error. User role and privileges reassign failed. Contact Admin !`;
                         res.json(context);
                     };
+                }else {
+                    console.log("... User denied to have an authorization code ...");
+                    is_code_updated = true;
                 }
             }else {
                 console.log("... User authorization code data already exist ...");
@@ -1130,7 +1133,7 @@ const change_user_roles_handler = async (req, res, next) => {
                     config.company_name,
                     `Change of User Role`,
                     selected_user_profile.email,
-                    `Hi ${selected_user_profile.userID}, Your role have been change from ${backup_data[0].role} to ${payload.assigned_role} sucessfully.`
+                    `Hi ${selected_user_profile.userID}, Your role have been change from ${selected_user_profile.role} to ${payload.assigned_role} sucessfully.`
                 );
 
                 console.log("...Email response ...", nodemail_resp);
