@@ -148,6 +148,38 @@ const signup_handler = async (req, res, next) => {
 
 
         console.log("... Business registration completed ...");
+        console.log("... initiating tracking protocol ...");
+            
+        const user_profile = await getting_auth_user_data(req.session.passport.user);
+        tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+        tracking_payload.payload = {
+            users: [
+                {
+                    time: (await get_date_and_time()).time,
+                    date:  (await get_date_and_time()).date,
+                    action: "Signing up new user.",
+                    status: config.tracking.status.sucess,
+                }
+            ]
+        }
+        console.log("...final tracking payload ...", tracking_payload);
+
+        const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+        if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+        else {
+            if (tracking_query_resp.payload.users === undefined) {
+                tracking_query_resp.payload.users = tracking_payload.payload.users;
+                await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                    { "payload": tracking_query_resp.payload });
+
+            }else {
+                tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                    {"$set": { "payload.users": tracking_query_resp.payload.users } });
+            }
+        };
+            
+        console.log("... tracking protocol completed ...");
         console.log("... Sending email notification to company ...");
 
 
@@ -207,6 +239,41 @@ const signup_handler = async (req, res, next) => {
 
         // Handling errors 
             if (error.writeErrors[0].err.errmsg.includes("duplicate key error collection")) { // for duplicate key pairs in db 
+                console.log("... initiating tracking protocol ...");
+            
+                const user_profile = await getting_auth_user_data(req.session.passport.user);
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.payload = {
+                    users: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: "Signing up new user.",
+                            status: config.tracking.status.failed,
+                        }
+                    ]
+                }
+                console.log("...final tracking payload ...", tracking_payload);
+        
+                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                else {
+                    if (tracking_query_resp.payload.users === undefined) {
+                        tracking_query_resp.payload.users = tracking_payload.payload.users;
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            { "payload": tracking_query_resp.payload });
+        
+                    }else {
+                        tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                    }
+                };
+                    
+                console.log("... tracking protocol completed ...");
+                console.log("... wrappinng context befre redirecting ...");
+                console.log("... redirecting ...");
+
                 req.flash("signup", "Error. User already SignUp. Please Login !");
                 res.redirect(303, `${config.view_urls.user_register}`);
             }
@@ -263,24 +330,102 @@ const OTP_verification_handler = async (req, res, next) => {
         }
 
         console.log("... OTP code verification completed ...");
-        console.log("... Redirecting based on user credentials ...");
-
-        if (proceed) {
+        console.log("... initiating tracking protocol ...");
+            
+        let redirect_alt = "";
+        const user_profile = await getting_auth_user_data(req.session.passport.user);
+        tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+        if (typeof proceed === "boolean" && proceed) {
             if (user[0].role == "admin") {
-                req.flash("dashboard", "User is authenticated");
-                res.redirect(303, `${config.view_urls.dashboard}`);
+                tracking_payload.payload = {
+                    users: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: "verification of OTP Code.",
+                            status: config.tracking.status.sucess,
+                        }
+                    ]
+                }
+                console.log("...final tracking payload ...", tracking_payload);
+                redirect_alt = true;
 
             }else {
                 if (user[0].password.match(config.default_pass_regexp)) {  
-                    req.flash("reset_password", "For Security reasons, Change Password !");
-                    res.redirect(303, `${config.view_urls.reset_password}`);
+                    tracking_payload.payload = {
+                        users: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: "verification of OTP Code.",
+                                status: config.tracking.status.failed,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+                    redirect_alt = false;
 
                 }else {
-                    req.flash("dashboard", "User is authenticated");
-                    res.redirect(303, `${config.view_urls.dashboard}`);
+                    tracking_payload.payload = {
+                        users: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: "verification of OTP Code.",
+                                status: config.tracking.status.sucess,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+                    redirect_alt = true;
                 }
             }
-        }
+        };
+
+        console.log("... Redirecting based on user credentials ...");
+
+        if (typeof redirect_alt === "boolean" && redirect_alt) {
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.users === undefined) {
+                    tracking_query_resp.payload.users = tracking_payload.payload.users;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                }
+            };
+                
+            console.log("... tracking protocol completed ...");
+            console.log("... redirecting ...");
+
+            req.flash("dashboard", "User is authenticated");
+            res.redirect(303, `${config.view_urls.dashboard}`);
+
+        }else {  
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.users === undefined) {
+                    tracking_query_resp.payload.users = tracking_payload.payload.users;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                }
+            };
+                
+            console.log("... tracking protocol completed ...");
+            req.flash("reset_password", "For Security reasons, Change Password !");
+            res.redirect(303, `${config.view_urls.reset_password}`);
+        };
     } catch (error) {
         console.log("** Error:: OTP verification Handler **", error);
         console.log(typeof error);
@@ -450,11 +595,78 @@ const password_reset_handler = async (req, res, next) => {
         }
         
         if (is_user_updated !== "" && is_user_updated.length <= 0) {
+            console.log("... reset password failed ...");
+            console.log("... initiating tracking protocol ...");
+            
+            const user_profile = await getting_auth_user_data(req.session.passport.user);
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                users: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Resetting of password.",
+                        status: config.tracking.status.failed,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+    
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.users === undefined) {
+                    tracking_query_resp.payload.users = tracking_payload.payload.users;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                }
+            };
+                
+            console.log("... tracking protocol completed ...");
+            console.log("... redirecting ...");
+
             req.flash("reset_password", "Error. Unable to reset password. Try Again !");
             res.redirect(303, config.view_urls.reset_password);
 
         }else {
             console.log("... Password reset completed ...");
+            console.log("... initiating tracking protocol ...");
+            
+            const user_profile = await getting_auth_user_data(req.session.passport.user);
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                users: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Resetting of password.",
+                        status: config.tracking.status.sucess,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+    
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.users === undefined) {
+                    tracking_query_resp.payload.users = tracking_payload.payload.users;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                }
+            };
+                
+            console.log("... tracking protocol completed ...");
             console.log("... Redirectig ...");
 
             req.flash("dashboard", "User is authenticated !");
@@ -584,6 +796,38 @@ const resend_OTP_code_handler = async (req, res, next) => {
         const otp = await randomSerialCode(5);
 
         console.log("... OTP code genrated  completed ...");
+        console.log("... initiating tracking protocol ...");
+            
+        const user_profile = await getting_auth_user_data(req.session.passport.user);
+        tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+        tracking_payload.payload = {
+            users: [
+                {
+                    time: (await get_date_and_time()).time,
+                    date:  (await get_date_and_time()).date,
+                    action: "Resend of OTP Code.",
+                    status: config.tracking.status.sucess,
+                }
+            ]
+        }
+        console.log("...final tracking payload ...", tracking_payload);
+
+        const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+        if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+        else {
+            if (tracking_query_resp.payload.users === undefined) {
+                tracking_query_resp.payload.users = tracking_payload.payload.users;
+                await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                    { "payload": tracking_query_resp.payload });
+
+            }else {
+                tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                    {"$set": { "payload.users": tracking_query_resp.payload.users } });
+            }
+        };
+            
+        console.log("... tracking protocol completed ...");
         console.log("... Sending email to auth user ...");
 
         const nodemail_resp = await sending_email(
@@ -626,8 +870,6 @@ const purchases_handler = async (req, res, next) => {
         payload.userID = req.session.passport.user.userID;
         payload.company = req.session.passport.user.company;
 
-        console.log("... payload collected completed ...", payload);
-
         const user_profile = await  getting_auth_user_data(req.session.passport.user);
         if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
         else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
@@ -638,12 +880,14 @@ const purchases_handler = async (req, res, next) => {
         if (await verifying_user_restriction(null, req.session.passport.user)) { proceed = true }
         else { 
             if (await verifying_user_restriction(config.roles.purchases, req.session.passport.user)) { 
+                console.log("... user is not restricted ...");
                 console.log("... verifying user previleges ...");
-                proceed = await verifying_previliges_only(req, "document", config.previliges_options.create);
+                proceed = await verifying_user_previliges(req, "document", config.previliges_options.create);
             }
             else { proceed = false }; 
         };
 
+        let tracking_payload = "";
         if (proceed) {
             console.log("... user is permitted for operation ...");
             console.log("... user is previlged to poroceed ...");
@@ -653,17 +897,79 @@ const purchases_handler = async (req, res, next) => {
         
             console.log("... query responds ...", query_resp);
             console.log("... insertion of payload completed ...");
+            console.log("... initiating tracking protocol ...");
+            
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Added new purchase(s).",
+                        status: config.tracking.status.sucess,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
             console.log("... wrapping context before redirecting ...");
-    
-            console.log("... wrapping context completed ...");
-            console.log("... redireting reponses ....");
     
             context.msg = "Purchase submission sucess";
             context.data = query_resp;
-            
+
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+
             res.json(context);
         }else {
             console.log("... user is NOT previlges to proceed ...");
+            console.log("... initiating tracking protocol ...");
+            
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Added new purchase(s).",
+                        status: config.tracking.status.denied,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
             console.log("... wrapping context completed ...");
             console.log("... redireting reponses ....");
 
@@ -675,7 +981,37 @@ const purchases_handler = async (req, res, next) => {
 
         if (error.code == "11000") { //  for duplicate of business name 
             console.log("... data is duplicated ...");
+            console.log("... initiating tracking protocol ...");
             
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Added new purchase(s).",
+                        status: config.tracking.status.failed,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
             console.log("... wrapping context before redirecting ...");
 
             const error_msg = "Error. Data is duplicated . Try Again !";
@@ -684,10 +1020,8 @@ const purchases_handler = async (req, res, next) => {
             console.log("... wrapping context completed ...");
             console.log("... redireting reponses ....");
 
-            // req.flash("purchase", context.msg);
-            // res.redirect(303, config.view_urls.purchase);
             res.json(context);
-        }
+        };
 
         res.redirect(303, `${config.view_urls._500}`);
     }
@@ -698,7 +1032,7 @@ const purchases_preview_handler = async (req, res, next) => {
         console.log("** inside purchases preview submission **");
         console.log("... collection of data payload ...");
 
-        let proceed = "";
+        let proceed = "", tracking_payload = {};
         const payload = req.body;
         const incoming_payload = req.body;
         
@@ -709,7 +1043,7 @@ const purchases_preview_handler = async (req, res, next) => {
         console.log("... payload collected completed ...", payload);
         console.log("... getting user profile bases on level of crendential ");
 
-        const user_profile = await getting_auth_user_data(req.session.passport.user.email)
+        const user_profile = await getting_auth_user_data(req.session.passport.user);
         
         console.log("... user is found ...");
         console.log("... verifying user previlges ...");
@@ -728,6 +1062,37 @@ const purchases_preview_handler = async (req, res, next) => {
 
             if (verification_responds === undefined) {
                 console.log("... User is not authorized ...");
+                console.log("... initiaing tracking protocol ...");
+
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.payload = {
+                    purchases: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: `Request to make changes on purchase item #${payload.item_code}`,
+                            status: config.tracking.status.restricted,
+                        }
+                    ]
+                }
+                console.log("...final tracking payload ...", tracking_payload);
+        
+                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                else {
+                    if (tracking_query_resp.payload.purchases === undefined) {
+                        tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            { "payload": tracking_query_resp.payload });
+        
+                    }else {
+                        tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                    }
+                };
+                    
+                console.log("... tracking protocol completed ...");
                 console.log("... wrapping context before rediecting ...");
                 
                 context.msg = "Error. User is not authorized !";
@@ -735,52 +1100,89 @@ const purchases_preview_handler = async (req, res, next) => {
 
             }else if (typeof verification_responds === "object") {
                 if (verification_responds.status.trim() === "breach") {
-                    let tracking_payload = {}, is_data_updated = "", update_resp = "";
+                    let is_data_updated = "";
 
                     console.log("... breached of authorization codes ...");
-                    console.log("... preparing payload for update of database ...");
+                    console.log("... initiaing tracking protocol ...");
 
-                    const breach_msg = `Breach! ${auth_response.data.userID} authorization code is breached by ${payload.initiator} on Purchases`;
                     tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-
-                    // tracking_payload.breached_by = {
-                    
-                    // }
-                    tracking_payload.breaches = [{
-                        msg: breach_msg,
-                        ...await get_date_and_time(),
-                    }];
-                    tracking_payload.purchases = {  
-                        ...await get_date_and_time(),
-                        msg: `Request to make changes on purchase item #${payload.item_code}`,
+                    tracking_payload.payload = {
+                        purchases: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Request to make changes on purchase item #${payload.item_code}`,
+                                status: config.tracking.status.restricted,
+                            }
+                        ]
                     }
-                    tracking_payload.is_breach_alert_activated = true;
-                    
-                    console.log("... payload completed ...");
-                    console.log("... updating database ...");
+                    console.log("...final tracking payload for purchases ...", tracking_payload);
 
-                    const tracking_query_response = await TrackingModel.findOne({ "companyRefID": tracking_payload.companyRefID, "userID": tracking_payload.userID });
-                    if (tracking_query_response === null) {
-                        update_resp = await TrackingModel.insertOne(tracking_payload);
-                        is_data_updated = true;
-
-                    }else {
-                        const payload_update = {
-                            msg: breach_msg,
-                            ...await get_date_and_time(),
+                    let tracking_query_resp = "";
+                    tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                    else {
+                        if (tracking_query_resp.payload.purchases === undefined) {
+                            tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                { "payload": tracking_query_resp.payload });
+            
+                        }else {
+                            tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
                         };
+                    };
 
-                        tracking_query_response.breaches.push(payload_update);
-                        update_resp = await TrackingModel.updateOne({ "companyRefID": req.session.passport.user.companyRefID, "userID": req.session.passport.user.userID }, 
-                            { "breaches": tracking_query_response.breaches, "is_breach_alert_activated": true });
-                        is_data_updated = true;
+                    tracking_payload.payload = {
+                        authorization: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Breach! ${verification_responds.data.userID} authorization code is breached by ${payload.initiator} on Purchases.`,
+                                status: config.tracking.status.breach,
+                            }
+                        ]
+                    };
+
+                    console.log("...final tracking payload for authorization ...", tracking_payload);
+
+                    tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                    if (tracking_query_resp === null) { 
+                        await TrackingModel.insertMany(tracking_payload);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            { "is_breach_alert_activated": true });
+                        is_data_updated = true; 
                     }
+                    else {
+                        if (tracking_query_resp.payload.authorization === undefined) {
+                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                            
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": [
+                                    { "payload": tracking_query_resp.payload },
+                                    { "is_breach_alert_activated": true }
+                                ]});
+                            is_data_updated = true;
+                        }else {
+                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": [
+                                    { "payload.authorization": tracking_query_resp.payload.authorization },
+                                    { "is_breach_alert_activated": true }
+                                ]});
+                            is_data_updated = true;
+                        }
+                    };
 
-                    if (is_data_updated) {
-                        console.log("... updating database completed ...");
+                    if (typeof is_data_updated === "boolean" && is_data_updated) {
+                        console.log("... Tracking protocol initiation completed ...");
                         console.log("... sending email to company admin and user as notification ...");
                         
                         const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
+                        const query_data_1 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.managing_director });
+                        const query_data_2 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.operation_manager });
+                        
                         const email_response_1 = await sending_email(
                             config.company_name,
                             "Authorization Code Breached !",
@@ -790,29 +1192,70 @@ const purchases_preview_handler = async (req, res, next) => {
                         const email_response_2 = await sending_email(
                             config.company_name,
                             "Authorization Code Breached !",
-                            auth_response.data.email,
-                            `Hi ${auth_response.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
+                            verification_responds.data.email,
+                            `Hi ${verification_responds.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
                         );
+                        if (query_data_1 !== null) {
+                            await sending_email(
+                                config.company_name,
+                                "Authorization Code Breached !",
+                                query_data_1.email,
+                                `Hi ${query_data_1.first_name} ${query_data_1.last_name}, There has been a breach of authorization code. We recommend to you to check it out.`
+                            );
+                        };
+                        if (query_data_2 !== null) {
+                            await sending_email(
+                                config.company_name,
+                                "Authorization Code Breached !",
+                                query_data_2.email,
+                                `Hi ${query_data_2.first_name} ${query_data_2.last_name}, There has been a breach of authorization code. We recommend to you to check it out.`
+                            );
+                        }
 
                         console.log("... is email sent to Admin ...",email_response_1, email_response_2);
-                        console.log("... flagging the breach alert to user ...");
+                        console.log("... wrapping context before redirecting responds ...");
                         
-                        if (update_resp !== "") {
-                            console.log("... getting final query responds from the database ...", update_resp);
-                            console.log("... wrapping context before redirecting responds ...");
-                            
-                            context.msg = "Error. Authorization breach !";
-                            context.is_data_breach = update_resp.is_breach_alert_activated;
-                            context.response = "";
+                        context.msg = "Error. Authorization breach !";
+                        context.is_data_breach = tracking_payload.is_breach_alert_activated;
+                        context.response = verification_responds.data;
 
-                            res.json(context);
-                        }
-                        
+                        res.json(context);
                     }
-                }
+                };
             }else if (typeof verification_responds === "string") {
                 if (verification_responds.trim() === "not_activated") {
                     console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
+                    console.log("... initiaing tracking protocol ...");
+
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        authorization: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Request to make changes on purchase item #${payload.item_code}. Authorization codes not activated !`,
+                                status: config.tracking.status.denied,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+            
+                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                    else {
+                        if (tracking_query_resp.payload.authorization === undefined) {
+                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                { "payload": tracking_query_resp.payload });
+            
+                        }else {
+                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
+                        }
+                    };
+                        
+                    console.log("... tracking protocol completed ...");
                     console.log("... wrapping context before redirecting ...");
     
                     context.msg = "Error. Authorization not activated. Activate Authorization code before usage !";
@@ -820,20 +1263,116 @@ const purchases_preview_handler = async (req, res, next) => {
     
                 }else if (verification_responds.trim() === "code_err") { 
                     console.log("... invalid authorization code ...");
+                    console.log("... initiaing tracking protocol ...");
+
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        authorization: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Request to make changes on purchase item #${payload.item_code}. Authorization codes Invalid !`,
+                                status: config.tracking.status.denied,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+            
+                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                    else {
+                        if (tracking_query_resp.payload.authorization === undefined) {
+                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                { "payload": tracking_query_resp.payload });
+            
+                        }else {
+                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
+                        }
+                    };
+                        
+                    console.log("... tracking protocol completed ...");
                     console.log("... wrapping context before redirecting ...");
     
                     context.msg = "Error. Invalid authorization code !";
                     res.json(context);
                 
-                }else if (verification_responds.trim() === "verified") { proceed = true };
+                }else if (verification_responds.trim() === "verified") { 
+                    console.log("... verification of authorization code valid ...");
+                    console.log("... initiaing tracking protocol ...");
+
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        authorization: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Request to make changes on purchase item #${payload.item_code}. Authorization codes valid and used.`,
+                                status: config.tracking.status.sucess,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+            
+                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                    else {
+                        if (tracking_query_resp.payload.authorization === undefined) {
+                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                { "payload": tracking_query_resp.payload });
+            
+                        }else {
+                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
+                        }
+                    };
+                        
+                    console.log("... tracking protocol completed ...");
+                    proceed = true 
+                };
             };
         }else {
             console.log("... user is not previlged to proceed operation ...");
+            console.log("... initiaing tracking protocol ...");
+
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: `Request to make changes on purchase item #${payload.item_code} !`,
+                        status: config.tracking.status.restricted,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+    
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+                
+            console.log("... tracking protocol completed ...");
+            console.log("... wrapping context before redirecting ...");
             
             context.msg = "Error. User not privileged to perform operation !";
             res.json(context);
-        }
-
+        };
 
         if (typeof proceed === "boolean" && proceed) {
             console.log("... user is authorized to proceed ...");
@@ -844,6 +1383,37 @@ const purchases_preview_handler = async (req, res, next) => {
 
             if (current_payload.companyRefID !== req.session.passport.user.companyRefID) {  
                 console.log("... data does not belong to the right company ...");
+                console.log("... initiaing tracking protocol ...");
+
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.payload = {
+                    purchases: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: `Request to make changes on purchase item #${payload.item_code}. Data Inconsistency. Contact Admin / Developer !`,
+                            status: config.tracking.status.error,
+                        }
+                    ]
+                }
+                console.log("...final tracking payload ...", tracking_payload);
+        
+                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                else {
+                    if (tracking_query_resp.payload.purchases === undefined) {
+                        tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            { "payload": tracking_query_resp.payload });
+        
+                    }else {
+                        tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                    }
+                };
+                    
+                console.log("... tracking protocol completed ...");
                 console.log("... wrapping context before redirecting ...");
                 
                 context.msg = "Error. Couldn't submit. Try Again !";
@@ -859,12 +1429,12 @@ const purchases_preview_handler = async (req, res, next) => {
                         {
                             current_data: current_payload,
                             incoming_data: incoming_payload,
-                            remarks: 'conflict',
+                            remarks: config.comparism_options.conflict,
                             user_comment: payload.comment,
                             lead_comment: null,
-                            entry_date_time: `${(await get_date_and_time()).date}/${(await get_date_and_time()).time}`,
+                            entry_date_time: `${(await get_date_and_time()).date} @ ${(await get_date_and_time()).time}`,
                             response_date_time: null,
-                            headline: "modify",
+                            headline: config.previliges_options.modify,
                         }
                     ],
                 };
@@ -875,10 +1445,9 @@ const purchases_preview_handler = async (req, res, next) => {
                     await ComparismeModel.insertMany(comparism_payload);
                     is_data_inserted = true;
                 }else {
-                    const updated_payload = comparism_obj.payload.push(comparism_payload.payload[0]);
                     await ComparismeModel.updateOne({ "userID": comparism_payload.userID },
-                        { "payload": updated_payload });
-                        is_data_inserted = true;
+                        {"$push": { "payload": comparism_payload.payload[0] } });
+                    is_data_inserted = true;
                 }
                 if (typeof is_data_inserted === "boolean" && is_data_inserted) {
                     console.log("... insertion responds ...");
@@ -894,14 +1463,44 @@ const purchases_preview_handler = async (req, res, next) => {
     } catch (error) {
         console.log("** Error:: Purchases Handler **", error);
 
-        if (error.code == "11000") { //  for duplicate of business name 
+        if (error.code == "11000") { //  for duplicate of business name
+            console.log("... Attept to insert dupqlicated data into the database ...");
+            console.log("... initiaing tracking protocol ...");
+
+            const user_profile = await getting_auth_user_data(req.session.passport.user);
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: `Request to make changes on purchase item #${payload.item_code}. Data duplicated. !`,
+                        status: config.tracking.status.error,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+    
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+                
+            console.log("... tracking protocol completed ...");
             console.log("... wrapping context before redirecting ...");
 
             const error_msg = "Error. Data is duplicated . Try Again !";
             context.msg = error_msg;
-
-            console.log("... wrapping context completed ...");
-            console.log("... redireting reponses ....");
 
             res.json(context);
         }
@@ -913,7 +1512,7 @@ const purchases_preview_handler = async (req, res, next) => {
 
 // DASHBOARD SECIION 
 const change_user_roles_and_previlges_handler = async (req, res, next) => {
-    let context = {}, proceed = "", is_data_updated = "";
+    let context = {}, proceed = "", tracking_payload = {}, is_data_updated = "", proceed_tracking_user = "", proceed_tracking_auth = "";
     try {
         console.log("** Collecting data to change user roles and previliges **");
         
@@ -935,6 +1534,7 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
         console.log("... verifying user found in the right company ...");
 
         const is_user_found = await is_user_found_in_company(req.params.id, passport_data.companyRefID);
+        const user_profile = await getting_auth_user_data(req.session.passport.user);
         
         console.log("... verifcation responds ...", is_user_found);
         console.log("... getting selected user data from the database ...");
@@ -945,10 +1545,23 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
 
         if (is_user_found === undefined) { 
             console.log("... database server error ...");
-            console.log("... wrapping context before redirecting ...");
+            console.log("... initiating tracking protocol ...");
+            
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                users: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Change user roles and previleges. User not found. Contact Admin.",
+                        status: config.tracking.status.restricted,
+                    }
+                ]
+            };
 
-            context.msg = "Error. Server not responding. Try Again / contact Admin !";
-            res.json(context);
+            console.log("...final tracking payload ...", tracking_payload);
+            context.msg = "Error. User not Registered. Try Again / contact Admin !";
+            proceed_tracking_user = true;
 
         }else if (is_user_found) {
             console.log("... user is foud in the company ...");
@@ -959,20 +1572,52 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
             
             if (authorization_data === null) {
                 console.log("... Auth user does not have authorization code to proceed ...");
-                console.log("... wrapping context before redirecting ...");
-
+                console.log("... initiating tracking protocol ...");
+            
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.payload = {
+                    authorization: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: "Change user roles and previleges. User not having Authorization codes ",
+                            status: config.tracking.status.restricted,
+                        }
+                    ]
+                };
+    
+                console.log("...final tracking payload ...", tracking_payload);
                 context.msg = `Error. User is not permitted to perform operation !`;
-                res.json(context);
+                proceed_tracking_auth = true;
                 
             }else {
                 console.log("... user is permitted to proceed ...");
                 console.log("... verifying for user previlges ...");
 
-                const user_profile = await getting_auth_user_data(req.session.passport.user.email);
                 const is_user_permitted = await verifying_user_previliges(req, config.previliges_type.user, config.previliges_options.modify);
                 console.log("... user previlges responds ...", is_user_permitted);
                 
-                if (is_user_permitted) {
+                if (is_user_permitted === undefined) {
+                    console.log("... Server error. contact developer ...");
+                    console.log("... initiating tracking protocol ...");
+            
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        users: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: "Change user roles and previleges. User not privilged to perform operation. Contact Admin !",
+                                status: config.tracking.status.restricted,
+                            }
+                        ]
+                    };
+        
+                    console.log("...final tracking payload ...", tracking_payload);
+                    context.msg = "Error. User not privielegd to perform operation. Contact Admin !";
+                    proceed_tracking_user = true;
+
+                }else if (typeof is_user_permitted === "boolean" && is_user_permitted) {
                     console.log("... user is permitted to proceed ...");
                     console.log("... verifying auth authorization code ...");
                     
@@ -983,41 +1628,224 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
 
                     if (verification_responds === undefined) {
                         console.log("... User is not authorized ...");
-                        console.log("... wrapping context before rediecting ...");
-                        
+                        console.log("... initiating tracking protocol ...");
+            
+                        tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                        tracking_payload.payload = {
+                            authorization: [
+                                {
+                                    time: (await get_date_and_time()).time,
+                                    date:  (await get_date_and_time()).date,
+                                    action: "Change user roles and previleges. Not having Authorization codes ",
+                                    status: config.tracking.status.restricted,
+                                }
+                            ]
+                        };
+            
+                        console.log("...final tracking payload ...", tracking_payload);
                         context.msg = "Error. User is not authorized !";
-                        res.json(context);
+                        proceed_tracking_auth = true;
 
                     }else if (typeof verification_responds === "object") {
                         if (verification_responds.status.trim() === "breach") {
-                            let tracking_payload = {}, update_resp = "";
+                            let is_data_updated = "";
 
                             console.log("... breached of authorization codes ...");
-                            console.log("... preparing payload for update of database ...");
-
-                            const breach_msg = `Breach! ${auth_response.data.userID} authorization code is breached by ${payload.initiator} on Purchases`;
+                            console.log("... initiaing tracking protocol ...");
+        
                             tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-
-                            
-
-
-                        }
+                            tracking_payload.payload = {
+                                users: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: `Change user roles and previleges. User not authorized to perform operation !`,
+                                        status: config.tracking.status.restricted,
+                                    }
+                                ]
+                            }
+                            console.log("...final tracking payload for users ...", tracking_payload);
+        
+                            let tracking_query_resp = "";
+                            tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                            else {
+                                if (tracking_query_resp.payload.users === undefined) {
+                                    tracking_query_resp.payload.users = tracking_payload.payload.users;
+                                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                        { "payload": tracking_query_resp.payload });
+                    
+                                }else {
+                                    tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                        {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                                };
+                            };
+        
+                            tracking_payload.payload = {
+                                authorization: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: `Breach! ${verification_responds.data.userID} authorization code is breached by ${payload.initiator} on Purchases.`,
+                                        status: config.tracking.status.breach,
+                                    }
+                                ]
+                            };
+        
+                            console.log("...final tracking payload for authorization ...", tracking_payload);
+        
+                            tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                            if (tracking_query_resp === null) { 
+                                await TrackingModel.insertMany(tracking_payload);
+                                await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                    {"$set": { "is_breach_alert_activated": true }});
+                                is_data_updated = true; 
+                            }
+                            else {
+                                if (tracking_query_resp.payload.authorization === undefined) {
+                                    tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                        {"$set": [
+                                            { "payload": tracking_query_resp.payload },
+                                            { "is_breach_alert_activated": true }
+                                        ]});
+                                    is_data_updated = true;
+                                }else {
+                                    tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                        {"$set": [
+                                            { "payload.authorization": tracking_query_resp.payload.authorization },
+                                            { "is_breach_alert_activated": true }
+                                        ]});
+                                    is_data_updated = true;
+                                }
+                            };
+        
+                            if (typeof is_data_updated === "boolean" && is_data_updated) {
+                                console.log("... Tracking protocol initiation completed ...");
+                                console.log("... sending email to company admin and user as notification ...");
+                                
+                                const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
+                                const query_data_1 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.managing_director });
+                                const query_data_2 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.operation_manager });
+                                
+                                const email_response_1 = await sending_email(
+                                    config.company_name,
+                                    "Authorization Code Breached !",
+                                    company_data.email,
+                                    `Hi Admin, There has been a breach of authorization code. We recommend to you to check it out.`
+                                );
+                                const email_response_2 = await sending_email(
+                                    config.company_name,
+                                    "Authorization Code Breached !",
+                                    verification_responds.data.email,
+                                    `Hi ${verification_responds.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
+                                );
+                                if (query_data_1 !== null) {
+                                    await sending_email(
+                                        config.company_name,
+                                        "Authorization Code Breached !",
+                                        query_data_1.email,
+                                        `Hi ${query_data_1.first_name} ${query_data_1.last_name}, There has been a breach of authorization code. We recommend to you to check it out.`
+                                    );
+                                };
+                                if (query_data_2 !== null) {
+                                    await sending_email(
+                                        config.company_name,
+                                        "Authorization Code Breached !",
+                                        query_data_2.email,
+                                        `Hi ${query_data_2.first_name} ${query_data_2.last_name}, There has been a breach of authorization code. We recommend to you to check it out.`
+                                    );
+                                };
+        
+                                console.log("... is email sent to Admin ...",email_response_1, email_response_2);
+                                console.log("... wrapping context before redirecting responds ...");
+                                
+                                context.msg = "Error. Authorization breach !";
+                                context.is_data_breach = tracking_payload.is_breach_alert_activated;
+                                context.response = verification_responds.data;
+        
+                                res.json(context);
+                            };
+                        };
                     }else if (typeof verification_responds === "string") {
                         if (verification_responds.trim() === "not_activated") {
                             console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
-                            console.log("... wrapping context before redirecting ...");
+                            console.log("... initiating tracking protocol ...");
             
+                            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                            tracking_payload.payload = {
+                                authorization: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: "Change user roles and previleges. Authorization codes not activated !",
+                                        status: config.tracking.status.denied,
+                                    }
+                                ]
+                            };
+                
+                            console.log("...final tracking payload ...", tracking_payload);
                             context.msg = "Error. Authorization not activated. Activate codes before usage !";
-                            res.json(context);
+                            proceed_tracking_auth = true;
             
                         }else if (verification_responds.trim() === "code_err") { 
                             console.log("... invalid authorization code ...");
-                            console.log("... wrapping context before redirecting ...");
+                            console.log("... initiating tracking protocol ...");
             
+                            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                            tracking_payload.payload = {
+                                authorization: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: "Change user roles and previleges. Authorization codes Invalid",
+                                        status: config.tracking.status.denied,
+                                    }
+                                ]
+                            };
+                
+                            console.log("...final tracking payload ...", tracking_payload);
                             context.msg = "Error. Invalid authorization code !";
-                            res.json(context);
+                            proceed_tracking_auth = true;
                         
-                        }else if (verification_responds.trim() === "verified") { proceed = true };
+                        }else if (verification_responds.trim() === "verified") { 
+                            console.log("... Authorization code verified ...");
+                            console.log("... initiating tracking protocol ...");
+            
+                            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                            tracking_payload.payload = {
+                                authorization: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: "Change user roles and previleges. Authorization codes verified and in-used",
+                                        status: config.tracking.status.sucess,
+                                    }
+                                ]
+                            };
+                
+                            console.log("...final tracking payload ...", tracking_payload);
+
+                            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                            else {
+                                if (tracking_query_resp.payload.authorization === undefined) {
+                                    tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                        { "payload": tracking_query_resp.payload });
+                
+                                }else {
+                                    tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                        {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
+                                }
+                            };
+                            
+                            console.log("... tracking protocol completed ...");
+                            proceed = true 
+                        };
                     };
                 }else {
                     console.log("... user is not premitted to proceed opeartion ...");
@@ -1026,7 +1854,7 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
                     context.msg = "Error. User not privileged to perform operation !";
                     res.json(context);
                 }
-            }
+            };
         }else {
             console.log("... user nopt found in the company ...");
             console.log("... wrapping context before redirecting ...");
@@ -1034,22 +1862,158 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
             context.msg = "Error. User not registred !";
             res.json(context);
         };
-        
-
-
+    
         if (typeof proceed === "boolean" && proceed) {
             console.log("... user authorization code verified ...");
             console.log("... proceed to update database ...");
 
             if (selected_user_profile.role === config.roles.admin) {
                 console.log("... Admin role cannot be modified ...");
-                console.log("... wrapping context before redirecting ...");
+                console.log("... initiating tracking protocol ...");
+            
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.payload = {
+                    users: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: "Attempted to change Admin role. Contact Admin !",
+                            status: config.tracking.status.denied,
+                        }
+                    ]
+                };
+                console.log("...final tracking payload ...", tracking_payload);
+
+                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                if (tracking_query_resp === null) { 
+                    await TrackingModel.insertMany(tracking_payload); 
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "is_breach_alert_activated": true }});
+                }
+                else {
+                    if (tracking_query_resp.payload.users === undefined) {
+                        tracking_query_resp.payload.users = tracking_payload.payload.users;
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": [
+                                { "payload": tracking_query_resp.payload },
+                                { "is_breach_alert_activated": true }
+                            ]});
+    
+                    }else {
+                        tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": [
+                                { "payload.users": tracking_query_resp.payload.users },
+                                { "is_breach_alert_activated": true }
+                            ]});
+                    }
+                };
+                
+                console.log("... tracking protocol completed ...");
+                console.log("... sending email to company admin as notification ...");
+                        
+                const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
+                const query_data_1 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.managing_director });
+                const query_data_2 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.operation_manager });
+                
+                const email_response = await sending_email(
+                    config.company_name,
+                    "Change of User Role !",
+                    company_data.email,
+                    `Hi Admin, ${user_profile[0].UserID} made an attempt to change your role. Such user is not permitted to perform operation`
+                );
+                if (query_data_1 !== null) {
+                    await sending_email(
+                        config.company_name,
+                        "Authorization Code Breached !",
+                        query_data_1.email,
+                        `Hi ${query_data_1.first_name} ${query_data_1.last_name}, ${user_profile[0].UserID} made an attempt to change the role of Admin. Such user is not permitted to perform operation`
+                    );
+                };
+                if (query_data_2 !== null) {
+                    await sending_email(
+                        config.company_name,
+                        "Authorization Code Breached !",
+                        query_data_2.email,
+                        `Hi ${query_data_2.first_name} ${query_data_2.last_name}, ${user_profile[0].UserID} made an attempt to change the role of Admin. Such user is not permitted to perform operation`
+                    );
+                };
+
+                console.log("... is email sent to Admin ...",email_response);
+                console.log("... wrapping context before redirecting responds ...");
 
                 context.msg = "Error. Admin role cannot be reassigned !";
-                res.json(context);    
+                res.json(context);   
             
             }else if ( (selected_user_profile.role === config.roles.managing_director) && (passport_data.role === config.roles.operation_manager) ){
                 console.log("... Admin role cannot be modified ...");
+                console.log("... initiating tracking protocol ...");
+            
+                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                tracking_payload.payload = {
+                    users: [
+                        {
+                            time: (await get_date_and_time()).time,
+                            date:  (await get_date_and_time()).date,
+                            action: "Attempted to change the Managing Director's role. Contact Admin !",
+                            status: config.tracking.status.denied,
+                        }
+                    ]
+                };
+                tracking_payload.is_breach_alert_activated = true;
+    
+                console.log("...final tracking payload ...", tracking_payload);
+
+                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                else {
+                    if (tracking_query_resp.payload.users === undefined) {
+                        tracking_query_resp.payload.users = tracking_payload.payload.users;
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": [
+                                { "payload": tracking_query_resp.payload },
+                                { "is_breach_alert_activated": tracking_payload.is_breach_alert_activated }
+                            ]});
+    
+                    }else {
+                        tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": [
+                                { "payload.users": tracking_query_resp.payload.users },
+                                { "is_breach_alert_activated": tracking_payload.is_breach_alert_activated }
+                            ]});
+                    }
+                };
+                
+                console.log("... tracking protocol completed ...");
+                console.log("... sending email to user as notification ...");
+                        
+                const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
+                const query_data = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.managing_director });
+                const query_data_2 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.operation_manager });
+                
+                const email_response = await sending_email(
+                    config.company_name,
+                    "Change of User Role !",
+                    query_data.email,
+                    `Hi ${query_data.first_name}, ${user_profile[0].first_name} ${user_profile[0].last_name} made an attempt to change your role. Such user is not permitted to perform operation.`
+                );
+                await sending_email(
+                    config.company_name,
+                    "Change of User Role !",
+                    company_data.email,
+                    `Hi Admin, ${user_profile[0].first_name} ${user_profile[0].last_name} made an attempt to change the role of the Managing director. Such user is not permitted to perform operation`
+                );
+                if (query_data_2 !== null) {
+                    await sending_email(
+                        config.company_name,
+                        "Authorization Code Breached !",
+                        query_data_2.email,
+                        `Hi ${query_data_2.first_name} ${query_data_2.last_name}, ${user_profile[0].UserID} made an attempt to change the role of the Managing director. Such user is not permitted to perform operation`
+                    );
+                };
+
+                console.log("... is email sent to Admin ...",email_response);
                 console.log("... wrapping context before redirecting ...");
 
                 context.msg = `Error. ${config.roles.managing_director} role cannot be reassigned. Contact Admin !`;
@@ -1072,21 +2036,64 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
                                 { "previliges": payload.assigned_previlges });
                         };
                         if (query_resp !== "" && query_resp === null) {
+                            console.log("... User role update failed ...");
+                            console.log("... initiaing tracking protocol ...");
+        
+                            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                            tracking_payload.payload = {
+                                users: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: `Change user roles and previleges. Failed to update user role. Contact Admin / Developer. !`,
+                                        status: config.tracking.status.error,
+                                    }
+                                ]
+                            }
+                            console.log("...final tracking payload for users ...", tracking_payload);
                             context.msg = `Error. User role update failed. Contact Admin !`;
-                            res.json(context);
+                            proceed_tracking_user = true;
 
-                        }else { is_data_updated = true }
+                        }else { 
+                            console.log("... User role chnaged sucessfully ...");
+                            console.log("... initiaing tracking protocol ...");
+        
+                            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                            tracking_payload.payload = {
+                                users: [
+                                    {
+                                        time: (await get_date_and_time()).time,
+                                        date:  (await get_date_and_time()).date,
+                                        action: `Change user roles and previleges. ${selected_user_profile.userID} role / priviliges change sucessfully by the ${passport_data.role}.`,
+                                        status: config.tracking.status.sucess,
+                                    }
+                                ]
+                            }
+                            console.log("...final tracking payload for users ...", tracking_payload);
+                            is_data_updated = true;
+                        }
                     };
                 }else {
                     console.log("... User is not permitted to preform operation ...");
-                    console.log("... wrapping context before redirecting ...");
-
+                    console.log("... initiaing tracking protocol ...");
+        
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        users: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Change user roles and previleges. User not permitted to perform operation. !`,
+                                status: config.tracking.status.denied,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload for users ...", tracking_payload);
                     context.msg = `Error. User not premitted to perform operation. Contact Admin !`;
-                    res.json(context);
+                    proceed_tracking_user = true;
                 }
             }
         };
-
 
 
         if (typeof is_data_updated === "boolean" && is_data_updated) {
@@ -1096,6 +2103,7 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
             let is_code_updated = "", indexes = [], proceed_auth_code = "";
             const auth_data_resp = await AuthorizationModel.findOne({ "userID": selected_user_profile.userID, "companyRefID": passport_data.companyRefID });
             const opts = [config.previliges_options.modify, config.previliges_options.delete, config.previliges.documents.report];
+            
             payload.assigned_previlges[0].value.forEach(data => {
                 const index = opts.findIndex(opt => { return opt.trim() === data.trim() });
                 indexes.push(index);
@@ -1166,16 +2174,59 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
                     config.company_name,
                     `Change of User Role`,
                     selected_user_profile.email,
-                    `Hi ${selected_user_profile.userID}, Your role have been change from ${selected_user_profile.role} to ${payload.assigned_role} sucessfully.`
+                    `Hi ${selected_user_profile.userID}, Your role have been change from ${selected_user_profile.role} to ${payload.assigned_role} sucessfully by the ${passport_data.role}.`
                 );
 
                 console.log("...Email response ...", nodemail_resp);
                 console.log("... sending email completed ...");
                 console.log("... wrapping context before redirecting ...");
 
-                context.msg = `Sucess. User role and privileges reassign !`;
+                context.msg = `Sucess. User role / privileges reassign !`;
                 res.json(context);
             };
+        };
+
+        if (typeof proceed_tracking_user === "boolean" && proceed_tracking_user) {
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.users === undefined) {
+                    tracking_query_resp.payload.users = tracking_payload.payload.users;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.users.push(tracking_payload.payload.users[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.users": tracking_query_resp.payload.users } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
+            console.log("... wrapping context before redirecting ...");
+
+            res.json(context);
+        };
+        if (typeof proceed_tracking_auth === "boolean" && proceed_tracking_auth) {
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.authorization === undefined) {
+                    tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
+            console.log("... wrapping context before redirecting ...");
+
+            res.json(context);
         }
     } catch (error) {
         console.log("** Error:: Change user roles and previlges Handler **", error);

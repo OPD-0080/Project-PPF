@@ -135,18 +135,18 @@ const tracking_schema = new mongoose.Schema({
     initiator: {type: String, required: true, unique: false, default: null},
     userID: {type: String, required: true, unique: false},
     role: {type: String, required: true, unique: false, default: null},
-
-    authorization: {type: Object, required: true, unique: false, default: null},
-    users: {type: Object, required: true, unique: false, default: null},
-    purchases: {type: Object, required: true, unique: false, default: null},
-    sales: {type: Object, required: true, unique: false, default: null},
-    comparism: {type: Object, required: true, unique: false, default: null},
-    cash: {type: Object, required: true, unique: false, default: null},
-    inventory_management: {type: Object, required: true, unique: false, default: null},
-    reports: {type: Object, required: true, unique: false, default: null},
-    breaches: {type: Object, required: true, unique: false, default: null},
-
+    payload: {type: Object, required: true, unique: false, default: null},
     is_breach_alert_activated: {type: Boolean, required: true, unique: false, default: false},
+
+    // authorization: {type: Object, required: true, unique: false, default: null},
+    // users: {type: Object, required: true, unique: false, default: null},
+    // purchases: {type: Object, required: true, unique: false, default: null},
+    // sales: {type: Object, required: true, unique: false, default: null},
+    // comparism: {type: Object, required: true, unique: false, default: null},
+    // cash: {type: Object, required: true, unique: false, default: null},
+    // inventory_management: {type: Object, required: true, unique: false, default: null},
+    // reports: {type: Object, required: true, unique: false, default: null},
+    // breaches: {type: Object, required: true, unique: false, default: null},
 
 },{timestamps: true});
 

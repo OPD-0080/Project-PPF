@@ -251,7 +251,7 @@ const view_logout = async (req, res, next) => {
 
     } catch (error) {
         console.log("** Error:: Logout view **", error);
-        res.redirect("500");
+        res.redirect(303, config.view_urls._500);
     }
 };
 const view_404 = async (req, res, next) => {

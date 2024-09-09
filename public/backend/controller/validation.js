@@ -237,6 +237,8 @@ const loginValidation = async (req, res, next) => {
                 }else if ( (user.length > 0) && (login_resp.length <= 0) ) { // if user has signup and trying to login 
                     next() 
                 }else if ( (user.length > 0) && (login_resp.length > 0) ) { // if user has signup and already login but login for the second time
+                    console.log("... user login twice. Loging user out");
+                    
                     // delete user login  data from db first and update date and time 
                         await DateTimeTracker.updateOne(
                                 { "uuid": login_resp[0].uuid }, // filter to get user data from db
@@ -439,7 +441,7 @@ const reset_authorization_code = async (req, res, next) => {
 };
 const tracking_payload_initials = async (req, user_profile) => {
     let payload = {};
-    if (user_profile[0].hasOwnProperty("ceo")) {  payload.initiator = user_profile[0].ceo }
+    if (user_profile[0].ceo !== undefined) {  payload.initiator = user_profile[0].ceo }
     else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}` };
 
     payload.companyRefID = req.session.passport.user.companyRefID;

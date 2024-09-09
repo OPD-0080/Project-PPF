@@ -1,3 +1,5 @@
+const { get_date_and_time } = require("../utils/date_time");
+
 const GET_base_url = "/api/get/user";
 const POST_base_url = "/api/post/user";
 
@@ -40,6 +42,21 @@ const config = {
         account: "account",
         staff: "staff"
     },
+    tracking: {
+        status: {
+            sucess: "sucess",
+            denied: "denied",
+            failed: "failed",
+            restricted: "restricted",
+            breach: "breach",
+            error: "server error",
+        }
+    },
+    comparism_options: {
+        conflict: "conflict",
+        verified: "verified",
+    },
+
 
     GET_url: GET_base_url,
     POST_url: POST_base_url,
