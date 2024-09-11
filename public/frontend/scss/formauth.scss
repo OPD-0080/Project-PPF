@@ -56,6 +56,9 @@
             color: white;
         }
     }
+};
+.payload-wrapper {
+    display: none;
 }
 .auth-form {
     form {
@@ -250,6 +253,15 @@
 
         &.show {
             @include flex(column, center, center);
+        }
+
+        .delete_items_wrapper {
+            display: none;
+            &.show { display: block };
+        }
+        .modify-tags {
+            display: block;
+            &.hide { display: none };
         }
 
         .overlay-page-container {

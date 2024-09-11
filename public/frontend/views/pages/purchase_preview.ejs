@@ -93,7 +93,7 @@
                     <div class="overlay-close-button"></div>
                     <form class="needs-validation purchases-form-wrapper" formvalidate >
                         <div class="row purchases-form-container">
-                            <div class="col-xl-6 cells">
+                            <div class="col-xl-6 cells modify-tags">
                                 <div class="mb-3 row">
                                     <label class="col-lg-4 col-form-label" for="validationCustom01">Supplier:
                                         <span class="text-danger">*</span>
@@ -127,7 +127,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-xl-6 cells">
+                            <div class="col-xl-6 cells modify-tags">
                                 <div class="mb-3 row">
                                     <label class="col-lg-4 col-form-label" for="validationCustom06">Particular:
                                         <span class="text-danger">*</span>
@@ -168,6 +168,16 @@
                                     </label>
                                     <div class="col-lg-6">
                                         <textarea name="comment" class="form-control comment" id="validationCustom09" maxlength="200" required></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-6 cells delete_items_wrapper">
+                                <div class="mb-3 row">
+                                    <label class="col-lg-4 col-form-label" for="validationCustom10">Item(s) to be deleted: 
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="col-lg-6">
+                                        <textarea class="form-control detele-items" id="validationCustom10" maxlength="200" readonly required></textarea>
                                     </div>
                                 </div>
                             </div>
@@ -212,6 +222,7 @@
                                         </div>
                                     </div>
                                     <!-- end -->
+                                    <div class="payload-wrapper" data-payload='<% if (context !== undefined) { %><%- JSON.stringify(context.purchases) %><% } %>'></div>
                                     <table class="table table-striped table-responsive-sm tb-wrapper" data-url='<% if (context !== undefined) { %><%- context.config.view_urls.purchase_responds %><% } %>'>
                                         <thead class="tb-head-wrapper">
                                             <tr>
@@ -231,7 +242,35 @@
                                                 <th>Amount</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="tb-body-wrapper">
+                                        <tbody class="tb-body-wrapper" data-config='<% if (context !== undefined) { %><%- context.config.previliges.documents.modify %>,<%- context.config.previliges.documents.delete %><% } %>'>
+                                            <% if (context.purchases !== undefined) { %>
+                                                <% if (context.purchases.length < 0) { %>
+                                                    <div class="empty-preview-wrapper"><h5 class="i">Data Not Found</h5></div>
+                                                <% }else { %>
+                                                    <% const indexes = Array.from({length: context.purchases.length}, (_, i) => i + 1); %>
+                                                    <% for( let i = 0; i < context.purchases.length; i++ ) { %>
+                                                        <% const data = context.purchases[i]; %>
+                                                        <% const number = indexes[i]; %>
+
+                                                        <tr class="each-list-cell" data-uid="<%- data._id %>">
+                                                            <td>
+                                                                <div class="form-check custom-checkbox checkbox-success check-lg me-3">
+                                                                    <input type="checkbox" class="form-check-input selected-box" id="customCheckBox2" required="">
+                                                                    <label class="form-check-label" for="customCheckBox2"></label>
+                                                                </div>
+                                                            </td>
+                                                            <th class="text-black"><%- number %></th>
+                                                            <td><%- data.supplier %></td>
+                                                            <td><%- data.invoice_date %></td>
+                                                            <td>#<%- data.invoice_number %></td>
+                                                            <td><%- data.particular %></td>
+                                                            <td><%- data.quantity %></td>
+                                                            <td class="color-primary">Ghc <%- data.price %></td>
+                                                            <td class="color-primary">Ghc <%- data.amount %></td>
+                                                        </tr>
+                                                    <% } %>
+                                                <% } %>
+                                            <% } %>
                                         </tbody>
                                     </table>
 									<div class="mb-3 row" style="margin-left: 79%;">

@@ -95,6 +95,10 @@ a {
   color: white;
 }
 
+.payload-wrapper {
+  display: none;
+}
+
 .auth-form form .form-cell {
   position: relative;
   margin-bottom: 20px;
@@ -316,6 +320,18 @@ a {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+.overall-body .overlay-page-wrapper .delete_items_wrapper {
+  display: none;
+}
+.overall-body .overlay-page-wrapper .delete_items_wrapper.show {
+  display: block;
+}
+.overall-body .overlay-page-wrapper .modify-tags {
+  display: block;
+}
+.overall-body .overlay-page-wrapper .modify-tags.hide {
+  display: none;
 }
 .overall-body .overlay-page-wrapper .overlay-page-container {
   position: absolute;

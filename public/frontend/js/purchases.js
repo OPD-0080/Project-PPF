@@ -203,6 +203,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         const overlay_page_container = overlay_page_wrapper.querySelector(".overlay-page-container");
         const overlay_page_close_button = document.querySelectorAll(".overlay-close-button");
         const form_controls = overlay_page_wrapper.querySelectorAll(".form-control");
+        const delete_items_wrapper = overlay_page_wrapper.querySelector(".delete_items_wrapper");
         const overlay_submit_button_wrapper = overlay_page_wrapper.querySelector(".modify-button-wrapper");
         const overlay_submit_button = overlay_submit_button_wrapper.querySelector(".btn");
         const auth_page_wrapper = document.querySelector(".auth-page-wrapper");
@@ -210,13 +211,15 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         const auth_page_button = auth_page_wrapper.querySelector(".auth-page-button");
         const auth_input = auth_page_wrapper.querySelector("#auth_code");
         const gif_loader = auth_page_wrapper.querySelector(".loading-gif");
-        const form_button = overlay_page_wrapper.querySelector(".purchases-button");
+        const payload_wrapper = document.querySelector(".payload-wrapper");
+        const modify_tags = overlay_page_wrapper.querySelectorAll(".modify-tags")
         
 
         let payload = {};
         const loading_purchases_from_database = async () => {
-            const url = tb_wrapper.getAttribute("data-url");
-            return await load_data_from_server(`${url}`);
+            sessionStorage.removeItem("dumpsite");
+            sessionStorage.removeItem("dumpsite_1");
+            return JSON.parse(payload_wrapper.getAttribute("data-payload"));
         };
         const highlight_selected_list = async (selected_parent_el = null, checkbox_as_array = null ) => {
             if ((checkbox_as_array !== null) && (selected_parent_el == null)) {
@@ -255,51 +258,19 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 }
             }
         };
-        const display_purchases_content = async (data_as_array) => {
-            let show = "";
-            if (data_as_array === null) {
-                show +=`
-                    <div class="empty-preview-wrapper"><h5 class="i">Data Not Found</h5></div>
-                `;
-                tb_body_wrapper.innerHTML = show;
-            }else {
-                const indexes = Array.from({length: data_as_array.length}, (_, i) => i + 1);
-                for (let i = 0; i < data_as_array.length; i++) {
-                    const data = data_as_array[i];
-                    const number = indexes[i];
-                    
-                    show +=`
-                        <tr class="each-list-cell" data-uid="${data._id}">
-                            <td>
-                                <div class="form-check custom-checkbox checkbox-success check-lg me-3">
-                                    <input type="checkbox" class="form-check-input selected-box" id="customCheckBox2" required="">
-                                    <label class="form-check-label" for="customCheckBox2"></label>
-                                </div>
-                            </td>
-                            <th class="text-black">${number}</th>
-                            <td>${data.supplier}</td>
-                            <td>${data.invoice_date}</td>
-                            <td>#${data.invoice_number}</td>
-                            <td>${data.particular}</td>
-                            <td>${data.quantity}</td>
-                            <td class="color-primary">Ghc ${data.price}</td>
-                            <td class="color-primary">Ghc ${data.amount}</td>
-                        </tr>
-                    `;
-                    tb_body_wrapper.innerHTML = show;
-                };
-            }
-        };
         const save_selected_items = async (selected_item) => {
             if (sessionStorage.getItem("dumpsite")) {
-                const selected_items = JSON.parse(sessionStorage.getItem("dumpsite"));                                    
+                const selected_items = JSON.parse(sessionStorage.getItem("dumpsite"));    
+                const codes_items = JSON.parse(sessionStorage.getItem("dumpsite_1"));                                    
 
                 if (typeof selected_items === "object") {
                     const is_data_duplicated = selected_items.find(uid => { return uid ===  selected_item._id});
 
                     if (is_data_duplicated === undefined) {
                         selected_items.push(selected_item._id);
+                        codes_items.push(selected_item.item_code);
                         sessionStorage.setItem("dumpsite", JSON.stringify(selected_items));
+                        sessionStorage.setItem("dumpsite_1", JSON.stringify(codes_items));
                         modification_buttons.forEach(button => { button.setAttribute("data-uid", JSON.stringify(selected_items))});
                         return true;
 
@@ -307,19 +278,23 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 }
             }else {
                 sessionStorage.setItem("dumpsite", JSON.stringify([selected_item._id]));
+                sessionStorage.setItem("dumpsite_1", JSON.stringify([selected_item.item_code]));
                 modification_buttons.forEach(button => { button.setAttribute("data-uid", JSON.stringify(JSON.parse(sessionStorage.getItem("dumpsite"))) )});
             }
         };
         const remove_selected_items = async (selected_item) => {
             if (sessionStorage.getItem("dumpsite")) {
-                const selected_items = JSON.parse(sessionStorage.getItem("dumpsite"));                                    
+                const selected_items = JSON.parse(sessionStorage.getItem("dumpsite"));  
+                const code_items = JSON.parse(sessionStorage.getItem("dumpsite_1"));                                   
 
                 if (typeof selected_items === "object") {
                     const item_index = selected_items.findIndex(uid => { return uid ===  selected_item._id});
 
                     if (item_index >= 0) {
                         selected_items.splice(item_index, 1);
+                        code_items.splice(item_index, 1);
                         sessionStorage.setItem("dumpsite", JSON.stringify(selected_items));
+                        sessionStorage.setItem("dumpsite_1", JSON.stringify(code_items));
                         modification_buttons.forEach(button => { button.setAttribute("data-uid", JSON.stringify(selected_items))});
 
                     }else { return false };
@@ -360,28 +335,9 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             auth_page_container.classList.remove("show");
             if (gif_loader !== undefined) { deactivate_gif_loader(gif_loader); };
         };
-        const updating_purchases_data = async () => {
-            const server_payload = await loading_purchases_from_database();
-            const purchases = server_payload.purchases;
-            
-            if (server_payload === 404) { 
-                display_purchases_content(null);
-                notify_user("Error. Inernet Connection Bad. Try Again !");
-                return
-            }
-            else if (purchases.length <= 0) { display_purchases_content(null); return purchases }
-            else { 
-                display_purchases_content(purchases); 
-                sessionStorage.removeItem("dumpsite");
-                purchases_modify_button_wrapper.classList.remove("show-buttons"); 
-                return purchases;
-            }
-        };
 
-
-        // loading payload from database and populating data in DOM
-            const purchases = await updating_purchases_data();
-        //  End
+        const purchases = await loading_purchases_from_database();;
+        const previliges_opts = tb_body_wrapper.getAttribute("data-config").split(",");
 
         //  Highligth and get data upon selection
             const form_check_input = tb_wrapper.querySelectorAll(".form-check-input"); 
@@ -546,6 +502,8 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         overlay_page_wrapper.classList.add("show");
                         setTimeout(() => { overlay_page_container.classList.add("show"); }, 100);
                         purchases_modify_button_wrapper.classList.remove("show-buttons");
+                        delete_items_wrapper.classList.remove("show");
+                        modify_tags.forEach(tag => { tag.classList.remove("hide"); });
 
                         if (sessionStorage.getItem("dumpsite")) {
                              // getting selected data for editing and populate it in DOM
@@ -554,7 +512,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                                 await populate_data_upon_modifiation(selected_data);
                             // end
                             payload.type = "document";
-                            payload.trigger = config.previliges_options.modify; // very important 
+                            payload.trigger = previliges_opts[0]; // very important 
                         }else {  
                             notify_user("Error. Selecte data to proceed modifiation");
                             deactivate_gif_loader(gif_loader); 
@@ -563,18 +521,35 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         }
                     }
                     else if (e.target.classList.contains("delete")) { 
-                        payload.type = "document";
-                        payload.trigger = config.previliges_options.delete; // very important 
+                        overlay_page_wrapper.classList.add("show");
+                        setTimeout(() => { overlay_page_container.classList.add("show"); }, 100);
+                        purchases_modify_button_wrapper.classList.remove("show-buttons");
+                        modify_tags.forEach(tag => { tag.classList.add("hide"); });
+                        delete_items_wrapper.classList.add("show");
 
-
-
-
+                        if (sessionStorage.getItem("dumpsite")) {
+                            // getting data from the local storage 
+                                const session_data = JSON.parse(sessionStorage.getItem("dumpsite"));
+                                payload.type = "document";
+                                payload.trigger = previliges_opts[1]; // very important
+                                payload.delete_ids = session_data; 
+                                const delete_tag =  delete_items_wrapper.querySelector("textarea");                    
+                                delete_tag.value = (JSON.parse(sessionStorage.getItem("dumpsite_1"))).join(" || ");
+                            // end
+                        }else {  
+                            notify_user("Error. Selecte data to proceed modifiation");
+                            deactivate_gif_loader(gif_loader); 
+                            remove_all_overlays_pages();
+                            purchases_modify_button_wrapper.classList.remove("show-buttons"); 
+                        }
                     }
                     else if (e.target.classList.contains("undo")) { 
                         await remove_highlight_selected_list(null, form_check_input);
                         show_remove_modify_buttons();
                         purchases.forEach(async data => { await remove_selected_items(data);  });
                         form_check_input.forEach(el => { el.checked = false; });
+                        delete_items_wrapper.classList.remove("show");
+                        modify_tags.forEach(tag => { tag.classList.remove("hide"); });
                     }
                 }
             });
@@ -584,60 +559,57 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 };
             });
             overlay_submit_button.onclick = async (e) => {
-                if (await validating_input_before_submission(form_controls)) {
-                    // show auth page overlay buton is triggered
-                        auth_page_wrapper.classList.add("show");
-                        setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
-                    // 
+                if (payload.delete_ids !== undefined) {
+                    if (payload.comment !== undefined && payload.comment !== "") {
+                        // show auth page overlay buton is triggered
+                            auth_page_wrapper.classList.add("show");
+                            setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
+                        // 
+                    }else { notify_user("Error. Misssing input. Provide your reason(s) !");  }
+                }else {
+                    if (await validating_input_before_submission(form_controls)) {
+                        // show auth page overlay buton is triggered
+                            auth_page_wrapper.classList.add("show");
+                            setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
+                        // 
+                    }
+                    else { notify_user("Error. Misssing input. All input are required !");  }
                 }
-                else { notify_user("Error. Misssing input. All input are required !");  }
+                
             };
             auth_page_button.onclick = async (e) => {
                 // submitting payload to server 
-                    if (typeof payload.trigger === "string" && payload.trigger.trim() === config.previliges_options.modify) {
-                        console.log("... geting the final payload ...", payload);
+                console.log("... geting the final payload ...", payload);
 
-                        const url = e.target.dataset.url;
-                        const previliges = e.target.dataset.previleges;
-                        const pageon = e.target.dataset.pageon;
+                const url = e.target.dataset.url;
+                const previliges = e.target.dataset.previleges;
+                const pageon = e.target.dataset.pageon;
 
-                        if (auth_input.value == "") { notify_user("Error. Authorization code required !"); }
-                        else { 
-                            activate_gif_loader(gif_loader);
-                            
-                            payload.authorization_code = auth_input.value; 
-                            payload.pageon = pageon;
-                            payload.previliges = previliges;
-
-                            const responses = await sending_data_to_server(url, payload);
-                            console.log("... getting responses from server ...", responses);
-                            
+                if (auth_input.value == "") { notify_user("Error. Authorization code required !"); }
+                else { 
+                    activate_gif_loader(gif_loader);
                     
-                            if (typeof responses === "object") { 
-                                setTimeout(async () => {  
-                                    notify_user(`${responses.msg}`); 
-                                    deactivate_gif_loader(gif_loader); 
-                                    remove_all_overlays_pages();
-                                    // then update data on the UI 
-                                    await updating_purchases_data()
-                                    // 
-                                }, 3000);
-                            }
-                            else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
-                            else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  }
-                        };
-                    };
-                    if (typeof payload.trigger === "string" && payload.trigger.trim() === "delete") {
+                    payload.authorization_code = auth_input.value; 
+                    payload.pageon = pageon;
+                    payload.previliges = previliges;
 
-
-
-
-                    };
-                //  end
+                    const responses = await sending_data_to_server(url, payload);
+                    console.log("... getting responses from server ...", responses);
+                    
+                    if (typeof responses === "object") { 
+                        auth_input.value = "";
+                        setTimeout(async () => {  
+                            notify_user(`${responses.msg}`); 
+                            deactivate_gif_loader(gif_loader); 
+                            remove_all_overlays_pages();
+                            
+                        }, 3000);
+                    }
+                    else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
+                    else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  }
+                };
             };
         // end
-
-            
 
     }
 })();

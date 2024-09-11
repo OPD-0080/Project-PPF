@@ -15,6 +15,7 @@ const { is_user_active, getting_auth_user_data, tracking_payload_initials, verif
 const { get_date_and_time } = require("../utils/date_time");
 
 
+
 //
 // AUTHENTICATION
 const registration_handler = async (req, res, next) => {
@@ -1035,6 +1036,9 @@ const purchases_preview_handler = async (req, res, next) => {
         let proceed = "", tracking_payload = {};
         const payload = req.body;
         const incoming_payload = req.body;
+
+        console.log("... getting payload from the ui ...", payload);
+        
         
         payload.companyRefID = req.session.passport.user.companyRefID;
         payload.initiator = req.session.passport.user.userID;
@@ -1376,89 +1380,147 @@ const purchases_preview_handler = async (req, res, next) => {
 
         if (typeof proceed === "boolean" && proceed) {
             console.log("... user is authorized to proceed ...");
-            console.log("... inserting data into database for comparism and verification base on data existence ...");
+            console.log("... verifying if payload is for modification or deletion ...");
 
-            const current_payload = await PurchaseModel.findOne({ "item_code": payload.item_code });
-            console.log("... getting the current payload from database ...", current_payload);
-
-            if (current_payload.companyRefID !== req.session.passport.user.companyRefID) {  
-                console.log("... data does not belong to the right company ...");
-                console.log("... initiaing tracking protocol ...");
-
-                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                tracking_payload.payload = {
-                    purchases: [
-                        {
-                            time: (await get_date_and_time()).time,
-                            date:  (await get_date_and_time()).date,
-                            action: `Request to make changes on purchase item #${payload.item_code}. Data Inconsistency. Contact Admin / Developer !`,
-                            status: config.tracking.status.error,
-                        }
-                    ]
-                }
-                console.log("...final tracking payload ...", tracking_payload);
-        
-                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                else {
-                    if (tracking_query_resp.payload.purchases === undefined) {
-                        tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
-                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                            { "payload": tracking_query_resp.payload });
-        
-                    }else {
-                        tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
-                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                            {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
-                    }
-                };
-                    
-                console.log("... tracking protocol completed ...");
-                console.log("... wrapping context before redirecting ...");
+            let update_tracker = "", update_comparism = "", comparism_payload = {};
+            if (typeof payload.trigger === "string" && payload.trigger === config.previliges_options.delete) {
+                const query_resp = await PurchaseModel.findOne({ "_id": payload.delete_ids[0] });
                 
-                context.msg = "Error. Couldn't submit. Try Again !";
-                res.json(context);
-            }else {
-                const comparism_payload = {
-                    companyRefID: req.session.passport.user.companyRefID,
-                    initiator: req.session.passport.user.userID,
-                    company: req.session.passport.user.company,
-                    userID: req.session.passport.user.userID,
-                    role: req.session.passport.user.role,
-                    payload: [
-                        {
-                            current_data: current_payload,
-                            incoming_data: incoming_payload,
-                            remarks: config.comparism_options.conflict,
-                            user_comment: payload.comment,
-                            lead_comment: null,
-                            entry_date_time: `${(await get_date_and_time()).date} @ ${(await get_date_and_time()).time}`,
-                            response_date_time: null,
-                            headline: config.previliges_options.modify,
-                        }
-                    ],
-                };
+                if (query_resp.companyRefID !== req.session.passport.user.companyRefID) {  
+                    console.log("... data does not belong to the right company ...");
+                    console.log("... initiaing tracking protocol ...");
     
-                let is_data_inserted = "";
-                const comparism_obj = await ComparismeModel.findOne({ "userID": comparism_payload.userID });
-                if (comparism_obj === null) {
-                    await ComparismeModel.insertMany(comparism_payload);
-                    is_data_inserted = true;
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        purchases: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Request to delete ${payload.delete_ids.length} purchase item(s). Data Inconsistency. Contact Admin / Developer !`,
+                                status: config.tracking.status.error,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+                    update_tracker = true;
+                    
                 }else {
-                    await ComparismeModel.updateOne({ "userID": comparism_payload.userID },
-                        {"$push": { "payload": comparism_payload.payload[0] } });
-                    is_data_inserted = true;
-                }
-                if (typeof is_data_inserted === "boolean" && is_data_inserted) {
-                    console.log("... insertion responds ...");
-                    console.log("... insertion of payload completed ...");
-                    console.log("... wrapping context before redirecting ...");
+                    comparism_payload = {
+                        companyRefID: req.session.passport.user.companyRefID,
+                        initiator: req.session.passport.user.userID,
+                        company: req.session.passport.user.company,
+                        userID: req.session.passport.user.userID,
+                        role: req.session.passport.user.role,
+                        payload: [
+                            {
+                                current_data: payload.delete_ids,
+                                incoming_data: incoming_payload,
+                                remarks: config.comparism_options.conflict,
+                                user_comment: payload.comment,
+                                lead_comment: null,
+                                entry_date_time: `${(await get_date_and_time()).date} @ ${(await get_date_and_time()).time}`,
+                                response_date_time: null,
+                                headline: config.previliges_options.delete,
+                            }
+                        ],
+                    };
+                    update_comparism = true;
+                };
+            }else if (typeof payload.trigger === "string" && payload.trigger === config.previliges_options.modify) {
+                console.log("... inserting data into database for comparism and verification base on data existence ...");
+
+                const current_payload = await PurchaseModel.findOne({ "item_code": payload.item_code });
+                console.log("... getting the current payload from database ...", current_payload);
     
-                    const msg = "Sucess. Request is sent and will be verify for approval !";
-                    context.msg = msg;
-                    res.json(context);
+                if (current_payload.companyRefID !== req.session.passport.user.companyRefID) {  
+                    console.log("... data does not belong to the right company ...");
+                    console.log("... initiaing tracking protocol ...");
+    
+                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+                    tracking_payload.payload = {
+                        purchases: [
+                            {
+                                time: (await get_date_and_time()).time,
+                                date:  (await get_date_and_time()).date,
+                                action: `Request to make changes on purchase item #${payload.item_code}. Data Inconsistency. Contact Admin / Developer !`,
+                                status: config.tracking.status.error,
+                            }
+                        ]
+                    }
+                    console.log("...final tracking payload ...", tracking_payload);
+                    update_tracker = true;
+
+                }else {
+                    comparism_payload = {
+                        companyRefID: req.session.passport.user.companyRefID,
+                        initiator: req.session.passport.user.userID,
+                        company: req.session.passport.user.company,
+                        userID: req.session.passport.user.userID,
+                        role: req.session.passport.user.role,
+                        payload: [
+                            {
+                                current_data: current_payload,
+                                incoming_data: incoming_payload,
+                                remarks: config.comparism_options.conflict,
+                                user_comment: payload.comment,
+                                lead_comment: null,
+                                entry_date_time: `${(await get_date_and_time()).date} @ ${(await get_date_and_time()).time}`,
+                                response_date_time: null,
+                                headline: config.previliges_options.modify,
+                            }
+                        ],
+                    };
+                    update_comparism = true;
+                };
+
+                if (typeof update_tracker === "boolean" && update_tracker) {
+                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                    else {
+                        if (tracking_query_resp.payload.purchases === undefined) {
+                            tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                { "payload": tracking_query_resp.payload });
+            
+                        }else {
+                            tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                                {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                        }
+                    };
+                        
+                    console.log("... tracking protocol completed ...");
+                    console.log("... wrapping context before redirecting ...");
+                    
+                    context.msg = "Error. Couldn't submit. Try Again !";
+                    req.flash("preview", context.msg);
+                    res.redirect(303, config.view_urls.purchase_preview);
+                };
+                if (typeof update_comparism === "boolean" && update_comparism) {
+                    console.log("... proceeding to delete data from database ...");
+
+                    let is_data_inserted = "";
+                    const comparism_obj = await ComparismeModel.findOne({ "userID": comparism_payload.userID });
+                    if (comparism_obj === null) {
+                        await ComparismeModel.insertMany(comparism_payload);
+                        is_data_inserted = true;
+                    }else {
+                        await ComparismeModel.updateOne({ "userID": comparism_payload.userID },
+                            {"$push": { "payload": comparism_payload.payload[0] }});
+                        is_data_inserted = true;
+                    }
+                    if (typeof is_data_inserted === "boolean" && is_data_inserted) {
+                        console.log("... insertion responds ...");
+                        console.log("... insertion of payload completed ...");
+                        console.log("... wrapping context before redirecting ...");
+        
+                        const msg = "Sucess. Request is sent and will be verify for approval !";
+                        context.msg = msg;
+                        req.flash("preview", context.msg);
+                        res.redirect(303, config.view_urls.purchase_preview);
+                    };
                 }
-            }
+            };
         };      
     } catch (error) {
         console.log("** Error:: Purchases Handler **", error);

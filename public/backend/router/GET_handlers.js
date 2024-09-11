@@ -311,7 +311,10 @@ const view_purchase_preview = async (req, res, next) => {
         let context = {}, user_alert = "";
         console.log("** inside purchases preview view");
         console.log("... loading all data from the database ...");
+
+        const purchases = await PurchaseModel.find();
         
+        console.log("... query responds ...", purchases);
         console.log("... loading data from database completed ...");
         console.log("... wrapping context before rendering ...");
 
@@ -319,7 +322,7 @@ const view_purchase_preview = async (req, res, next) => {
         context.message = flash_msg;
         context.config = config;
         context.user = req.session.passport.user;
-        // context.purchases = purchases;
+        context.purchases = purchases;
 
         console.log("... context completed ...");
         console.log("... rendering ...");
@@ -347,7 +350,7 @@ const view_purchase_responds = async (req, res, next) => {
         context.message = flash_msg;
         context.purchases = purchases;
 
-        console.log("... context completed ...", context);
+        console.log("... context completed ...");
         console.log("... rendering ...");
 
         res.json(context);
