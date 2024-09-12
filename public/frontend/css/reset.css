@@ -9,8 +9,6 @@ body {
   overflow-x: hidden;
   overflow-y: scroll;
   width: 100%;
-  background: #2e2e2e;
-  color: white;
 }
 
 ul, ol, li {

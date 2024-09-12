@@ -1,13 +1,189 @@
 <!DOCTYPE html>
 <html lang="en">
+
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Dashboard </title>
+    <!-- Meta -->
+	<%- include ("../partial/meta-description.ejs") %>
+
+	<!-- Title -->
+	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
+
+	<!-- General css -->
+    <%- include ("../partial/meta-css.ejs") %>
+    <link href="/frontend/vendor/jqvmap/css/jqvmap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="/frontend/vendor/chartist/css/chartist.min.css">
+    <link href="/frontend/vendor/bootstrap-select/dist/css/bootstrap-select.min.css" rel="stylesheet">
+	<link href="/frontend/vendor/bootstrap-datetimepicker/css/bootstrap-datetimepicker.min.css" rel="stylesheet">
+
 </head>
 <body>
-    This is the dashboard page 
+
+    <!--*******************
+        Preloader start
+    ********************-->
+	<%- include ("../partial/preloader.ejs") %>
+    <!--*******************
+        Preloader end
+    ********************-->
+
+    <!--**********************************
+        Main wrapper start
+    ***********************************-->
+    <div id="main-wrapper">
+
+        <!--**********************************
+            Nav header start
+        ***********************************-->
+        <%- include ("../partial/nav-header.ejs") %>
+        <!--**********************************
+            Nav header end
+        ***********************************-->
+		<!--**********************************
+            Chat box start
+        ***********************************-->
+		<!-- NOTIFICATION SECTION  -->
+		<%- include ("../partial/notificatiion.ejs")  %>
+		<!-- NOTIFICATION SECTION  -->
+		<!--**********************************
+            Chat box start
+        ***********************************-->
+		<%- include ("../partial/chartbox.ejs") %>
+		<!--**********************************
+            Chat box End
+        ***********************************-->
+		
+		<!--**********************************
+            Header start
+        ***********************************-->
+        <%- include ("../partial/header.ejs") %>
+        <!--**********************************
+            Header end ti-comment-alt
+        ***********************************-->
+
+        <!--**********************************
+            Sidebar start
+        ***********************************-->
+		<%- include ("../partial/sidebar.ejs") %>
+        <!--**********************************
+            Sidebar end
+        ***********************************-->
+		
+		<!--**********************************
+            Content body start
+        ***********************************-->
+        <div class="content-body">
+            <!-- row -->
+			<div class="container-fluid">
+				<div class="form-head d-flex align-items-center mb-sm-4 mb-3">
+					<div class="me-auto">
+						<h2 class="text-black font-w600">Dashboard</h2>
+						<!-- <p class="mb-0">Hospital Admin Dashboard Template</p> -->
+					</div>
+					<!-- <a href="javascript:void(0)" class="btn btn-outline-primary"><i class="las la-cog scale5 me-3"></i>Customize Layout</a> -->
+				</div>
+				<div class="row">
+					<div class="col-lg-12" >
+                        <div class="card" style="background-color: aquamarine;">
+                            <div class="card-header">
+                                <h4 class="card-title"></h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-validation">
+                                        <div class="row">
+                                            <div class="col-xl-12">
+												<div class="row">
+													<div class="col-xl-3">
+														<a href="<% if (context !== undefined) { %><%- context.config.view_urls.purchase %><% } %>"><button type="button" class="btn btn-rounded btn-primary">
+															<span class="btn-icon-left text-primary"><i class="fa fa-add"></i>
+															</span>Purchases
+														</button></a>
+													</div>
+													<div class="col-xl-2">
+														<a href="#"><button type="button" class="btn btn-rounded btn-secondary">
+																<span class="btn-icon-left text-secondary"><i class="fa fa-plus color-secondary"></i>
+															</span>Sales
+														</button></a>
+													</div>
+													<div class="col-xl-2">
+														<a><button type="button" class="btn btn-rounded btn-success"><span
+															class="btn-icon-left text-success"><i class="fa fa-plus color-success"></i>
+														</span>Cash</button></a>
+													</div>
+													<div class="col-xl-3">
+														<a><button type="button" class="btn btn-rounded btn-warning"><span
+															class="btn-icon-left text-warning"><i class="fa fa-plus color-warning"></i>
+														</span>Inventory Management</button></a>
+													</div>
+													<div class="col-xl-2">
+														<a><button type="button" class="btn btn-rounded btn-danger"><span
+															class="btn-icon-left text-danger"><i class="fa fa-plus color-danger"></i>
+														</span> Reports</button></a>
+													</div>
+												</div>
+                                            </div>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+				</div>
+				
+            </div>
+        </div>
+        <!--**********************************
+            Content body end
+        ***********************************-->
+
+        <!--**********************************
+            Footer start
+        ***********************************-->
+        <div class="footer">
+            <div class="copyright">
+                <p>Copyright © Designed &amp; Developed by <a href="" target="_blank">PPF</a> 2024</p>
+            </div>
+        </div>
+        <!--**********************************
+            Footer end
+        ***********************************-->
+
+		<!--**********************************
+           Support ticket button start
+        ***********************************-->
+
+        <!--**********************************
+           Support ticket button end
+        ***********************************-->
 
 
+    </div>
+    <!--**********************************
+        Main wrapper end
+    ***********************************-->
+
+    <!--**********************************
+        Scripts
+    ***********************************-->
+    <!-- Required vendors -->
+    <!-- General js -->
+    <%- include ("../partial/meta-js.ejs") %>
+	<script src="/frontend/vendor/chart-js/chart.bundle.min.js"></script>
+	<script src="/frontend/vendor/bootstrap-datetimepicker/js/moment.js"></script>
+	<script src="/frontend/vendor/bootstrap-datetimepicker/js/bootstrap-datetimepicker.min.js"></script>
+	<!-- Chart piety plugin files -->
+    <script src="/frontend/vendor/peity/jquery.peity.min.js"></script>
+	
+	<!-- Apex Chart -->
+	<script src="/frontend/vendor/apexchart/apexchart.js"></script>
+	
+	<!-- Dashboard 1 -->
+	<script src="/frontend/js/dashboard/dashboard-1.js"></script>
+	<script>
+		$(function () {
+			$('#datetimepicker1').datetimepicker({
+				inline: true,
+			});
+		});
+	</script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+<% if (context.message !== undefined) { %>
+    <% if (context.message.length > 0) { %>
+        <div class="notification-wrapper show2">
+            <div class="notification-container">
+                <div class="i"><div></div></div>
+                <div class="notification-text"> <%- context.message %> </div>
+            </div>
+        </div>
+    <% }else { %>
+        <div class="notification-wrapper">
+            <div class="notification-container">
+                <div class="i"><div></div></div>
+                <div class="notification-text"></div>
+            </div>
+        </div>
+    <% } %>
+<% } %>

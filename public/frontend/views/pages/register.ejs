@@ -1,30 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" class="h-100">
 
-<!-- Mirrored from welly.dexignzone.com/django/xhtml/page-register.html by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 20 Feb 2024 11:22:27 GMT -->
 <head>
     <!-- Meta -->
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<meta name="keywords" content="admin dashboard, admin template, administration, analytics, bootstrap, disease, doctor, elegant, health, hospital admin, medical dashboard, modern, responsive admin dashboard">
-	<meta name="author" content="DexignZone">
-	<meta name="robots" content="">
-	<meta name="description" content="Welly is a clean-code, responsive Django Admin template that can be easily customized to fit the needs of various hospital, medical dashboard, health, doctor, and other businesses.">
-	<meta property="og:title" content="Welly - Django Hospital Admin Dashboard Bootstrap Template">
-	<meta property="og:description" content="Welly is a clean-code, responsive Django Admin template that can be easily customized to fit the needs of various hospital, medical dashboard, health, doctor, and other businesses.">
-	<meta property="og:image" content="https://welly.dexignzone.com/django/social-image.png">
-	<meta name="format-detection" content="telephone=no">
-
-	<!-- Mobile Specific -->
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-
+	<%- include ("../partial/meta-description.ejs") %>
 	<!-- Title -->
 	<title>PROJECT - PPF || Register </title>
-    <!-- Favicon icon -->
-    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon.png">
-    <link rel="stylesheet" href="/frontend/css/style.css" >
-    <link rel="stylesheet" href="/frontend/css/formauth.css" >
-	<!-- <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800;900&amp;family=Roboto:wght@100;300;400;500;700;900&amp;display=swap" rel="stylesheet"> -->
+    <!-- GENERAL css -->
+    <%- include ("../partial/meta-css.ejs") %>
 </head>
 
 <body class="h-100">
@@ -34,19 +17,7 @@
                 <div class="col-md-12">
 					
                     <!-- NOTIFICATION SECTION  -->
-                    <% if (context.message !== undefined) { %>
-                        <% if (context.message.length > 0) { %>
-                            <div class="notification-wrapper show2">
-                                <div class="i"><div></div></div>
-                                <div class="notification-text"> <%- context.message %> </div>
-                            </div>
-                        <% }else { %>
-                            <div class="notification-wrapper">
-                                <div class="i"><div></div></div>
-                                <div class="notification-text"></div>
-                            </div>
-                        <% } %>
-                    <% } %>
+                    <%- include ("../partial/notificatiion.ejs")  %>
                     <!-- NOTIFICATION SECTION  -->
 
 					<div class="authincation-content">
@@ -54,13 +25,13 @@
                             <div class="col-xl-12">
                                 <div class="auth-form">
 									<div class="text-center mb-12 logo-wrapper">
-									    <a href="index.html" class="logo-img-wrapper">
+									    <a href="<% if (context !== undefined) { %><%- context.config.view_urls.login %><% } %>" class="logo-img-wrapper">
                                             <img src="../../img/svg" alt="">
                                             <div class="logo-content"> Logo Content </div>
                                         </a>
 									</div>
                                     <h4 class="text-center mb-1 text-white"> Register Your Business </h4>
-                                    <form action="<% if (context !== undefined) { %><%- context.register_url %><% } %>" method="post">
+                                    <form action="<% if (context !== undefined) { %><%- context.config.post_urls.register %><% } %>" method="post">
                                         <div class="row" style="margin-top: 20px;">
                                             <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Email</strong></label>
@@ -76,7 +47,7 @@
                                             </div>
                                             <div class="form-group; col-md-6 form-cell">
                                                 <label class="mb-1 text-white"><strong>Business Type</strong></label>
-                                                <select class="form-control" name="businessType" id="">
+                                                <select class="form-control" name="businessType" id="type">
                                                     <option value="" disabled> Select Opt </option>
                                                     <option value="Business 1"> Business 1 </option>
                                                     <option value="Business 2"> Business 2 </option>
@@ -129,23 +100,13 @@
                                             
                                             <div class="form-group; col-md-4 form-cell">
                                                 <label class="mb-1 text-white"><strong>Password</strong></label>
-                                                <input type="password" class="form-control" value="Password" name="new_pass">
+                                                <input type="password" class="form-control" name="new_pass">
                                             </div> 
                                             <div class="form-group; col-md-4 form-cell">
                                                 <label class="mb-1 text-white"><strong>Confirm Password</strong></label>
-                                                <input type="password" class="form-control" value="Password" name="password">
+                                                <input type="password" class="form-control" name="password">
                                             </div> 
-                                            <!-- <div class="form-group; col-md-6 form-cell">
-                                                <label class="mb-1 text-white"><strong> Departments (if applicable) </strong></label>
-                                                <select class="form-control" name="department" id="department-option">
-                                                    <option value=""> Select Opt(s) </option>
-                                                    <option value="departmemnt 1"> departmemnt 1 </option>
-                                                    <option value="departmemnt 2"> departmemnt 2 </option>
-                                                    <option value="departmemnt 3"> departmemnt 3 </option>
-                                                </select>
-                                                <div class="department-preview">
-                                                </div>
-                                            </div> -->
+    
                                             
                                             <div class="text-center mt-4" style="margin-top: 10px;">
                                                 <button type="submit" class="btn bg-white text-primary btn-block"> Register </button>
@@ -168,11 +129,9 @@
 	Scripts
 ***********************************-->
 <!-- Required vendors -->
-<script src="/frontend/js/formauth.js"></script>
-<script src="vendor/global/global.min.js"></script>
-<script src="vendor/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
-<script src="js/custom.min.js"></script>
-<script src="js/deznav-init.js"></script>
+
+    <!-- GENERAL JS -->
+    <%- include ("../partial/meta-js.ejs") %>
 
 </body>
 </html>

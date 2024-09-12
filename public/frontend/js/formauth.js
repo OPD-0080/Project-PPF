@@ -1,30 +1,111 @@
-
+"use strict";
 
 // NOTIFICATION SECTION 
 const notify_user = (msg) => {
     // define  paramters 
         const notification_wrapper = document.querySelector(".notification-wrapper");
         const content = notification_wrapper.querySelector(".notification-text");
+        const notification_container = notification_wrapper.querySelector(".notification-container");
     // ...
     // defining modules 
         const remove_alert = () => { notification_wrapper.classList.remove("show") };
         const show_alert = () => {
-        notification_wrapper.classList.add("show");
-        setTimeout(() => { remove_alert() }, 3000);
+            notification_wrapper.classList.add("show");
+            setTimeout(() => { remove_alert() }, 5000);
         };
     // ...
     // setting logic for showing notification 
         if (notification_wrapper.classList.contains("show2")) {
             notification_wrapper.classList.add("show");
-            setTimeout(() => { notification_wrapper.classList.remove("show2") }, 5000);
+            setTimeout(() => { notification_wrapper.classList.remove("show2") }, 10000);
         }
         if (msg == undefined) { remove_alert() } 
         else {
             content.innerHTML = msg;
+            if (content.innerHTML.includes("Error")) { notification_container.classList.remove("sucess"); notification_container.classList.remove("proceed") }
+            else if (content.innerHTML.includes("__")) { notification_container.classList.add("proceed"); notification_container.classList.remove("sucess")}
+            else { notification_container.classList.remove("proceed"); notification_container.classList.add("sucess") }
             show_alert()
         }
     // ...
 };notify_user();
+const sending_data_to_server = async (url, payload) => {
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.status === 200 && response.statusText === "OK") { return await response.json(); }
+        else { return 400 }
+
+    } catch (error) {
+        return false;
+    }
+};
+const load_data_from_server = async (url) => {
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+        });
+
+        console.log(response);
+
+        if (response.status === 200 && response.statusText === "OK") { return await response.json(); }
+        else { return 400 }
+
+    } catch (error) {
+        return false;
+    }
+};
+const validating_input_before_submission = async (input_el_in_array, iteration_number = null) => {
+    let count = 0, decount = 0;
+    if ((iteration_number !== null) && (typeof iteration_number === "number")) {
+        for (let i = 0; i < iteration_number; i++) {
+            const input = input_el_in_array[i];
+    
+            if (input.value !== "") { count++ }
+            else { decount++ }
+        }
+        // console.log("count", count, "decount", decount);
+        if ( (count + decount) === iteration_number ) {
+            if (decount === 0) { return true }
+            else { return false }
+        }
+    }else if ((iteration_number !== null) && (typeof iteration_number === "string")) { return false }
+    else {
+        for (let i = 0; i < input_el_in_array.length; i++) {
+            const input = input_el_in_array[i];
+    
+            if (input.value !== "") { count++ }
+            else { decount++ }
+        }
+        // console.log("count", count, "decount", decount);
+        if ( (count + decount) === input_el_in_array.length ) {
+            if (decount === 0) { return true }
+            else { return false }
+        }
+    }
+};
+const activate_gif_loader = (div_element) => { div_element.classList.add("show"); };
+const deactivate_gif_loader = (div_element) => { div_element.classList.remove("show"); };
+const submit_form_template = (url, payload) => {
+    const form = document.createElement("form");
+    const input = document.createElement("input");
+    const submit = document.createElement("input");
+    form.setAttribute("action", `${url}`);
+    form.setAttribute("method", `post`);
+    input.setAttribute("name", `payload`);
+    input.setAttribute("value", `${payload}`);
+    input.setAttribute("type", "text");
+    submit.setAttribute("type", "submit");
+    form.append(input); form.append(submit);
+    document.body.append(form);
+    submit.click();
+}
+
 // ....
 // DEPARTMENT MULTIPLE OPTIONS
 (() => {
@@ -87,7 +168,7 @@ const notify_user = (msg) => {
                 const data_duplicate_status = session_data.findIndex(data => data == e.target.value); // check for duplication of opts
     
                 // showing error alert when opts is duplicated or else proceed to select options
-                (data_duplicate_status  > -1)? notify_user(`${e.target.value} already selected.`) : select_multiple_option(e);
+                (data_duplicate_status  > -1)? notify_user(`Error. ${e.target.value} already selected.`) : select_multiple_option(e);
             }
         };
     }
@@ -125,11 +206,11 @@ const notify_user = (msg) => {
         }
     }
     const populate_filtered_data = (array, value, div) => {
-        const filtered_data = array.filter(data => { return data.trim().startsWith(value.trim()) });
+        const filtered_data = array.filter(data => { return data.name.trim().startsWith(value.trim()) });
         let show = "";
         filtered_data.forEach(data => {
             show += `
-                <li class="preview-opts"><div class="i"></div><div>${data}</div></li>
+                <li class="preview-opts"><img src="${(data.photo)? data.photo : '/img/svg/home-black.svg'}" class="i"></img><div>${data.name}</div></li>
             `;
             div.innerHTML = show;
         });
@@ -150,3 +231,11 @@ const notify_user = (msg) => {
     };
 })();
 // ...
+
+
+
+
+
+
+export { load_data_from_server, sending_data_to_server, notify_user, validating_input_before_submission, 
+    activate_gif_loader, deactivate_gif_loader, submit_form_template }

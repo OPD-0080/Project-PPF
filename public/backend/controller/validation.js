@@ -3,8 +3,9 @@ const validator = require("validator");
 const moment = require("moment");
 
 
-const { UserModel, LoginModel, DateTimeTracker, RegistrationModel } = require("../../database/schematics");
+const { UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel } = require("../../database/schematics");
 const config = require("../config/config");
+
 
 // ...
 const registrationValidation = async (req, res, next) => {
@@ -117,6 +118,10 @@ const signupValidation = async (req, res, next) => {
             msg = "Error. Provide Your Active Contact Number";
             status = true;
 
+        }else if (data.tel.length >= 11) {
+            msg = "Error. Contact Number must be max 10 digits";
+            status = true;
+            
         }else if (validator.isEmpty(data.date_of_birth)) {
             msg = "Error. Provide Your Date of Birth";
             status = true;
@@ -139,7 +144,7 @@ const signupValidation = async (req, res, next) => {
             console.log("** Validation Completed **");
             const user = req.session.passport.user;
             // checking if comapny is registered or not
-                const biodata = await RegistrationModel.find({ businessName: user.company.trim() }); // getting company biodata from db
+                const biodata = await RegistrationModel.find({ "businessName": user.company.trim() }); // getting company biodata from db
                 console.log("getting biodata from db ...", biodata);
 
                 if (biodata.length == 0) { // server could not find registered biodata from db
@@ -147,7 +152,16 @@ const signupValidation = async (req, res, next) => {
                     res.redirect(303, `${config.view_urls.user_register}`)
 
                 }else { // server found biodata 
-                    next() // move to the next middelware 
+                    console.log("... verifying if email already found in database ...");
+                    const is_email_found = await UserModel.findOne({ "email": data.username })
+                    console.log("... gettig final check point ...", is_email_found);
+                    
+
+                    if (is_email_found === null) { next() } // move to the next middelware
+                    else {
+                        req.flash("signup", `Error. Email already used. Try using another email !`) // send messge to user 
+                        res.redirect(303, `${config.view_urls.user_register}`)
+                    }
                 }
         }
 
@@ -217,12 +231,14 @@ const loginValidation = async (req, res, next) => {
             // ...
             // checking if user is a superuser or not and has already signup or not 
                 if (user.length == 0) { // if user has not signup and trying to login 
-                    req.flash("signup", "Error. User not Found. For Signup, Contact Admin !"); // send user an alert message
+                    req.flash("login", "Error. User not Found. For Signup, Contact Admin !"); // send user an alert message
                     res.redirect(303, `${config.view_urls.login}`) // redirect user to the signup page
 
                 }else if ( (user.length > 0) && (login_resp.length <= 0) ) { // if user has signup and trying to login 
                     next() 
                 }else if ( (user.length > 0) && (login_resp.length > 0) ) { // if user has signup and already login but login for the second time
+                    console.log("... user login twice. Loging user out");
+                    
                     // delete user login  data from db first and update date and time 
                         await DateTimeTracker.updateOne(
                                 { "uuid": login_resp[0].uuid }, // filter to get user data from db
@@ -309,7 +325,7 @@ const resetPasswordValidation = async (req, res, next) => {
 
         }else {
             console.log("** Validation Completed **");
-            necx();
+            next();
         }
 
     } catch (error) {
@@ -383,7 +399,6 @@ const forgotPasswordConfirmValidation = async (req, res, next) => {
 };
 
 
-
 const is_user_active = async (user) => {
     let msg = "";
     (user.is_active)? msg = true : msg = false;
@@ -391,11 +406,149 @@ const is_user_active = async (user) => {
 };
 const getting_auth_user_data = async (auth_user) => {
     let user = "";
-    (auth_user.role == "Admin")? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
+    (auth_user.role == config.roles.admin)? user = await RegistrationModel.find({ "email": auth_user.email}) :  user = await UserModel.find({ "email": auth_user.email });  
     return user
 };
+const is_user_found_in_company = async (user_id, companyRefID) => {
+    try {
+    if ((typeof user_id === "string") && (typeof companyRefID === "string")) {
+        let data = await RegistrationModel.findOne({ "_id": user_id });
+        if (data !== null) { return true }
+        else { 
+            data = await UserModel.findOne({ "_id": user_id })
+            if (data.companyRefID === companyRefID.trim()) { return true }
+            else { return false };
+        }; 
+    }
+    } catch (error) { return undefined; }
+};
+const reset_authorization_code = async (req, res, next) => {
+    try {
+        if (req.session.hasOwnProperty("passport")) {
+            const user = req.session.passport.user;
+            const query_resp = await AuthorizationModel.findOne( {"email": user.email, "companyRefID": user.companyRefID, "userID": user.userID } )
+            
+            if (query_resp === null) { next() }
+            else {
+                await AuthorizationModel.updateOne( {"email": query_resp.email}, { "authorization_active": false, "authorization_visible": false } )
+                next();
+            }
+        }else { res.redirect(303, config.view_urls.logout) }
+    } catch (error) {
+        console.log("... Error @ reset authorization code middleware ...", error);
+        res.redirect(303, config.view_urls.logout);        
+    }
+};
+const tracking_payload_initials = async (req, user_profile) => {
+    let payload = {};
+    if (user_profile[0].ceo !== undefined) {  payload.initiator = user_profile[0].ceo }
+    else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}` };
+
+    payload.companyRefID = req.session.passport.user.companyRefID;
+    payload.userID = req.session.passport.user.userID;
+    payload.company = req.session.passport.user.company;
+    payload.role = req.session.passport.user.role;
+
+    return payload;
+};
+const verifying_user_restriction = async (restriction_paramter = null, user_obj) => {
+    if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.admin) { return true }
+    else if ((restriction_paramter === null) && user_obj.role.trim() === config.roles.staff) { return false }
+    else {
+        if (restriction_paramter.trim() === user_obj.role.trim()) { return true }
+        else { return false }
+    };
+};
+const verifying_user_previliges = async (req, previliges_type, previlges_opt) => {
+    const user_profile = await getting_auth_user_data(req.session.passport.user);
+    console.log("... user profile ...", user_profile);
+
+    if (typeof user_profile[0].previliges === "string" && user_profile[0].role === config.roles.admin && user_profile[0].previliges === "super") {
+        return true;
+
+    }else {
+        if (user_profile[0].role === config.roles.staff && user_profile[0].previliges === null) {
+            console.log("... user NOT having previlges to perform operation. ...");   
+            return false;
+        
+        }else {
+            if (user_profile[0].previliges === null) {
+                console.log("... user NOT having previlges to perform operation. ...");   
+                return false;
+            }else {
+                console.log("... checking previliges type ...");
+                let user_previliges_obj = "";
+                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === config.previliges_type.document) {
+                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === config.previliges_type.document });
+                };
+                if (typeof previliges_type === "string" && previliges_type.trim().toLowerCase() === config.previliges_type.user) {
+                    user_previliges_obj = user_profile[0].previliges.find(el => { return el.type  === config.previliges_type.user });
+                };
+                console.log("... getting user previlges object responds ...", user_previliges_obj);
+
+                if (user_previliges_obj !== "" && user_previliges_obj !== undefined) {
+                    if (typeof user_previliges_obj === "object") { 
+                        if (typeof previliges_type === "string" && previliges_type.trim() === user_previliges_obj.type) {
+                            if (user_previliges_obj.value.find(el => { return el === previlges_opt.trim() }) === undefined) { return false }
+                            else { return true };    
+                        }else { return false }
+                    }
+                }
+            }
+        }
+    }
+};
+const verifying_user_authorization_codes = async (req, authorization_code) => {
+    try {
+        console.log("... getting authorization code ...", authorization_code);
+        console.log("... checking if auth-user has authorization payload ...");
+
+        const auth_payload = await AuthorizationModel.findOne({ "email": req.session.passport.user.email });
+        console.log("... authorization payload ...", auth_payload);
+
+        
+        if (auth_payload == null) {
+            console.log("... payload not found ...");
+            console.log("... checking for breach of authorization code ...");
+
+            const breached_payload = await AuthorizationModel.findOne({ "authorization": authorization_code });
+            console.log("... getting breached payload ...", breached_payload);
+            
+            if (breached_payload == null) {  return undefined;}
+            else { return { status: "breach", data: breached_payload } }
+            
+        }else {
+            if (auth_payload.authorization_visible && auth_payload.authorization_active) {
+                console.log("... authorization code visible and is activated and ready for usage ...");
+                console.log("... verifying authorization code ...");
+                    
+                if (authorization_code.trim() === auth_payload.authorization.trim()) {
+                    console.log("... code verification completed ...");
+                    console.log("... updating database ...");
+
+                    await AuthorizationModel.updateOne({ "userID": req.session.passport.user.userID, "companyRefID": req.session.passport.user.companyRefID },
+                        { "authorization_active": true });
+                    
+                    console.log("... database update completed ...");
+                    return "verified";
+
+                }else { return "code_err" };
+            }else { return "not_activated"; }
+        }
+    } catch (error) {
+        console.log("Error @ verifying authorization code ...", error);
+        return undefined;
+    }
+
+
+};
+
+
+
+
 
 module.exports = { loginValidation, signupValidation, OTPValidation, registrationValidation, 
     is_user_active, resetPasswordValidation, forgotPasswordInitiateValidation, forgotPasswordConfirmValidation,
-    getting_auth_user_data
+    getting_auth_user_data, reset_authorization_code, tracking_payload_initials,
+    verifying_user_restriction, verifying_user_previliges, is_user_found_in_company, verifying_user_authorization_codes
 }

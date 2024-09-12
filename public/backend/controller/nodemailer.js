@@ -44,7 +44,7 @@ const sending_email_with_html_template = async (company_name, subject, receiver_
             to: `${receiver_email}`,
             subject: `${subject}`,
             text: `${message}`,
-            html: html_template // to customize message to the receiptent tmo suit company profile 
+            html: `${html_template}` // to customize message to the receiptent tmo suit company profile 
         };
         console.log("....SENDNING EMAIL .....", email_detail);
 

@@ -1,0 +1,14 @@
+<div class="nav-header">
+    <a href="<% if (context.config !== undefined) { %><%- context.config.view_urls.dashboard %><% } %>" class="brand-logo">
+        <img class="logo-abbr" src="/frontend/images/blank.png" alt="">
+        <p style="color: black;"><% if (context.config !== undefined) { %><%- context.config.company_name %><% } %></p>
+        <img class="logo-compact" src="" alt="">
+        <img class="brand-title" src="" alt="">
+    </a>
+
+    <div class="nav-control">
+        <div class="hamburger">
+            <span class="line"></span><span class="line"></span><span class="line"></span>
+        </div>
+    </div>
+</div>

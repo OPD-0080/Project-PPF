@@ -1,13 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> Dashboard </title>
+   <!-- Meta -->
+	<%- include ("../partial/meta-description.ejs") %>
+    <!-- Title -->
+	<title>Welly - Django Hospital Admin Dashboard Bootstrap Template</title>
+    <!-- General css -->
+    <%- include ("../partial/meta-css.ejs") %>
 </head>
-<body>
-    This is the OTP verification page 
 
+<body class="h-100">
+    <div class="authincation h-100">
+        <div class="container h-100">
+            <div class="row justify-content-center h-100 align-items-center">
+                <div class="col-md-6">
+                    <div class="authincation-content">
+                        <div class="row no-gutters">
+                            <div class="col-xl-12">
+                                <div class="auth-form otp-wrapper">
+                                    <!-- NOTIFICATION SECTION  -->
+                                    <%- include ("../partial/notificatiion.ejs")  %>
+                                    <!-- NOTIFICATION SECTION  -->
+									<div class="text-center mb-3">
+										<a href="<% if (context !== undefined) { %><%- context.config.view_urls.login %><% } %>"><img src="/frontend/images/" alt=""></a>
+									</div>
+                                    <h4 class="text-center mb-4 text-white">OTP Verification</h4>
+                                    <form class="otp-form-wrapper" action="<% if (context !== undefined) { %><%- context.config.post_urls.otp %><% } %>" method="post">
+                                        <div class="form-group">
+                                            <label class="text-white"><strong>OTP</strong></label>
+                                            <input type="text" class="form-control otp-input" name="otp" value="" required>
+                                        </div>
+                                        <div class="text-center otp-form-button mb-4">
+                                            <button type="button" class="btn bg-white text-primary btn-block resend" data-url="<% if (context !== undefined) { %><%- context.config.post_urls.otp_resend %><% } %>">Resend OTP Code</button>
+                                            <button type="submit" class="btn bg-white text-primary btn-block">SUBMIT</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!--**********************************
+        Scripts
+    ***********************************-->
+    
+    <script src="/frontend/js/otp-verification.js" type="module"></script>
+    <!-- General js -->
+    <%- include ("../partial/meta-js.ejs") %>
+    
 
 </body>
 </html>
