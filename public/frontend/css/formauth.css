@@ -228,6 +228,29 @@ a {
   justify-content: flex-start;
   align-items: center;
 }
+.purchases-form-wrapper .purchases-form-container .cells .purchases-button-wrapper .ms-auto button {
+  position: relative;
+  margin: 5px;
+}
+.purchases-form-wrapper .purchases-form-container .cells .purchases-button-wrapper .ms-auto button .preview-number {
+  position: absolute;
+  top: 0px;
+  right: -10px;
+  width: 20px;
+  height: 20px;
+  transform: translateX(30px);
+  -webkit-transform: translateX(30px);
+  -moz-transform: translateX(30px);
+  -ms-transform: translateX(30px);
+  -o-transform: translateX(30px);
+  transform: translateY(-5px);
+  -webkit-transform: translateY(-5px);
+  -moz-transform: translateY(-5px);
+  -ms-transform: translateY(-5px);
+  -o-transform: translateY(-5px);
+  background: whitesmoke;
+  color: black;
+}
 
 .loading-gif {
   width: 40px;
@@ -495,24 +518,33 @@ a {
 .tb-wrapper .tb-body-wrapper {
   position: relative;
 }
-.tb-wrapper .tb-body-wrapper .empty-preview-wrapper {
-  position: absolute;
-  top: 0px;
-  background: whitesmoke;
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  z-index: 3;
-}
 .tb-wrapper .tb-body-wrapper .each-list-cell {
   background: transparent;
 }
 .tb-wrapper .tb-body-wrapper .each-list-cell.selected {
   background: #ffd3d3;
 }
+.tb-wrapper .tb-body-wrapper .each-list-cell.checked {
+  background: rgba(132, 241, 132, 0.4509803922);
+}
 .tb-wrapper .tb-body-wrapper .each-list-cell td {
   text-align: center;
+}
+
+.empty-preview-wrapper {
+  position: relative;
+  top: 0px;
+  width: 100%;
+  padding: 20px;
+  z-index: 3;
+  text-align: center;
+}
+
+.preview-buttons-wrapper #preview-submit {
+  visibility: hidden;
+  opacity: 0;
+}
+.preview-buttons-wrapper #preview-submit.show {
+  visibility: visible;
+  opacity: 1;
 }

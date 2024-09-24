@@ -72,6 +72,7 @@ const config = {
         forgot_password_confirm: `${POST_base_url}/password/forgot/confirmation`,
         purchases_entry: `${POST_base_url}/purchases/entry`,
         purchases_preview: `${POST_base_url}/purchases/preview`,
+        purchases_submit: `${POST_base_url}/purchases/submit`,
     },
 
     view_urls: {

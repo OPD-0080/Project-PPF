@@ -25,8 +25,7 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
     if (purchases_wrapper !== null) {
 
         const form_controls = purchases_wrapper.querySelectorAll(".form-control");
-        const purchase_form_wrapaper = document.querySelector(".purchases-form-wrapper");
-        const form_button = purchases_wrapper.querySelector(".purchases-button");
+        const form_buttons = purchases_wrapper.querySelectorAll(".purchases-button");
         const form_button_wrapper = purchases_wrapper.querySelector(".purchases-button-wrapper");
         const copy_paste_buttons = purchases_wrapper.querySelectorAll(".purchases-copy-paste-button");
         const gif_loader = purchases_wrapper.querySelector(".loading-gif");
@@ -130,32 +129,40 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 }
             }
         });
-        form_button.onclick = async (e) => {
-            // console.log("... final payload ...", payload);
-            if (await validating_input_before_submission(form_controls)) {
-                notify_user("__Sumission initiated."); 
-                activate_gif_loader(gif_loader);
-
-                const url = form_button_wrapper.getAttribute("data-purchases");
-                const responses = await sending_data_to_server(`${url}`, payload);
-                console.log("... server responds ...", responses);
-                
-
-                if (typeof responses === "object") { 
-                    setTimeout(() => {  
-                        notify_user("Purchase submisson sucess"); 
-                        deactivate_gif_loader(gif_loader); 
-                        form_controls.forEach( async el => { 
-                            el.value = "";
-                            if (el.classList.contains("item-code")) { el.value = await genearte_random_code(); }; 
-                        });
-                    }, 3000);
+        form_buttons.forEach(button => {
+            button.onclick = async (e) => {
+                if (e.target.classList.contains("submit")) {
+                    const purchases_number = document.querySelector(".preview-number");
+                    if (await validating_input_before_submission(form_controls)) {
+                        notify_user("__Sumission initiated."); 
+                        activate_gif_loader(gif_loader);
+        
+                        const url = form_button_wrapper.getAttribute("data-purchases");
+                        const responses = await sending_data_to_server(`${url}`, payload);
+                        console.log("... server responds ...", responses);
+                        
+        
+                        if (typeof responses === "object") { 
+                            setTimeout(() => {  
+                                notify_user("Purchase submisson sucess"); 
+                                deactivate_gif_loader(gif_loader); 
+                                form_controls.forEach( async el => { 
+                                    el.value = "";
+                                    if (el.classList.contains("item-code")) { el.value = await genearte_random_code(); }; 
+                                });
+                                purchases_number.innerHTML = responses.purchases_length;
+                            }, 3000);
+                        }
+                        else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Purchase submission failed. Try Again"); }
+                        else { notify_user("Error. Server not responding !"); }
+                    }
+                    else { notify_user("Error. Misssing input. All input are required !");  }
+                }else if (e.target.classList.contains("preview")) {
+                    sessionStorage.removeItem("copy");
+                    window.location.assign(`${e.target.getAttribute("data-url")}`) 
                 }
-                else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Purchase submission failed. Try Again"); }
-                else { notify_user("Error. Server not responding !"); }
-            }
-            else { notify_user("Error. Misssing input. All input are required !");  }
-        };
+            };
+        });
         copy_paste_buttons.forEach(button => {
             button.onclick = async (e) => {
                 if (e.target.classList.contains("copy")) {
@@ -203,16 +210,13 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         const overlay_page_container = overlay_page_wrapper.querySelector(".overlay-page-container");
         const overlay_page_close_button = document.querySelectorAll(".overlay-close-button");
         const form_controls = overlay_page_wrapper.querySelectorAll(".form-control");
-        const delete_items_wrapper = overlay_page_wrapper.querySelector(".delete_items_wrapper");
         const overlay_submit_button_wrapper = overlay_page_wrapper.querySelector(".modify-button-wrapper");
         const overlay_submit_button = overlay_submit_button_wrapper.querySelector(".btn");
-        const auth_page_wrapper = document.querySelector(".auth-page-wrapper");
-        const auth_page_container = auth_page_wrapper.querySelector(".auth-page-container");
-        const auth_page_button = auth_page_wrapper.querySelector(".auth-page-button");
-        const auth_input = auth_page_wrapper.querySelector("#auth_code");
-        const gif_loader = auth_page_wrapper.querySelector(".loading-gif");
+        const gif_loader = overlay_page_wrapper.querySelector(".loading-gif");
         const payload_wrapper = document.querySelector(".payload-wrapper");
-        const modify_tags = overlay_page_wrapper.querySelectorAll(".modify-tags")
+        const modify_tags = overlay_page_wrapper.querySelectorAll(".modify-tags");
+        const attr_el = purchases_modify_button_wrapper.querySelector(".hidden-class");
+        const preview_buttons = document.querySelectorAll(".preview-buttons");
         
 
         let payload = {};
@@ -227,11 +231,23 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 return
             }else if ((checkbox_as_array == null) && (selected_parent_el !== null)) { selected_parent_el.classList.add("selected"); return }
         };
+        const verified_selected_list = async (selected_parent_el = null, checkbox_as_array = null ) => {
+            if ((checkbox_as_array !== null) && (selected_parent_el == null)) {
+                checkbox_as_array.forEach(box => { box.parentElement.parentElement.parentElement.classList.add("checked"); });
+                return
+            }else if ((checkbox_as_array == null) && (selected_parent_el !== null)) { selected_parent_el.classList.add("checked"); return }
+        };
         const remove_highlight_selected_list = async (selected_parent_el = null, checkbox_as_array = null ) => {
             if ((checkbox_as_array !== null) && (selected_parent_el == null)) {
                 checkbox_as_array.forEach(box => { box.parentElement.parentElement.parentElement.classList.remove("selected"); });
                 return
             }else if ((checkbox_as_array == null) && (selected_parent_el !== null)) { selected_parent_el.classList.remove("selected"); return }
+        };
+        const deverified_highlight_selected_list = async (selected_parent_el = null, checkbox_as_array = null ) => {
+            if ((checkbox_as_array !== null) && (selected_parent_el == null)) {
+                checkbox_as_array.forEach(box => { box.parentElement.parentElement.parentElement.classList.remove("checked"); });
+                return
+            }else if ((checkbox_as_array == null) && (selected_parent_el !== null)) { selected_parent_el.classList.remove("checked"); return }
         };
         const show_remove_modify_buttons = (edit_button_disabled = false, delete_button_disabled = false) => { 
             let status = [];
@@ -331,13 +347,44 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
             overlay_page_wrapper.classList.remove("show");
             overlay_page_container.classList.remove("show");
             purchases_modify_button_wrapper.classList.add("show-buttons");
-            auth_page_wrapper.classList.remove("show");
-            auth_page_container.classList.remove("show");
             if (gif_loader !== undefined) { deactivate_gif_loader(gif_loader); };
         };
+        const save_verified_selected_items = async (selected_item) => {
+            if (sessionStorage.getItem("verified_dumpsite")) {
+                const selected_items = JSON.parse(sessionStorage.getItem("verified_dumpsite"));   
+                if (typeof selected_items === "object") {
+                    const is_data_duplicated = selected_items.find(uid => { return uid ===  selected_item._id});
 
-        const purchases = await loading_purchases_from_database();;
+                    if (is_data_duplicated === undefined) {
+                        selected_items.push(selected_item._id);
+                        sessionStorage.setItem("verified_dumpsite", JSON.stringify(selected_items));
+                        return true;
+
+                    }else { return false };
+                }
+            }else {
+                sessionStorage.setItem("verified_dumpsite", JSON.stringify([selected_item._id]));
+            }
+        };
+        const remove_verified_selected_items = async (selected_item) => {
+            if (sessionStorage.getItem("verified_dumpsite")) {
+                const selected_items = JSON.parse(sessionStorage.getItem("verified_dumpsite"));                                  
+
+                if (typeof selected_items === "object") {
+                    const item_index = selected_items.findIndex(uid => { return uid ===  selected_item._id});
+
+                    if (item_index >= 0) {
+                        selected_items.splice(item_index, 1);
+                        sessionStorage.setItem("verified_dumpsite", JSON.stringify(selected_items));
+
+                    }else { return false };
+                }
+            }else { return false };
+        };
+
+        const purchases = await loading_purchases_from_database();
         const previliges_opts = tb_body_wrapper.getAttribute("data-config").split(",");
+        sessionStorage.removeItem("verified_dumpsite");
 
         //  Highligth and get data upon selection
             const form_check_input = tb_wrapper.querySelectorAll(".form-check-input"); 
@@ -391,8 +438,55 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                                 }else { show_remove_modify_buttons(); }
                             // 
                         }
-                    }
-                    
+                    };
+                    if (box.classList.contains("selected-checked")) {
+                        const selected_row = box.parentElement.parentElement.parentElement;
+                        const selected_item_id = selected_row.getAttribute("data-uid");
+                        const preview_submit_button = document.querySelector("#preview-submit");
+                        const purchase_length = Number(tb_body_wrapper.getAttribute("data-purchasesength"));
+
+                        if (box.checked) {
+                            await verified_selected_list(selected_row, null);
+                            // getting selected data upon selection and saving the items in sessionStorage
+                                const selected_item = purchases.find(data => { return data._id === selected_item_id });
+                                await save_verified_selected_items(selected_item);
+                            // end
+                            form_check_input.forEach(el => { if (el.classList.contains("checkall")) { el.checked = false; } });
+
+                            //  disabling the other checkbox when the verified checkbox is triggered
+                                const other_checkbox = e.target.parentElement.parentElement.parentElement.children[0].querySelector("input");
+                                other_checkbox.disabled = true;
+                                other_checkbox.checked = false;
+                                await remove_selected_items(selected_item);
+                                await remove_highlight_selected_list(selected_row, null);
+                            // end
+                            //  disable or enable submit button upon verifying checks.
+                                const verified_items = JSON.parse(sessionStorage.getItem("verified_dumpsite"));    
+                                if (purchase_length === verified_items.length) { preview_submit_button.classList.add("show"); }
+                                else {preview_submit_button.classList.remove("show");}
+                            // end
+                        }else {
+                            await deverified_highlight_selected_list(selected_row, null);
+                            form_check_input.forEach(el => { if (el.classList.contains("checkall")) { el.checked = false; } });
+
+                            const selected_item = purchases.find(data => { return data._id === selected_item_id });
+                            await remove_verified_selected_items(selected_item);
+
+                            //  enabling the other checkbox when the verified checkbox is triggered
+                                const other_checkbox = e.target.parentElement.parentElement.parentElement.children[0].querySelector("input");
+                                other_checkbox.disabled = false;
+                                other_checkbox.checked = false;
+                                await remove_selected_items(selected_item);
+                                await remove_highlight_selected_list(selected_row, null);
+                            // end
+                            //  disable or enable submit button upon verifying checks.
+                                const verified_items = JSON.parse(sessionStorage.getItem("verified_dumpsite")); 
+                                if (purchase_length === verified_items.length) { preview_submit_button.classList.add("show"); }
+                                else {preview_submit_button.classList.remove("show");}
+                            // end
+                        }
+
+                    };
                 }
             });
         // end
@@ -470,13 +564,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                             activate_input_indicator(e);
                         }
                     };
-                    if (e.target.classList.contains("comment")) {
-                        const value = e.target.value;
-                        payload.comment = value.toLocaleLowerCase(); 
-                        
-                        if (value.length !== 0) { deactivate_input_indicator(e); }
-                        else { activate_input_indicator(e); }
-                    };
                 };
                 input.onchange = (e) => {
                     if (e.target.classList.contains("invoice-date")) {
@@ -502,7 +589,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         overlay_page_wrapper.classList.add("show");
                         setTimeout(() => { overlay_page_container.classList.add("show"); }, 100);
                         purchases_modify_button_wrapper.classList.remove("show-buttons");
-                        delete_items_wrapper.classList.remove("show");
                         modify_tags.forEach(tag => { tag.classList.remove("hide"); });
 
                         if (sessionStorage.getItem("dumpsite")) {
@@ -521,20 +607,39 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         }
                     }
                     else if (e.target.classList.contains("delete")) { 
-                        overlay_page_wrapper.classList.add("show");
-                        setTimeout(() => { overlay_page_container.classList.add("show"); }, 100);
-                        purchases_modify_button_wrapper.classList.remove("show-buttons");
-                        modify_tags.forEach(tag => { tag.classList.add("hide"); });
-                        delete_items_wrapper.classList.add("show");
-
                         if (sessionStorage.getItem("dumpsite")) {
                             // getting data from the local storage 
                                 const session_data = JSON.parse(sessionStorage.getItem("dumpsite"));
                                 payload.type = "document";
                                 payload.trigger = previliges_opts[1]; // very important
                                 payload.delete_ids = session_data; 
-                                const delete_tag =  delete_items_wrapper.querySelector("textarea");                    
-                                delete_tag.value = (JSON.parse(sessionStorage.getItem("dumpsite_1"))).join(" || ");
+
+                                console.log("... geting the final payload ...", payload);
+
+                                const url = attr_el.getAttribute("data-url");;
+                                const previliges = attr_el.getAttribute("previleges");
+                                const pageon = attr_el.getAttribute("pageon");
+                
+                                const gif_loader = purchases_modify_button_wrapper.querySelector(".loading-gif");
+                                activate_gif_loader(gif_loader);
+                                
+                                payload.pageon = pageon;
+                                payload.previliges = previliges;
+                
+                                const responses = await sending_data_to_server(url, payload);
+                                console.log("... getting responses from server ...", responses);
+                                
+                                if (typeof responses === "object") { 
+                                    setTimeout(async () => {  
+                                        notify_user(`${responses.msg}`); 
+                                        deactivate_gif_loader(gif_loader); 
+                                        remove_all_overlays_pages();
+                                        setTimeout(() => { window.location.reload(); }, 1000);
+                                        
+                                    }, 3000);
+                                }
+                                else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
+                                else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  };
                             // end
                         }else {  
                             notify_user("Error. Selecte data to proceed modifiation");
@@ -548,9 +653,8 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                         show_remove_modify_buttons();
                         purchases.forEach(async data => { await remove_selected_items(data);  });
                         form_check_input.forEach(el => { el.checked = false; });
-                        delete_items_wrapper.classList.remove("show");
                         modify_tags.forEach(tag => { tag.classList.remove("hide"); });
-                    }
+                    };
                 }
             });
             overlay_page_close_button.forEach(button => {
@@ -559,56 +663,62 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 };
             });
             overlay_submit_button.onclick = async (e) => {
-                if (payload.delete_ids !== undefined) {
-                    if (payload.comment !== undefined && payload.comment !== "") {
-                        // show auth page overlay buton is triggered
-                            auth_page_wrapper.classList.add("show");
-                            setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
-                        // 
-                    }else { notify_user("Error. Misssing input. Provide your reason(s) !");  }
-                }else {
-                    if (await validating_input_before_submission(form_controls)) {
-                        // show auth page overlay buton is triggered
-                            auth_page_wrapper.classList.add("show");
-                            setTimeout(() => { auth_page_container.classList.add("show"); }, 200);
-                        // 
-                    }
-                    else { notify_user("Error. Misssing input. All input are required !");  }
-                }
-                
-            };
-            auth_page_button.onclick = async (e) => {
-                // submitting payload to server 
                 console.log("... geting the final payload ...", payload);
 
                 const url = e.target.dataset.url;
                 const previliges = e.target.dataset.previleges;
                 const pageon = e.target.dataset.pageon;
 
-                if (auth_input.value == "") { notify_user("Error. Authorization code required !"); }
-                else { 
-                    activate_gif_loader(gif_loader);
-                    
-                    payload.authorization_code = auth_input.value; 
-                    payload.pageon = pageon;
-                    payload.previliges = previliges;
+                activate_gif_loader(gif_loader);
+                
+                payload.pageon = pageon;
+                payload.previliges = previliges;
 
-                    const responses = await sending_data_to_server(url, payload);
-                    console.log("... getting responses from server ...", responses);
-                    
-                    if (typeof responses === "object") { 
-                        auth_input.value = "";
-                        setTimeout(async () => {  
-                            notify_user(`${responses.msg}`); 
-                            deactivate_gif_loader(gif_loader); 
-                            remove_all_overlays_pages();
-                            
-                        }, 3000);
-                    }
-                    else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Request changes submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
-                    else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  }
-                };
+                const responses = await sending_data_to_server(url, payload);
+                console.log("... getting responses from server ...", responses);
+                
+                if (typeof responses === "object") { 
+                    setTimeout(async () => {  
+                        notify_user(`${responses.msg}`); 
+                        deactivate_gif_loader(gif_loader); 
+                        remove_all_overlays_pages();
+                        setTimeout(() => { window.location.reload(); }, 1000);
+                        
+                    }, 3000);
+                }
+                else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
+                else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  }
             };
+        // end
+        // submitting purchases preview 
+            preview_buttons.forEach(button => {
+                button.onclick = async (e) => {
+                    if (e.target.classList.contains("back-to-preview")) { window.location.assign(`${e.target.getAttribute("data-url")}`) };
+                    if (e.target.classList.contains("submit")) {
+                        const url = e.target.getAttribute("data-url");
+
+                        console.log("... initiating submission ...");
+                        const preview_buttons_wrapper = document.querySelector(".preview-buttons-wrapper");
+                        const gif_loader = preview_buttons_wrapper.querySelector(".loading-gif");
+                        activate_gif_loader(gif_loader);
+                                    
+                        const responses = await sending_data_to_server(url, {});
+                        console.log("... getting responses from server ...", responses);
+                                    
+                        if (typeof responses === "object") { 
+                            setTimeout(async () => {  
+                                notify_user(`${responses.msg}`); 
+                                deactivate_gif_loader(gif_loader); 
+                                remove_all_overlays_pages();
+                                sessionStorage.removeItem("verified_dumpsite")
+                                setTimeout(() => { window.location.assign(`${e.target.getAttribute("data-redirect")}`); }, 1000);
+                            }, 3000);
+                        }
+                        else if ((typeof responses === "number") && (responses === 400)) { notify_user("Error. Submission failed. Try Again !"); deactivate_gif_loader(gif_loader); }
+                        else { notify_user("Error. Internet Connection Bad. Check Net Connection !"); deactivate_gif_loader(gif_loader);  };
+                    };
+                };
+            });
         // end
 
     }

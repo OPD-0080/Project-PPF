@@ -7,7 +7,7 @@ const passport = require("passport");
 // IMPORTATION OF HANDLERS
 const { signup_handler, registration_handler, OTP_verification_handler, is_OTP_verified, is_password_secured,
     password_reset_handler, forgot_password_initiate_handler, forgot_password_confirmation_handler, resend_OTP_code_handler,
-    purchases_handler, purchases_preview_handler,
+    purchases_entry_handler, purchases_edit_delete_handler, purchases_submission_handler,
     change_user_roles_and_previlges_handler } = require("./POST_handlers");
 // ...
 // IMPORTATION OF MIDDLEWARES
@@ -50,8 +50,9 @@ router.post("/password/forgot/confirmation", forgotPasswordConfirmValidation, fo
 router.post("/password/forgot/resend", isUSerAuthenticated, resend_OTP_code_handler );
 //  END
 // PURCHASES 
-router.post("/purchases/entry", isUSerAuthenticated, purchases_handler );
-router.post("/purchases/preview", isUSerAuthenticated, purchases_preview_handler );
+router.post("/purchases/entry", isUSerAuthenticated, purchases_entry_handler );
+router.post("/purchases/preview", isUSerAuthenticated, purchases_edit_delete_handler );
+router.post("/purchases/submit", isUSerAuthenticated, purchases_submission_handler );
 
 // END
 

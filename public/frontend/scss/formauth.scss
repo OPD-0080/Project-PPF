@@ -178,6 +178,23 @@
             .purchases-button-wrapper {
                 .ms-auto {
                     @include flex(row, flex-start, center);
+
+                    button {
+                        position: relative;
+                        margin: 5px;
+                        
+                        .preview-number {
+                            position: absolute;
+                            top: 0px;
+                            right: -10px;
+                            width: 20px;
+                            height: 20px;
+                            @include transformX(30px);
+                            @include transformY(-5px);
+                            background: whitesmoke;
+                            color: black;
+                        }
+                    }
                 }
             }
         }
@@ -400,24 +417,32 @@
 .tb-wrapper {
     .tb-body-wrapper {
         position: relative;
-
-        .empty-preview-wrapper {
-            position: absolute;
-            top: 0px;
-            background: whitesmoke;
-            width: 100%;
-            @include flex(row, center, center);
-            padding: 20px;
-            z-index: 3;
-        }
         .each-list-cell {
             background: transparent;
             &.selected { background: #ffd3d3 }
+            &.checked { background: #84f18473 }
 
             td { text-align: center }
         }
     }
-
+}
+.empty-preview-wrapper {
+    position: relative;
+    top: 0px;
+    width: 100%;
+    padding: 20px;
+    z-index: 3;
+    text-align: center;
+}
+.preview-buttons-wrapper {
+    #preview-submit {
+        visibility: hidden;
+        opacity: 0;
+        &.show { 
+            visibility: visible;
+            opacity: 1;
+        }
+    }
 }
 
 // END

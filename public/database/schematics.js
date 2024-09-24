@@ -91,6 +91,21 @@ const authorization_schema = new mongoose.Schema({
     authorization_visible: {type: Boolean, required: false, unique: false, default: false},
 }, {timestamps: true});
 
+const purchases_preview_schema = new mongoose.Schema({
+    companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
+    company: {type: String, required: true, unique: false, default: null},
+    initiator: {type: String, required: true, unique: false, default: null},
+    userID: {type: String, required: true, unique: false},
+    supplier: {type: String, required: true, unique: false, default: null},
+    invoice_date: {type: String, required: true, unique: false, default: null},
+    invoice_number: {type: String, required: true, unique: false, default: null},
+    item_code: {type: String, required: true, unique: false, default: null},
+    particular: {type: String, required: true, unique: false, default: null},
+    quantity: {type: String, required: true, unique: false, default: null},
+    price: {type: String, required: true, unique: false, default: null},
+    amount: {type: String, required: true, unique: false, default: null},
+},{timestamps: true});
+
 const purchases_schema = new mongoose.Schema({
     companyRefID: {type: String, required: true, unique: false, ref: 'Registration'},
     company: {type: String, required: true, unique: false, default: null},
@@ -158,6 +173,7 @@ const LoginModel = mongoose.model("Login", login_schema);
 const DateTimeTracker = mongoose.model("DateTimeTracker", date_time_schema);
 const RegistrationModel = mongoose.model("Registration", registration_schema);
 const AuthorizationModel = mongoose.model("Authorization", authorization_schema);
+const PurchasePreviewModel = mongoose.model("Purchases_Preview", purchases_preview_schema);
 const PurchaseModel = mongoose.model("Purchases", purchases_schema);
 const ComparismeModel = mongoose.model("Comparism", comparism_schema);
 const TrackingModel = mongoose.model("Tracking", tracking_schema);
@@ -168,6 +184,6 @@ const TrackingModel = mongoose.model("Tracking", tracking_schema);
 // EXPORT SCHEMATICS
 module.exports = { 
     UserModel, LoginModel, DateTimeTracker, RegistrationModel, AuthorizationModel, PurchaseModel, TrackingModel, 
-    ComparismeModel
+    ComparismeModel, PurchasePreviewModel
 }
 // ..

@@ -173,7 +173,9 @@
                                                 
                                                 <div class="mb-3 row purchases-button-wrapper" data-purchases="<% if (context !== undefined) { %><%- context.config.post_urls.purchases_entry %><% } %>">
                                                     <div class="col-lg-8 ms-auto">
-                                                        <button type="button" class="btn btn-primary purchases-button">Submit</button>
+                                                        <button type="button" class="btn btn-primary purchases-button submit">Submit</button>
+                                                        <button type="button" class="btn btn-primary purchases-button preview" 
+                                                        data-url="<% if (context !== undefined) { %><%- context.config.view_urls.purchase_preview %><% } %>">Preview Purchases <div class="preview-number"><%- context.purchases_length %></div></button>
                                                         <div class="loading-gif"></div>
                                                     </div>
                                                 </div>

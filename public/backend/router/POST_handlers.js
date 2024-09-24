@@ -6,13 +6,14 @@ const validator = require("validator");
 // IMPORTATION OF FILES 
 const config = require("../config/config");
 const { UserModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel, TrackingModel,
-    ComparismeModel } = require("../../database/schematics");
+    ComparismeModel, PurchasePreviewModel } = require("../../database/schematics");
 const { encrypt_access_code } = require("../controller/encryption");
 const { randomSerialCode, authorization_code } = require("../utils/code_generator");
 const { sending_email, sending_email_with_html_template } =  require("../controller/nodemailer");
 const { is_user_active, getting_auth_user_data, tracking_payload_initials, verifying_user_restriction,
         verifying_user_previliges, verifying_user_authorization_codes, is_user_found_in_company } = require("../controller/validation");
 const { get_date_and_time } = require("../utils/date_time");
+const { ReadStream } = require("fs");
 
 
 
@@ -860,7 +861,7 @@ const resend_OTP_code_handler = async (req, res, next) => {
 };
 // END 
 // PURCHASES
-const purchases_handler = async (req, res, next) => {
+const purchases_entry_handler = async (req, res, next) => {
     let context = {}, proceed = "";
     try {
         console.log("** Collecting data for purchases entry submission **");
@@ -894,7 +895,7 @@ const purchases_handler = async (req, res, next) => {
             console.log("... user is previlged to poroceed ...");
             console.log("... inserting payload into database ...");
             
-            const query_resp = await PurchaseModel.insertMany(payload);
+            const query_resp = await PurchasePreviewModel.insertMany(payload);
         
             console.log("... query responds ...", query_resp);
             console.log("... insertion of payload completed ...");
@@ -931,8 +932,9 @@ const purchases_handler = async (req, res, next) => {
             console.log("... tracking protocol completed ...");
             console.log("... wrapping context before redirecting ...");
     
-            context.msg = "Purchase submission sucess";
+            context.msg = "Sucess. Purchase created.";
             context.data = query_resp;
+            context.purchases_length = (await PurchasePreviewModel.find().sort({ "createdAt": -1 })).length;
 
             console.log("... wrapping context completed ...");
             console.log("... redireting reponses ....");
@@ -974,7 +976,7 @@ const purchases_handler = async (req, res, next) => {
             console.log("... wrapping context completed ...");
             console.log("... redireting reponses ....");
 
-            context.msg = `Hey ${eq.session.passport.user.userID}. you are not permitted for operation !`;
+            context.msg = `Hey ${req.session.passport.user.userID}. you are not permitted for operation !`;
             res.json(context);
         }
     } catch (error) {
@@ -1027,13 +1029,13 @@ const purchases_handler = async (req, res, next) => {
         res.redirect(303, `${config.view_urls._500}`);
     }
 };
-const purchases_preview_handler = async (req, res, next) => {
+const purchases_edit_delete_handler = async (req, res, next) => {
     let context = {};
     try {
         console.log("** inside purchases preview submission **");
         console.log("... collection of data payload ...");
 
-        let proceed = "", tracking_payload = {};
+        let proceed = "", tracking_payload = {}, is_data_deleted = "";
         const payload = req.body;
         const incoming_payload = req.body;
 
@@ -1057,288 +1059,38 @@ const purchases_preview_handler = async (req, res, next) => {
         
         if (is_user_permitted) {
             console.log("... user is permitted to proceed ...");
-            console.log("... verifying auth authorization code ...");
-            
-            const verification_responds = await verifying_user_authorization_codes(req, payload.authorization_code);
-            
-            console.log("... is user verified to proceed ...", verification_responds);
-            console.log("... verification completed ...");
+            console.log("... initiaing tracking protocol ...");
 
-            if (verification_responds === undefined) {
-                console.log("... User is not authorized ...");
-                console.log("... initiaing tracking protocol ...");
-
-                tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                tracking_payload.payload = {
-                    purchases: [
-                        {
-                            time: (await get_date_and_time()).time,
-                            date:  (await get_date_and_time()).date,
-                            action: `Request to make changes on purchase item #${payload.item_code}`,
-                            status: config.tracking.status.restricted,
-                        }
-                    ]
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: `User ${payload.userID} permitted to operate on Purchases !`,
+                        status: config.tracking.status.sucess,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+    
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+    
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
                 }
-                console.log("...final tracking payload ...", tracking_payload);
-        
-                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                else {
-                    if (tracking_query_resp.payload.purchases === undefined) {
-                        tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
-                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                            { "payload": tracking_query_resp.payload });
-        
-                    }else {
-                        tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
-                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                            {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
-                    }
-                };
-                    
-                console.log("... tracking protocol completed ...");
-                console.log("... wrapping context before rediecting ...");
-                
-                context.msg = "Error. User is not authorized !";
-                res.json(context);
-
-            }else if (typeof verification_responds === "object") {
-                if (verification_responds.status.trim() === "breach") {
-                    let is_data_updated = "";
-
-                    console.log("... breached of authorization codes ...");
-                    console.log("... initiaing tracking protocol ...");
-
-                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                    tracking_payload.payload = {
-                        purchases: [
-                            {
-                                time: (await get_date_and_time()).time,
-                                date:  (await get_date_and_time()).date,
-                                action: `Request to make changes on purchase item #${payload.item_code}`,
-                                status: config.tracking.status.restricted,
-                            }
-                        ]
-                    }
-                    console.log("...final tracking payload for purchases ...", tracking_payload);
-
-                    let tracking_query_resp = "";
-                    tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                    else {
-                        if (tracking_query_resp.payload.purchases === undefined) {
-                            tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                { "payload": tracking_query_resp.payload });
-            
-                        }else {
-                            tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
-                        };
-                    };
-
-                    tracking_payload.payload = {
-                        authorization: [
-                            {
-                                time: (await get_date_and_time()).time,
-                                date:  (await get_date_and_time()).date,
-                                action: `Breach! ${verification_responds.data.userID} authorization code is breached by ${payload.initiator} on Purchases.`,
-                                status: config.tracking.status.breach,
-                            }
-                        ]
-                    };
-
-                    console.log("...final tracking payload for authorization ...", tracking_payload);
-
-                    tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                    if (tracking_query_resp === null) { 
-                        await TrackingModel.insertMany(tracking_payload);
-                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                            { "is_breach_alert_activated": true });
-                        is_data_updated = true; 
-                    }
-                    else {
-                        if (tracking_query_resp.payload.authorization === undefined) {
-                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
-                            
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": [
-                                    { "payload": tracking_query_resp.payload },
-                                    { "is_breach_alert_activated": true }
-                                ]});
-                            is_data_updated = true;
-                        }else {
-                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": [
-                                    { "payload.authorization": tracking_query_resp.payload.authorization },
-                                    { "is_breach_alert_activated": true }
-                                ]});
-                            is_data_updated = true;
-                        }
-                    };
-
-                    if (typeof is_data_updated === "boolean" && is_data_updated) {
-                        console.log("... Tracking protocol initiation completed ...");
-                        console.log("... sending email to company admin and user as notification ...");
-                        
-                        const company_data = await RegistrationModel.findOne({ "_id": req.session.passport.user.comapnyRefID });
-                        const query_data_1 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.managing_director });
-                        const query_data_2 = await UserModel.findOne({ "companyRefID": req.session.passport.user.comapnyRefID, "role": config.roles.operation_manager });
-                        
-                        const email_response_1 = await sending_email(
-                            config.company_name,
-                            "Authorization Code Breached !",
-                            company_data.email,
-                            `Hi Admin, There has been a breach of authorization code. We recommend to you to check it out.`
-                        );
-                        const email_response_2 = await sending_email(
-                            config.company_name,
-                            "Authorization Code Breached !",
-                            verification_responds.data.email,
-                            `Hi ${verification_responds.data.userID}, There has been a breach of authorization code. We recommend to you to contact Admin.`
-                        );
-                        if (query_data_1 !== null) {
-                            await sending_email(
-                                config.company_name,
-                                "Authorization Code Breached !",
-                                query_data_1.email,
-                                `Hi ${query_data_1.first_name} ${query_data_1.last_name}, There has been a breach of authorization code. We recommend to you to check it out.`
-                            );
-                        };
-                        if (query_data_2 !== null) {
-                            await sending_email(
-                                config.company_name,
-                                "Authorization Code Breached !",
-                                query_data_2.email,
-                                `Hi ${query_data_2.first_name} ${query_data_2.last_name}, There has been a breach of authorization code. We recommend to you to check it out.`
-                            );
-                        }
-
-                        console.log("... is email sent to Admin ...",email_response_1, email_response_2);
-                        console.log("... wrapping context before redirecting responds ...");
-                        
-                        context.msg = "Error. Authorization breach !";
-                        context.is_data_breach = tracking_payload.is_breach_alert_activated;
-                        context.response = verification_responds.data;
-
-                        res.json(context);
-                    }
-                };
-            }else if (typeof verification_responds === "string") {
-                if (verification_responds.trim() === "not_activated") {
-                    console.log("... auth-user have authorization code, BUT NOT ACTIVATED ...");
-                    console.log("... initiaing tracking protocol ...");
-
-                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                    tracking_payload.payload = {
-                        authorization: [
-                            {
-                                time: (await get_date_and_time()).time,
-                                date:  (await get_date_and_time()).date,
-                                action: `Request to make changes on purchase item #${payload.item_code}. Authorization codes not activated !`,
-                                status: config.tracking.status.denied,
-                            }
-                        ]
-                    }
-                    console.log("...final tracking payload ...", tracking_payload);
-            
-                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                    else {
-                        if (tracking_query_resp.payload.authorization === undefined) {
-                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                { "payload": tracking_query_resp.payload });
-            
-                        }else {
-                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
-                        }
-                    };
-                        
-                    console.log("... tracking protocol completed ...");
-                    console.log("... wrapping context before redirecting ...");
-    
-                    context.msg = "Error. Authorization not activated. Activate Authorization code before usage !";
-                    res.json(context);
-    
-                }else if (verification_responds.trim() === "code_err") { 
-                    console.log("... invalid authorization code ...");
-                    console.log("... initiaing tracking protocol ...");
-
-                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                    tracking_payload.payload = {
-                        authorization: [
-                            {
-                                time: (await get_date_and_time()).time,
-                                date:  (await get_date_and_time()).date,
-                                action: `Request to make changes on purchase item #${payload.item_code}. Authorization codes Invalid !`,
-                                status: config.tracking.status.denied,
-                            }
-                        ]
-                    }
-                    console.log("...final tracking payload ...", tracking_payload);
-            
-                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                    else {
-                        if (tracking_query_resp.payload.authorization === undefined) {
-                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                { "payload": tracking_query_resp.payload });
-            
-                        }else {
-                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
-                        }
-                    };
-                        
-                    console.log("... tracking protocol completed ...");
-                    console.log("... wrapping context before redirecting ...");
-    
-                    context.msg = "Error. Invalid authorization code !";
-                    res.json(context);
-                
-                }else if (verification_responds.trim() === "verified") { 
-                    console.log("... verification of authorization code valid ...");
-                    console.log("... initiaing tracking protocol ...");
-
-                    tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
-                    tracking_payload.payload = {
-                        authorization: [
-                            {
-                                time: (await get_date_and_time()).time,
-                                date:  (await get_date_and_time()).date,
-                                action: `Request to make changes on purchase item #${payload.item_code}. Authorization codes valid and used.`,
-                                status: config.tracking.status.sucess,
-                            }
-                        ]
-                    }
-                    console.log("...final tracking payload ...", tracking_payload);
-            
-                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                    else {
-                        if (tracking_query_resp.payload.authorization === undefined) {
-                            tracking_query_resp.payload.authorization = tracking_payload.payload.authorization;
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                { "payload": tracking_query_resp.payload });
-            
-                        }else {
-                            tracking_query_resp.payload.authorization.push(tracking_payload.payload.authorization[0]);
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": { "payload.authorization": tracking_query_resp.payload.authorization } });
-                        }
-                    };
-                        
-                    console.log("... tracking protocol completed ...");
-                    proceed = true 
-                };
             };
+                
+            console.log("... tracking protocol completed ...");
+            proceed = true;
         }else {
             console.log("... user is not previlged to proceed operation ...");
             console.log("... initiaing tracking protocol ...");
@@ -1379,12 +1131,12 @@ const purchases_preview_handler = async (req, res, next) => {
         };
 
         if (typeof proceed === "boolean" && proceed) {
-            console.log("... user is authorized to proceed ...");
+            console.log("... user permission granted ...");
             console.log("... verifying if payload is for modification or deletion ...");
 
-            let update_tracker = "", update_comparism = "", comparism_payload = {};
+            let update_tracker = "";
             if (typeof payload.trigger === "string" && payload.trigger === config.previliges_options.delete) {
-                const query_resp = await PurchaseModel.findOne({ "_id": payload.delete_ids[0] });
+                const query_resp = await PurchasePreviewModel.findOne({ "_id": payload.delete_ids[0] });
                 
                 if (query_resp.companyRefID !== req.session.passport.user.companyRefID) {  
                     console.log("... data does not belong to the right company ...");
@@ -1396,7 +1148,7 @@ const purchases_preview_handler = async (req, res, next) => {
                             {
                                 time: (await get_date_and_time()).time,
                                 date:  (await get_date_and_time()).date,
-                                action: `Request to delete ${payload.delete_ids.length} purchase item(s). Data Inconsistency. Contact Admin / Developer !`,
+                                action: `Deleted ${payload.delete_ids.length} purchase item(s) upon previewing purchases. Contact Admin / Developer !`,
                                 status: config.tracking.status.error,
                             }
                         ]
@@ -1405,32 +1157,25 @@ const purchases_preview_handler = async (req, res, next) => {
                     update_tracker = true;
                     
                 }else {
-                    comparism_payload = {
-                        companyRefID: req.session.passport.user.companyRefID,
-                        initiator: req.session.passport.user.userID,
-                        company: req.session.passport.user.company,
-                        userID: req.session.passport.user.userID,
-                        role: req.session.passport.user.role,
-                        payload: [
-                            {
-                                current_data: payload.delete_ids,
-                                incoming_data: incoming_payload,
-                                remarks: config.comparism_options.conflict,
-                                user_comment: payload.comment,
-                                lead_comment: null,
-                                entry_date_time: `${(await get_date_and_time()).date} @ ${(await get_date_and_time()).time}`,
-                                response_date_time: null,
-                                headline: config.previliges_options.delete,
-                            }
-                        ],
+                    console.log("... payload meant for deleteion ...");
+                    console.log("... proceeding to delete purchases ...");
+
+                    let delete_count = 0;
+                    for (let i = 0; i < payload.delete_ids.length; i++) {
+                        const delete_data = payload.delete_ids[i];
+                        await PurchasePreviewModel.deleteMany({ "_id": delete_data });
+                        delete_count = delete_count + 1;
                     };
-                    update_comparism = true;
+                    if (delete_count === payload.delete_ids.length) {
+                        console.log("... wrapping context before redirecting ...");
+    
+                        const msg = "Sucess. Purchase(s) deleted.!";
+                        context.msg = msg;
+                        res.json(context);
+                    };
                 };
             }else if (typeof payload.trigger === "string" && payload.trigger === config.previliges_options.modify) {
-                console.log("... inserting data into database for comparism and verification base on data existence ...");
-
-                const current_payload = await PurchaseModel.findOne({ "item_code": payload.item_code });
-                console.log("... getting the current payload from database ...", current_payload);
+                const current_payload = await PurchasePreviewModel.findOne({ "item_code": payload.item_code });
     
                 if (current_payload.companyRefID !== req.session.passport.user.companyRefID) {  
                     console.log("... data does not belong to the right company ...");
@@ -1442,7 +1187,7 @@ const purchases_preview_handler = async (req, res, next) => {
                             {
                                 time: (await get_date_and_time()).time,
                                 date:  (await get_date_and_time()).date,
-                                action: `Request to make changes on purchase item #${payload.item_code}. Data Inconsistency. Contact Admin / Developer !`,
+                                action: `Updating Purchase item ${payload.item_code} upon previewing purchases. Contact Admin / Developer !`,
                                 status: config.tracking.status.error,
                             }
                         ]
@@ -1451,75 +1196,45 @@ const purchases_preview_handler = async (req, res, next) => {
                     update_tracker = true;
 
                 }else {
-                    comparism_payload = {
-                        companyRefID: req.session.passport.user.companyRefID,
-                        initiator: req.session.passport.user.userID,
-                        company: req.session.passport.user.company,
-                        userID: req.session.passport.user.userID,
-                        role: req.session.passport.user.role,
-                        payload: [
-                            {
-                                current_data: current_payload,
-                                incoming_data: incoming_payload,
-                                remarks: config.comparism_options.conflict,
-                                user_comment: payload.comment,
-                                lead_comment: null,
-                                entry_date_time: `${(await get_date_and_time()).date} @ ${(await get_date_and_time()).time}`,
-                                response_date_time: null,
-                                headline: config.previliges_options.modify,
-                            }
-                        ],
-                    };
-                    update_comparism = true;
-                };
-
-                if (typeof update_tracker === "boolean" && update_tracker) {
-                    const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
-                    if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
-                    else {
-                        if (tracking_query_resp.payload.purchases === undefined) {
-                            tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                { "payload": tracking_query_resp.payload });
-            
-                        }else {
-                            tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
-                            await TrackingModel.updateOne({ "userID": tracking_payload.userID },
-                                {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
-                        }
-                    };
-                        
-                    console.log("... tracking protocol completed ...");
-                    console.log("... wrapping context before redirecting ...");
+                    console.log("... payload is meant for modification  ...");
+                    console.log("... proceding to update preview ...");
                     
-                    context.msg = "Error. Couldn't submit. Try Again !";
-                    req.flash("preview", context.msg);
-                    res.redirect(303, config.view_urls.purchase_preview);
-                };
-                if (typeof update_comparism === "boolean" && update_comparism) {
-                    console.log("... proceeding to delete data from database ...");
+                    const query_resps = await PurchasePreviewModel.updateMany({ "item_code": payload.item_code }, 
+                        { "supplier": payload.supplier, "invoice_date": payload.invoice_date, "invoice_number": payload.invoice_number,
+                        "item_code": payload.item_code, "particular": payload.particular, "quantity": payload.quantity, "price": payload.price,
+                        "amount": payload.amount, "supplier": payload.supplier }
+                    );
 
-                    let is_data_inserted = "";
-                    const comparism_obj = await ComparismeModel.findOne({ "userID": comparism_payload.userID });
-                    if (comparism_obj === null) {
-                        await ComparismeModel.insertMany(comparism_payload);
-                        is_data_inserted = true;
-                    }else {
-                        await ComparismeModel.updateOne({ "userID": comparism_payload.userID },
-                            {"$push": { "payload": comparism_payload.payload[0] }});
-                        is_data_inserted = true;
-                    }
-                    if (typeof is_data_inserted === "boolean" && is_data_inserted) {
-                        console.log("... insertion responds ...");
-                        console.log("... insertion of payload completed ...");
-                        console.log("... wrapping context before redirecting ...");
+                    console.log("... purchases updated ...", query_resps);
+                    console.log("... wrapping context before redirecting ...");
+    
+                    const msg = "Sucess. Purchase updated.!";
+                    context.msg = msg;
+                    res.json(context);
+                };
+            };
+            if (typeof update_tracker === "boolean" && update_tracker) {
+                const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+                if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+                else {
+                    if (tracking_query_resp.payload.purchases === undefined) {
+                        tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            { "payload": tracking_query_resp.payload });
         
-                        const msg = "Sucess. Request is sent and will be verify for approval !";
-                        context.msg = msg;
-                        req.flash("preview", context.msg);
-                        res.redirect(303, config.view_urls.purchase_preview);
-                    };
-                }
+                    }else {
+                        tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                        await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                            {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                    }
+                };
+                    
+                console.log("... tracking protocol completed ...");
+                console.log("... wrapping context before redirecting ...");
+                
+                context.msg = "Error. Couldn't submit. Try Again !";
+                req.flash("preview", context.msg);
+                res.redirect(303, config.view_urls.purchase_preview);
             };
         };      
     } catch (error) {
@@ -1570,6 +1285,176 @@ const purchases_preview_handler = async (req, res, next) => {
         res.redirect(303, `${config.view_urls._500}`);
     }
 };
+const purchases_submission_handler = async (req, res, next) => {
+    let context = {}, proceed = "";
+    try {
+        console.log("** Submission of purchases entries **");
+
+        const payload = req.body;
+
+        payload.companyRefID = req.session.passport.user.companyRefID;
+        payload.userID = req.session.passport.user.userID;
+        payload.company = req.session.passport.user.company;
+
+        console.log("... getting payload before submission ...", payload);
+        
+
+        const user_profile = await  getting_auth_user_data(req.session.passport.user);
+        if (user_profile[0].role === "admin") { payload.initiator = user_profile[0].ceo }
+        else { payload.initiator = `${user_profile[0].first_name} ${user_profile[0].last_name}`; }
+
+        console.log("... getting final payload ...", payload);
+        console.log("... verifying if user is permitted to proceed operation ...");
+
+        if (await verifying_user_restriction(null, req.session.passport.user)) { proceed = true }
+        else { 
+            if (await verifying_user_restriction(config.roles.purchases, req.session.passport.user)) { 
+                console.log("... user is not restricted ...");
+                console.log("... verifying user previleges ...");
+                proceed = await verifying_user_previliges(req, "document", config.previliges_options.create);
+            }
+            else { proceed = false }; 
+        };
+
+        let tracking_payload = "";
+
+        console.log("... getting payload after ...", payload);
+        if (proceed) {
+            console.log("... user is permitted for operation ...");
+            console.log("... user is previlged to poroceed ...");
+            console.log("... initiaing submission ...");
+
+            const preview_payload = await PurchasePreviewModel.find({ "companyRefID": payload.companyRefID, "userID": payload.userID });
+            console.log("... getting preview payload ...", preview_payload);
+            
+            let insertion_count = 0, delete_count = 0;
+            for (let i = 0; i < preview_payload.length; i++) {
+                const payload = preview_payload[i];
+                
+                const data = await PurchaseModel.findOne({ "item_code": payload.item_code });
+                if (data === null) {
+                    await PurchaseModel.insertMany(payload);
+                    insertion_count = insertion_count + 1; 
+                }else {
+                    await PurchaseModel.updateMany({ "item_code": payload.item_code }, 
+                        { "supplier": payload.supplier, "invoice_date": payload.invoice_date, "invoice_number": payload.invoice_number,
+                        "item_code": payload.item_code, "particular": payload.particular, "quantity": payload.quantity, "price": payload.price,
+                        "amount": payload.amount, "supplier": payload.supplier }
+                    );
+                    insertion_count = insertion_count + 1;
+                }
+            };
+            if (insertion_count === preview_payload.length) {
+                console.log("... Purchases submission completed ...");
+                console.log("... clearing preview purchases ...");
+                
+                for (let i = 0; i < preview_payload.length; i++) {
+                    const payload = preview_payload[i];
+                    await PurchasePreviewModel.deleteMany({ "companyRefID": payload.companyRefID, "invoice_number": payload.invoice_number });
+                    delete_count = delete_count + 1;
+                }
+                if (delete_count === preview_payload.length) {
+                    console.log("... Preview purchase(s) cleared ...");
+                    console.log("... wrapping context before redirecting ...");
+    
+                    context.msg = "Purchase(s) submission sucess";
+        
+                    console.log("... wrapping context completed ...");
+                    console.log("... redireting reponses ....");
+        
+                    res.json(context);
+                }
+            }
+        }else {
+            console.log("... user is NOT previlges to proceed ...");
+            console.log("... initiating tracking protocol ...");
+            
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Submission of purchase(s) entries.",
+                        status: config.tracking.status.denied,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+
+            context.msg = `Hey ${req.session.passport.user.userID}. you are not permitted for operation !`;
+            res.json(context);
+        }
+
+    }catch (error) {
+        console.log("** Error:: Submission Purchases Handler **", error);
+
+        if (error.code == "11000") { //  for duplicate of business name 
+            console.log("... data is duplicated ...");
+            console.log("... initiating tracking protocol ...");
+            
+            tracking_payload = { ...await tracking_payload_initials(req, user_profile) };
+            tracking_payload.payload = {
+                purchases: [
+                    {
+                        time: (await get_date_and_time()).time,
+                        date:  (await get_date_and_time()).date,
+                        action: "Submission of purchase(s) entries.",
+                        status: config.tracking.status.failed,
+                    }
+                ]
+            }
+            console.log("...final tracking payload ...", tracking_payload);
+
+            const tracking_query_resp = await TrackingModel.findOne({"userID": tracking_payload.userID });
+            if (tracking_query_resp === null) { await TrackingModel.insertMany(tracking_payload); }
+            else {
+                if (tracking_query_resp.payload.purchases === undefined) {
+                    tracking_query_resp.payload.purchases = tracking_payload.payload.purchases;
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        { "payload": tracking_query_resp.payload });
+
+                }else {
+                    tracking_query_resp.payload.purchases.push(tracking_payload.payload.purchases[0]);
+                    await TrackingModel.updateOne({ "userID": tracking_payload.userID },
+                        {"$set": { "payload.purchases": tracking_query_resp.payload.purchases } });
+                }
+            };
+            
+            console.log("... tracking protocol completed ...");
+            console.log("... wrapping context before redirecting ...");
+
+            const error_msg = "Error. Purchases submission failed . Try Again !";
+            context.msg = error_msg;
+
+            console.log("... wrapping context completed ...");
+            console.log("... redireting reponses ....");
+
+            res.json(context);
+        };
+
+        res.redirect(303, `${config.view_urls._500}`);
+    }
+}
 // END
 
 // DASHBOARD SECIION 
@@ -2302,6 +2187,6 @@ const change_user_roles_and_previlges_handler = async (req, res, next) => {
 
 module.exports = { signup_handler, OTP_verification_handler, registration_handler,
     is_OTP_verified, is_password_secured,  password_reset_handler, forgot_password_initiate_handler, 
-    forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_handler, purchases_preview_handler,
-    change_user_roles_and_previlges_handler
+    forgot_password_confirmation_handler, resend_OTP_code_handler, purchases_entry_handler, purchases_edit_delete_handler,
+    change_user_roles_and_previlges_handler, purchases_submission_handler
 }

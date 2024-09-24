@@ -5,7 +5,8 @@ const moment = require("moment");
 
 // IMPORTATION OF FILES
 const config = require("../config/config");
-const { UserModel, LoginModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel } = require("../../database/schematics");
+const { UserModel, LoginModel, RegistrationModel, DateTimeTracker, AuthorizationModel, PurchaseModel,
+    PurchasePreviewModel } = require("../../database/schematics");
 const { randomPassword, randomSerialCode } = require("../utils/code_generator");
 // ...
 
@@ -291,6 +292,8 @@ const view_purchase = async (req, res, next) => {
         const flash_msg = req.flash("purchase");
         context.message = flash_msg;
         context.config = config;
+        context.purchases_length = (await PurchasePreviewModel.find().sort({ "createdAt": -1 })).length;
+
         console.log(context.message);
         
 
@@ -312,7 +315,7 @@ const view_purchase_preview = async (req, res, next) => {
         console.log("** inside purchases preview view");
         console.log("... loading all data from the database ...");
 
-        const purchases = await PurchaseModel.find();
+        const purchases = await PurchasePreviewModel.find().sort({ "createdAt": -1 });
         
         console.log("... query responds ...", purchases);
         console.log("... loading data from database completed ...");
@@ -327,7 +330,6 @@ const view_purchase_preview = async (req, res, next) => {
         console.log("... context completed ...");
         console.log("... rendering ...");
         
-        
         res.render("purchase_preview", { context });
 
     } catch (error) {
@@ -341,9 +343,9 @@ const view_purchase_responds = async (req, res, next) => {
         console.log("** inside purchases_responds view");
         console.log("... wrapping context before rendering ...");
 
-        const purchases = await PurchaseModel.find();
+        const purchases = await PurchasePreviewModel.find();
         
-        console.log("... query responds ...", purchases);
+        console.log("... query responds ...");
         console.log("... Loading purchases completed ...");
 
         const flash_msg = req.flash("purchases_responds");
