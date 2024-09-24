@@ -139,8 +139,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
         
                         const url = form_button_wrapper.getAttribute("data-purchases");
                         const responses = await sending_data_to_server(`${url}`, payload);
-                        console.log("... server responds ...", responses);
-                        
         
                         if (typeof responses === "object") { 
                             setTimeout(() => {  
@@ -614,8 +612,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                                 payload.trigger = previliges_opts[1]; // very important
                                 payload.delete_ids = session_data; 
 
-                                console.log("... geting the final payload ...", payload);
-
                                 const url = attr_el.getAttribute("data-url");;
                                 const previliges = attr_el.getAttribute("previleges");
                                 const pageon = attr_el.getAttribute("pageon");
@@ -627,8 +623,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                                 payload.previliges = previliges;
                 
                                 const responses = await sending_data_to_server(url, payload);
-                                console.log("... getting responses from server ...", responses);
-                                
                                 if (typeof responses === "object") { 
                                     setTimeout(async () => {  
                                         notify_user(`${responses.msg}`); 
@@ -663,8 +657,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 };
             });
             overlay_submit_button.onclick = async (e) => {
-                console.log("... geting the final payload ...", payload);
-
                 const url = e.target.dataset.url;
                 const previliges = e.target.dataset.previleges;
                 const pageon = e.target.dataset.pageon;
@@ -675,8 +667,6 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                 payload.previliges = previliges;
 
                 const responses = await sending_data_to_server(url, payload);
-                console.log("... getting responses from server ...", responses);
-                
                 if (typeof responses === "object") { 
                     setTimeout(async () => {  
                         notify_user(`${responses.msg}`); 
@@ -697,14 +687,11 @@ import { load_data_from_server, sending_data_to_server, notify_user, validating_
                     if (e.target.classList.contains("submit")) {
                         const url = e.target.getAttribute("data-url");
 
-                        console.log("... initiating submission ...");
                         const preview_buttons_wrapper = document.querySelector(".preview-buttons-wrapper");
                         const gif_loader = preview_buttons_wrapper.querySelector(".loading-gif");
                         activate_gif_loader(gif_loader);
                                     
                         const responses = await sending_data_to_server(url, {});
-                        console.log("... getting responses from server ...", responses);
-                                    
                         if (typeof responses === "object") { 
                             setTimeout(async () => {  
                                 notify_user(`${responses.msg}`); 
